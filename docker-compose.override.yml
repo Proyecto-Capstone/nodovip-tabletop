@@ -1,0 +1,23 @@
+# Ambiente LOCAL (se carga automáticamente)
+services:
+  postgres:
+    ports:
+      - "5432:5432"
+  redis:
+    ports:
+      - "6379:6379"
+  backend:
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    volumes:
+      - ./backend/app:/app/app:z
+    ports:
+      - "8000:8000"
+  frontend:
+    build:
+      target: dev
+    volumes:
+      - ./frontend:/app:z
+      - /app/node_modules
+  nginx:
+    environment:
+      FRONTEND_UPSTREAM: frontend:5173

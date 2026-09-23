@@ -3,3 +3,11 @@ node_modules/
 __pycache__/
 .env
 dist/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+.coverage
+htmlcov/

@@ -1,0 +1,13 @@
+# Ambiente TESTING/STAGING
+services:
+  postgres:
+    restart: unless-stopped
+  redis:
+    restart: unless-stopped
+  backend:
+    restart: unless-stopped
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "debug"]
+  frontend:
+    restart: unless-stopped
+  nginx:
+    restart: unless-stopped

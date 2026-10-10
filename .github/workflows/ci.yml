@@ -1,0 +1,72 @@
+# .github/workflows/ci.yml
+# PC-10 · Workflow inicial de CI (se completa en PB-15 / PC-26)
+name: CI
+
+on:
+  pull_request:
+    branches: [develop, main]
+  push:
+    branches: [develop, main]
+
+# Si subes otro commit al mismo PR, cancela la corrida anterior (ahorramos minutos)
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: Backend · lint + pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"   # usa la misma versión que dockerfile del back
+          cache: pip
+          cache-dependency-path: backend/requirements*.txt
+
+      - name: Instalar dependencias
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          if [ -f requirements-dev.txt ]; then pip install -r requirements-dev.txt; fi
+          pip install ruff pytest httpx
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Formato (ruff)
+        run: ruff format --check .
+
+      - name: Pruebas (pytest)
+        run: pytest -q
+
+  frontend:
+    name: Frontend · lint + build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint --if-present
+
+      - name: Build (TypeScript + Vite)
+        run: npm run build

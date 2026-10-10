@@ -75,3 +75,47 @@ class Usuario:
 
     def tiene_permiso(self, permiso: PermisoCodigo) -> bool:
         return self.activo and permiso in PERMISOS_POR_ROL[self.rol]
+
+
+# --- Reglas de gestión de usuarios (PB-02, RF-05) -----------------------------
+
+CONTRASENA_MIN = 10
+# bcrypt solo usa los primeros 72 bytes; más largo se rechaza para no truncar.
+CONTRASENA_MAX_BYTES = 72
+
+
+class ReglaUsuarioError(ValueError):
+    """Un dato de usuario no cumple una regla de negocio."""
+
+    def __init__(self, errores: list[str]):
+        self.errores = errores
+        super().__init__("; ".join(errores))
+
+
+def normalizar_correo(correo: str) -> str:
+    """El correo es el dato de login: se compara sin espacios y en minúsculas."""
+    return correo.strip().lower()
+
+
+def errores_contrasena(contrasena: str) -> list[str]:
+    """Política mínima de contraseñas. Devuelve la lista de reglas incumplidas."""
+    errores: list[str] = []
+    if len(contrasena) < CONTRASENA_MIN:
+        errores.append(f"Debe tener al menos {CONTRASENA_MIN} caracteres")
+    if len(contrasena.encode("utf-8")) > CONTRASENA_MAX_BYTES:
+        errores.append("Es demasiado larga (máximo 72 bytes)")
+    if not any(c.islower() for c in contrasena):
+        errores.append("Debe incluir al menos una letra minúscula")
+    if not any(c.isupper() for c in contrasena):
+        errores.append("Debe incluir al menos una letra mayúscula")
+    if not any(c.isdigit() for c in contrasena):
+        errores.append("Debe incluir al menos un número")
+    if contrasena != contrasena.strip():
+        errores.append("No puede empezar ni terminar con espacios")
+    return errores
+
+
+def validar_contrasena(contrasena: str) -> None:
+    errores = errores_contrasena(contrasena)
+    if errores:
+        raise ReglaUsuarioError([f"Contraseña: {e.lower()}" for e in errores])

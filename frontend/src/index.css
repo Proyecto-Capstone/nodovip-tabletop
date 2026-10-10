@@ -64,7 +64,7 @@ a {
 
 .app {
   display: grid;
-  grid-template-columns: 230px 1fr;
+  grid-template-columns: 230px minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   min-height: 100vh;
 }
@@ -130,6 +130,7 @@ a {
 }
 
 .contenido {
+  min-width: 0;
   padding: 1.5rem;
   max-width: 1200px;
   width: 100%;
@@ -226,6 +227,10 @@ a {
 }
 
 .boton-peligro {
+  color: var(--rojo);
+}
+
+.boton.texto-peligro {
   color: var(--rojo);
 }
 
@@ -551,6 +556,7 @@ a {
 }
 
 .tabla-contenedor {
+  position: relative;
   padding: 0;
   overflow-x: auto;
 }
@@ -580,6 +586,59 @@ a {
   white-space: nowrap;
 }
 
+/* --- Gestión de usuarios -------------------------------------------------- */
+
+.alerta-exito {
+  background: var(--verde-fondo);
+  color: var(--verde);
+}
+
+.estado-activo {
+  background: var(--verde-fondo);
+  color: var(--verde);
+}
+
+.estado-inactivo {
+  background: var(--gris-fondo);
+  color: var(--texto-suave);
+}
+
+.fila-inactiva td {
+  color: var(--texto-suave);
+}
+
+.acciones-fila {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+.panel-formulario {
+  border-color: #b9bfd1;
+}
+
+.requisitos-compactos {
+  flex: 1 1 220px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  font-size: 0.8rem;
+  margin-bottom: 0.75rem;
+}
+
+.requisitos-compactos li {
+  padding: 0.1rem 0;
+}
+
+.solo-lector {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
 /* --- Responsive (RNF-07: desde 360 px) ------------------------------------- */
 
 @media (max-width: 900px) {
@@ -593,7 +652,7 @@ a {
 
 @media (max-width: 720px) {
   .app {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     grid-template-rows: auto auto 1fr;
   }
   .topbar {

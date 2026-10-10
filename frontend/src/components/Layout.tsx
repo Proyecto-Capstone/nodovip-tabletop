@@ -30,7 +30,10 @@ export function Layout() {
         </NavLink>
         <NavLink to="/banco-preguntas">Banco de preguntas</NavLink>
         {esAdministrador && (
-          <NavLink to="/escenarios/nuevo">Nuevo escenario</NavLink>
+          <>
+            <NavLink to="/escenarios/nuevo">Nuevo escenario</NavLink>
+            <NavLink to="/usuarios">Gestión de usuarios</NavLink>
+          </>
         )}
       </nav>
 

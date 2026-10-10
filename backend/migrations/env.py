@@ -5,7 +5,10 @@ from logging.config import fileConfig
 from alembic import context
 from sqlalchemy import engine_from_config, pool
 
-from app.adapters.outbound.persistence import models  # noqa: F401  registra tablas
+from app.adapters.outbound.persistence import (  # noqa: F401  registran tablas
+    models,
+    models_escenarios,
+)
 from app.adapters.outbound.persistence.database import Base, get_database_url
 
 config = context.config

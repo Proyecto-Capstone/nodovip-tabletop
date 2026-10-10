@@ -5,6 +5,7 @@ import { BancoPreguntasPage } from './pages/BancoPreguntasPage'
 import { BibliotecaPage } from './pages/BibliotecaPage'
 import { EscenarioDetallePage } from './pages/EscenarioDetallePage'
 import { EscenarioFormPage } from './pages/EscenarioFormPage'
+import { UsuariosPage } from './pages/UsuariosPage'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="escenarios/:id" element={<EscenarioDetallePage />} />
             <Route path="escenarios/:id/editar" element={<EscenarioFormPage />} />
             <Route path="banco-preguntas" element={<BancoPreguntasPage />} />
+            <Route path="usuarios" element={<UsuariosPage />} />
             <Route path="*" element={<Navigate to="/escenarios" replace />} />
           </Route>
         </Routes>

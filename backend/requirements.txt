@@ -21,3 +21,5 @@ websockets==17.1
 SQLAlchemy>=2.0,<3
 alembic>=1.13
 psycopg[binary]>=3.2
+bcrypt>=4.2
+email-validator>=2.2

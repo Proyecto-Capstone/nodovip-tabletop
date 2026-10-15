@@ -1,6 +1,7 @@
 // PB-02: panel de administración de usuarios y roles (solo Administrador).
 
 import { useState, type FormEvent } from 'react'
+import { Link } from 'react-router-dom'
 import { ApiError, type RolSistema } from '../api/client'
 import {
   activarUsuario,
@@ -12,7 +13,7 @@ import {
   rutaUsuarios,
   type Usuario,
 } from '../api/usuarios'
-import { ROLES_SISTEMA, useRol } from '../auth/rolContext'
+import { ROLES_SISTEMA, nombreRolSistema, useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { contrasenaValida, reglasContrasena } from '../lib/contrasena'
 import { useDebounce, useGet } from '../lib/useGet'
@@ -21,9 +22,6 @@ type Panel =
   | { modo: 'crear' }
   | { modo: 'editar'; usuario: Usuario }
   | { modo: 'contrasena'; usuario: Usuario }
-
-const nombreRolSistema = (rol: RolSistema) =>
-  ROLES_SISTEMA.find((r) => r.codigo === rol)?.nombre ?? rol
 
 const formatoFecha = (iso: string | null) =>
   iso
@@ -39,7 +37,7 @@ function mensajes(error: unknown) {
 }
 
 export function UsuariosPage() {
-  const { rol, esAdministrador } = useRol()
+  const { rol, puedeGestionarUsuarios } = useSesion()
   const [texto, setTexto] = useState('')
   const [rolFiltro, setRolFiltro] = useState('')
   const [estado, setEstado] = useState('')
@@ -49,13 +47,13 @@ export function UsuariosPage() {
   const q = useDebounce(texto.trim())
 
   const usuarios = useGet<Usuario[]>(
-    esAdministrador
+    puedeGestionarUsuarios
       ? rutaUsuarios({ q, rol: rolFiltro, activo: estado || undefined })
       : null,
     rol,
   )
 
-  if (!esAdministrador) return <SinPermiso />
+  if (!puedeGestionarUsuarios) return <SinPermiso />
 
   const terminar = (mensaje: string) => {
     setPanel(null)
@@ -233,6 +231,12 @@ export function UsuariosPage() {
                       >
                         Contraseña
                       </button>
+                      <Link
+                        className="boton boton-texto"
+                        to={`/accesos?usuario=${u.id}`}
+                      >
+                        Accesos
+                      </Link>
                       <button
                         type="button"
                         className={`boton boton-texto ${u.activo ? 'texto-peligro' : ''}`}

@@ -8,7 +8,7 @@ import {
   type RolEjercicio,
   type TipoEscenario,
 } from '../api/escenarios'
-import { useRol } from '../auth/rolContext'
+import { useSesion } from '../auth/sesionContext'
 import {
   Cargando,
   Errores,
@@ -20,7 +20,7 @@ import { ETIQUETA_NIVEL, NIVELES, nombreRol, nombreTipo } from '../lib/etiquetas
 import { useDebounce, useGet } from '../lib/useGet'
 
 export function BibliotecaPage() {
-  const { rol, esAdministrador, puedeLeerEscenarios } = useRol()
+  const { rol, puedeGestionarEscenarios, puedeLeerEscenarios } = useSesion()
   const [texto, setTexto] = useState('')
   const [tipo, setTipo] = useState('')
   const [nivel, setNivel] = useState('')
@@ -38,7 +38,7 @@ export function BibliotecaPage() {
           tipo,
           nivel,
           rol: rolFiltro,
-          estado: esAdministrador ? estado : undefined,
+          estado: puedeGestionarEscenarios ? estado : undefined,
         })
       : null,
     rol,
@@ -54,12 +54,12 @@ export function BibliotecaPage() {
         <div>
           <h1>Biblioteca de escenarios</h1>
           <p className="texto-suave">
-            {esAdministrador
+            {puedeGestionarEscenarios
               ? 'Escenarios base de NODOVIP. Solo los publicados están disponibles para los moderadores.'
               : 'Escenarios publicados que puedes usar como base para diseñar un tabletop.'}
           </p>
         </div>
-        {esAdministrador && (
+        {puedeGestionarEscenarios && (
           <Link className="boton boton-primario" to="/escenarios/nuevo">
             + Nuevo escenario
           </Link>
@@ -110,7 +110,7 @@ export function BibliotecaPage() {
             ))}
           </select>
         </label>
-        {esAdministrador && (
+        {puedeGestionarEscenarios && (
           <label className="campo">
             <span>Estado</span>
             <select value={estado} onChange={(e) => setEstado(e.target.value)}>
@@ -155,7 +155,7 @@ export function BibliotecaPage() {
             <div className="fila-badges">
               <span className="tipo">{nombreTipo(tipos.datos, e.tipo_codigo)}</span>
               <NivelBadge nivel={e.nivel} />
-              {esAdministrador && <EstadoBadge estado={e.estado} />}
+              {puedeGestionarEscenarios && <EstadoBadge estado={e.estado} />}
             </div>
             <h2>{e.nombre}</h2>
             <div className="chips">

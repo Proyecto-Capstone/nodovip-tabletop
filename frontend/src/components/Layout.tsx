@@ -1,38 +1,65 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import type { RolSistema } from '../api/client'
-import { ROLES_SISTEMA, useRol } from '../auth/rolContext'
+import { useState } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { nombreRolSistema, useSesion } from '../auth/sesionContext'
 
 export function Layout() {
-  const { rol, cambiarRol, esAdministrador } = useRol()
+  const {
+    usuario,
+    cerrarSesion,
+    puedeLeerEscenarios,
+    puedeGestionarEscenarios,
+    puedeGestionarUsuarios,
+  } = useSesion()
+  const navegar = useNavigate()
+  const [saliendo, setSaliendo] = useState(false)
+
+  const salir = async () => {
+    setSaliendo(true)
+    try {
+      await cerrarSesion()
+    } finally {
+      navegar('/login', { replace: true })
+    }
+  }
 
   return (
     <div className="app">
       <header className="topbar">
         <span className="marca">NODOVIP — Plataforma Tabletop Exercise</span>
-        <label className="selector-rol" title="Temporal hasta que exista el login (PB-01)">
-          <span>Rol (desarrollo)</span>
-          <select
-            value={rol}
-            onChange={(e) => cambiarRol(e.target.value as RolSistema)}
-          >
-            {ROLES_SISTEMA.map((r) => (
-              <option key={r.codigo} value={r.codigo}>
-                {r.nombre}
-              </option>
-            ))}
-          </select>
-        </label>
+        {usuario && (
+          <div className="usuario-barra">
+            <span className="usuario-datos">
+              <strong>{usuario.nombre}</strong>
+              <span className="usuario-rol">{nombreRolSistema(usuario.rol)}</span>
+            </span>
+            <button
+              type="button"
+              className="boton boton-salir"
+              onClick={salir}
+              disabled={saliendo}
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        )}
       </header>
 
       <nav className="sidebar" aria-label="Navegación principal">
-        <NavLink to="/escenarios" end>
-          Biblioteca de escenarios
-        </NavLink>
-        <NavLink to="/banco-preguntas">Banco de preguntas</NavLink>
-        {esAdministrador && (
+        {puedeLeerEscenarios && (
           <>
-            <NavLink to="/escenarios/nuevo">Nuevo escenario</NavLink>
+            <NavLink to="/escenarios" end>
+              Biblioteca de escenarios
+            </NavLink>
+            <NavLink to="/banco-preguntas">Banco de preguntas</NavLink>
+          </>
+        )}
+        {puedeGestionarEscenarios && (
+          <NavLink to="/escenarios/nuevo">Nuevo escenario</NavLink>
+        )}
+        {puedeGestionarUsuarios && (
+          <>
             <NavLink to="/usuarios">Gestión de usuarios</NavLink>
+            <NavLink to="/accesos">Historial de accesos</NavLink>
           </>
         )}
       </nav>

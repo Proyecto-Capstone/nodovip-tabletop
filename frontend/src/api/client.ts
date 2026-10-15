@@ -1,7 +1,7 @@
 // Cliente HTTP de la API. Todas las rutas van bajo /api (NGINX las envía al backend).
+// La sesión viaja sola en una cookie httpOnly: el código no la ve ni la guarda.
 
 const BASE = '/api'
-const CLAVE_ROL = 'nodovip.rolDebug'
 
 export type RolSistema =
   | 'administrador'
@@ -10,23 +10,14 @@ export type RolSistema =
   | 'observador'
   | 'analista'
 
-// TEMPORAL hasta PB-01: el rol se guarda en el navegador y viaja en la cabecera
-// X-Rol-Debug. El backend solo la acepta en los ambientes local y test.
-export function leerRolGuardado(): RolSistema {
-  try {
-    const guardado = localStorage.getItem(CLAVE_ROL)
-    if (guardado) return guardado as RolSistema
-  } catch {
-    // localStorage puede no estar disponible (modo privado)
-  }
-  return 'administrador'
-}
+// Aviso cuando el backend responde 401: la sesión venció, se cerró en otra
+// pestaña o la cuenta fue desactivada. SesionProvider se suscribe.
+let alPerderSesion: (() => void) | null = null
 
-export function guardarRol(rol: RolSistema) {
-  try {
-    localStorage.setItem(CLAVE_ROL, rol)
-  } catch {
-    // sin almacenamiento, el rol dura solo esta sesión
+export function avisarAlPerderSesion(funcion: () => void) {
+  alPerderSesion = funcion
+  return () => {
+    if (alPerderSesion === funcion) alPerderSesion = null
   }
 }
 
@@ -66,18 +57,19 @@ export async function api<T>(
 ): Promise<T> {
   const respuesta = await fetch(BASE + ruta, {
     method: opciones.metodo ?? 'GET',
-    headers: {
-      'X-Rol-Debug': leerRolGuardado(),
-      ...(opciones.cuerpo !== undefined
+    credentials: 'same-origin',
+    headers:
+      opciones.cuerpo !== undefined
         ? { 'Content-Type': 'application/json' }
-        : {}),
-    },
+        : undefined,
     body:
       opciones.cuerpo !== undefined ? JSON.stringify(opciones.cuerpo) : undefined,
   })
   const texto = await respuesta.text()
   const cuerpo = texto ? JSON.parse(texto) : null
   if (!respuesta.ok) {
+    // Un login fallido también es 401, pero ahí no había sesión que perder.
+    if (respuesta.status === 401 && ruta !== '/auth/login') alPerderSesion?.()
     throw new ApiError(respuesta.status, extraerErrores(respuesta.status, cuerpo))
   }
   return cuerpo as T

@@ -7,6 +7,7 @@ from sqlalchemy import engine_from_config, pool
 
 from app.adapters.outbound.persistence import (  # noqa: F401  registran tablas
     models,
+    models_accesos,
     models_escenarios,
 )
 from app.adapters.outbound.persistence.database import Base, get_database_url

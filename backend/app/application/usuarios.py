@@ -93,8 +93,10 @@ class ServicioUsuarios:
     def eliminar(self, usuario_id: UUID) -> None:
         """Borrado definitivo. Solo para cuentas ya desactivadas.
 
-        Si el usuario tiene registros asociados (sesiones, respuestas, accesos),
-        la base de datos lo impide y el usuario debe quedar desactivado.
+        Si el usuario tiene registros asociados (accesos, sesiones, respuestas),
+        la base de datos lo impide y el usuario debe quedar desactivado. Como
+        todo login queda en el historial, en la práctica solo se eliminan
+        cuentas que nunca ingresaron.
         """
         usuario = self.obtener(usuario_id)
         if usuario.activo:

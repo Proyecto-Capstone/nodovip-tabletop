@@ -22,4 +22,5 @@ SQLAlchemy>=2.0,<3
 alembic>=1.13
 psycopg[binary]>=3.2
 bcrypt>=4.2
+PyJWT>=2.10
 email-validator>=2.2

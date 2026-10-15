@@ -1,45 +1,91 @@
-"""Usuario actual y control de permisos para los endpoints.
+"""Usuario actual y control de permisos para los endpoints (PB-01, RNF-01).
 
-TEMPORAL hasta PB-01 (PC-12): todavía no hay login. Mientras tanto, en los
-ambientes `local` y `test` el rol se toma de la cabecera `X-Rol-Debug`
-(por ejemplo `X-Rol-Debug: administrador`). En cualquier otro ambiente se
-responde 401 siempre.
+La sesión viaja en una cookie `httpOnly` con un JWT firmado. En cada request se
+valida el token y se recarga el usuario de la base: si fue desactivado o le
+cambiaron el rol, el cambio aplica de inmediato.
 
-PB-01 reemplaza `obtener_usuario_actual` por la validación del token. Los
-endpoints no cambian: siguen usando `requiere_permiso(...)`.
+Los endpoints no dependen de cómo se autentica: siguen usando
+`requiere_permiso(...)`.
 """
 
-import os
 from dataclasses import dataclass
+from functools import cache
 from typing import Annotated
+from uuid import UUID
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Cookie, Depends, HTTPException, Request, status
+from sqlalchemy.orm import Session
 
-from app.domain.usuarios import PERMISOS_POR_ROL, PermisoCodigo, RolNombre
+from app import config
+from app.adapters.outbound.persistence.database import get_session
+from app.adapters.outbound.persistence.repositorio_accesos import (
+    SqlRegistroAccesoRepository,
+)
+from app.adapters.outbound.persistence.repositorio_usuarios import (
+    SqlUsuarioRepository,
+)
+from app.adapters.outbound.seguridad.bcrypt_hasher import BcryptHasher
+from app.adapters.outbound.seguridad.jwt_tokens import JwtTokens
+from app.application.autenticacion import CLAVE_RELLENO, ServicioAutenticacion
+from app.domain.usuarios import PERMISOS_POR_ROL, PermisoCodigo, RolNombre, Usuario
 
-AMBIENTES_CON_ROL_DEBUG = {"local", "test"}
+NOMBRE_COOKIE = "nodovip_sesion"
 
 
 @dataclass(frozen=True)
 class UsuarioActual:
+    id: UUID
+    nombre: str
+    correo: str
     rol: RolNombre
 
     def puede(self, permiso: PermisoCodigo) -> bool:
         return permiso in PERMISOS_POR_ROL[self.rol]
 
+    @property
+    def permisos(self) -> list[PermisoCodigo]:
+        return sorted(PERMISOS_POR_ROL[self.rol])
+
+    @classmethod
+    def desde(cls, u: Usuario) -> "UsuarioActual":
+        return cls(id=u.id, nombre=u.nombre, correo=u.correo, rol=u.rol)
+
+
+@cache
+def _hash_relleno() -> str:
+    """Hash bcrypt para igualar el tiempo de respuesta con correos inexistentes.
+    Se calcula una sola vez por proceso (12 rondas tardan ~0,25 s)."""
+    return BcryptHasher().hashear(CLAVE_RELLENO)
+
+
+def get_servicio_autenticacion(
+    session: Annotated[Session, Depends(get_session)],
+) -> ServicioAutenticacion:
+    return ServicioAutenticacion(
+        SqlUsuarioRepository(session),
+        SqlRegistroAccesoRepository(session),
+        BcryptHasher(),
+        JwtTokens(config.jwt_secreto()),
+        hash_relleno=_hash_relleno(),
+    )
+
+
+def ip_cliente(request: Request) -> str:
+    """IP del cliente. Detrás de NGINX, uvicorn la toma de X-Forwarded-For
+    (variable FORWARDED_ALLOW_IPS en docker-compose)."""
+    return request.client.host if request.client else "desconocida"
+
 
 def obtener_usuario_actual(
-    x_rol_debug: Annotated[str | None, Header()] = None,
+    servicio: Annotated[ServicioAutenticacion, Depends(get_servicio_autenticacion)],
+    token: Annotated[str | None, Cookie(alias=NOMBRE_COOKIE)] = None,
 ) -> UsuarioActual:
-    no_autenticado = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED, detail="No autenticado"
-    )
-    if os.getenv("APP_ENV") not in AMBIENTES_CON_ROL_DEBUG or not x_rol_debug:
-        raise no_autenticado
-    try:
-        return UsuarioActual(rol=RolNombre(x_rol_debug))
-    except ValueError:
-        raise no_autenticado from None
+    usuario = servicio.usuario_desde_token(token) if token else None
+    if usuario is None:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="No autenticado"
+        )
+    return UsuarioActual.desde(usuario)
 
 
 def requiere_permiso(permiso: PermisoCodigo):

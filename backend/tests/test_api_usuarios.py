@@ -3,8 +3,6 @@
 No necesita PostgreSQL: corre igual en local y en el CI.
 """
 
-import copy
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -12,65 +10,20 @@ from app.adapters.inbound.api.usuarios import get_servicio_usuarios
 from app.application.usuarios import ServicioUsuarios
 from app.domain.usuarios import RolNombre
 from app.main import app
-from app.ports.usuario_repository import FiltroUsuarios
+from tests.fakes import HasherFalso, RepoUsuariosEnMemoria
 
-ADMIN = {"X-Rol-Debug": "administrador"}
-MODERADOR = {"X-Rol-Debug": "moderador"}
+ADMIN = {"X-Rol-Prueba": "administrador"}
+MODERADOR = {"X-Rol-Prueba": "moderador"}
 CLAVE = "Nodovip2026seguro"
-
-
-class RepoEnMemoria:
-    def __init__(self):
-        self.datos = {}
-
-    def obtener_por_id(self, usuario_id):
-        u = self.datos.get(usuario_id)
-        return copy.deepcopy(u) if u else None
-
-    def obtener_por_correo(self, correo):
-        for u in self.datos.values():
-            if u.correo.lower() == correo.lower():
-                return copy.deepcopy(u)
-        return None
-
-    def listar(self, filtro: FiltroUsuarios | None = None):
-        filtro = filtro or FiltroUsuarios()
-        res = list(self.datos.values())
-        if filtro.texto:
-            t = filtro.texto.lower()
-            res = [u for u in res if t in (u.nombre + u.correo).lower()]
-        if filtro.rol:
-            res = [u for u in res if u.rol == filtro.rol]
-        if filtro.activo is not None:
-            res = [u for u in res if u.activo == filtro.activo]
-        return [copy.deepcopy(u) for u in sorted(res, key=lambda u: u.nombre)]
-
-    def contar_activos(self, rol):
-        return sum(1 for u in self.datos.values() if u.rol == rol and u.activo)
-
-    def guardar(self, usuario):
-        self.datos[usuario.id] = copy.deepcopy(usuario)
-        return copy.deepcopy(usuario)
-
-    def eliminar(self, usuario_id):
-        self.datos.pop(usuario_id, None)
-
-
-class HasherFalso:
-    def hashear(self, contrasena):
-        return f"hash::{contrasena[::-1]}"
-
-    def verificar(self, contrasena, hash_guardado):
-        return hash_guardado == self.hashear(contrasena)
 
 
 @pytest.fixture
 def repo():
-    return RepoEnMemoria()
+    return RepoUsuariosEnMemoria()
 
 
 @pytest.fixture
-def client(monkeypatch, repo):
+def client(monkeypatch, repo, sesion_por_cabecera):
     monkeypatch.setenv("APP_ENV", "test")
     servicio = ServicioUsuarios(repo, HasherFalso())
     app.dependency_overrides[get_servicio_usuarios] = lambda: servicio

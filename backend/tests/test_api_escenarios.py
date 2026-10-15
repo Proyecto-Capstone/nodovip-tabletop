@@ -26,9 +26,9 @@ from app.ports.escenario_repository import (
     TareaDelBanco,
 )
 
-ADMIN = {"X-Rol-Debug": "administrador"}
-MODERADOR = {"X-Rol-Debug": "moderador"}
-PARTICIPANTE = {"X-Rol-Debug": "participante"}
+ADMIN = {"X-Rol-Prueba": "administrador"}
+MODERADOR = {"X-Rol-Prueba": "moderador"}
+PARTICIPANTE = {"X-Rol-Prueba": "participante"}
 
 
 class RepoEnMemoria:
@@ -90,7 +90,7 @@ class CatalogoEnMemoria:
 
 
 @pytest.fixture
-def client(monkeypatch):
+def client(monkeypatch, sesion_por_cabecera):
     monkeypatch.setenv("APP_ENV", "test")
     servicio = ServicioEscenarios(RepoEnMemoria(), CatalogoEnMemoria())
     app.dependency_overrides[get_servicio] = lambda: servicio
@@ -142,11 +142,6 @@ def _crear_y_publicar(client, **cambios) -> str:
 
 def test_sin_usuario_responde_401(client):
     assert client.get("/api/escenarios").status_code == 401
-
-
-def test_rol_debug_no_funciona_fuera_de_local_y_test(client, monkeypatch):
-    monkeypatch.setenv("APP_ENV", "production")
-    assert client.get("/api/escenarios", headers=ADMIN).status_code == 401
 
 
 def test_moderador_no_puede_crear(client):

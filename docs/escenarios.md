@@ -85,12 +85,13 @@ erDiagram
 
 Respuestas de error: `401` sin usuario, `403` sin permiso, `404` no existe (o no visible para el rol), `422` datos inválidos o regla de negocio incumplida (con la lista de `errores`).
 
-## Autenticación temporal (hasta PB-01)
+## Autenticación
 
-Mientras no exista el login, en los ambientes `local` y `test` el rol se envía en la cabecera `X-Rol-Debug`. En cualquier otro ambiente la API responde 401. PB-01 reemplaza esto por el token sin cambiar los endpoints.
+Los endpoints usan la sesión de PB-01 (cookie `nodovip_sesion`). Ver `docs/autenticacion.md`.
 
 ```bash
-curl -H "X-Rol-Debug: moderador" "http://localhost:8080/api/escenarios?tipo=ransomware"
+curl -c sesion.txt -H "Content-Type: application/json"   -d '{"correo":"moderador@ejemplo.test","contrasena":"..."}'   http://localhost:8080/api/auth/login
+curl -b sesion.txt "http://localhost:8080/api/escenarios?tipo=ransomware"
 ```
 
 ## Datos de ejemplo

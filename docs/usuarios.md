@@ -12,7 +12,7 @@ Módulo M4, requisito RF-05. Usa el modelo de datos de `docs/modelo-datos.md`.
 | Todo usuario tiene un rol | Uno de los 5 roles del sistema (RF-05) |
 | Contraseña cifrada | bcrypt con 12 rondas (RNF-02); el hash nunca sale en la API |
 | Política de contraseñas | Mínimo 10 caracteres, mayúscula, minúscula y número; sin espacios al inicio o final; máximo 72 bytes (límite de bcrypt) |
-| Desactivar antes de eliminar | Desactivar conserva el historial para auditoría. Solo una cuenta inactiva se puede eliminar definitivamente, y solo si no tiene registros asociados (409) |
+| Desactivar antes de eliminar | Desactivar conserva el historial para auditoría. Solo una cuenta inactiva se puede eliminar definitivamente, y solo si no tiene registros asociados (409). Desde PB-01 todo login queda en el historial de accesos, así que en la práctica solo se eliminan cuentas que nunca ingresaron |
 | Siempre queda un Administrador activo | No se puede desactivar ni cambiar el rol del último administrador activo (422) |
 
 ## Endpoints
@@ -38,8 +38,8 @@ docker compose exec backend python -m app.crear_admin
 
 Pide nombre, correo y contraseña por consola. La contraseña no se muestra ni queda en el historial de la terminal.
 
-## Pendiente para PB-01
+## Inicio de sesión
 
-- Login con correo y contraseña (usa `HasherContrasenas.verificar`).
-- Reemplazar la cabecera temporal `X-Rol-Debug` por el token.
-- Historial de accesos (usuario, fecha/hora, IP, resultado).
+Implementado en PB-01: ver `docs/autenticacion.md`. Un usuario desactivado no
+puede iniciar sesión y, si tenía una sesión abierta, la pierde en su siguiente
+request.

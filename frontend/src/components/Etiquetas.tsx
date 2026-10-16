@@ -34,8 +34,9 @@ export function Errores({ errores }: { errores?: string[] }) {
 
 export function SinPermiso() {
   return (
-    <div className="alerta alerta-aviso">
-      Tu rol no tiene acceso a esta sección. Cambia el rol en la barra superior.
+    <div className="alerta alerta-aviso" role="alert">
+      Sin acceso: tu rol no tiene permiso para esta sección. Si crees que es un
+      error, pide al administrador que revise tu rol.
     </div>
   )
 }

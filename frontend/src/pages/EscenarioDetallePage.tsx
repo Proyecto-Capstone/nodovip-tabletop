@@ -11,7 +11,7 @@ import {
   type RolEjercicio,
   type TipoEscenario,
 } from '../api/escenarios'
-import { useRol } from '../auth/rolContext'
+import { useSesion } from '../auth/sesionContext'
 import {
   Cargando,
   Errores,
@@ -24,7 +24,7 @@ import { useGet } from '../lib/useGet'
 
 export function EscenarioDetallePage() {
   const { id = '' } = useParams()
-  const { rol, esAdministrador, puedeLeerEscenarios } = useRol()
+  const { rol, puedeGestionarEscenarios, puedeLeerEscenarios } = useSesion()
   const habilitado = puedeLeerEscenarios
   const escenario = useGet<EscenarioDetalle>(
     habilitado ? rutas.escenario(id) : null,
@@ -86,7 +86,7 @@ export function EscenarioDetallePage() {
           <h1>{e.nombre}</h1>
         </div>
         <div className="acciones">
-          {esAdministrador && e.estado !== 'archivado' && (
+          {puedeGestionarEscenarios && e.estado !== 'archivado' && (
             <>
               <Link className="boton" to={`/escenarios/${e.id}/editar`}>
                 Editar
@@ -120,7 +120,7 @@ export function EscenarioDetallePage() {
               </button>
             </>
           )}
-          {!esAdministrador && (
+          {!puedeGestionarEscenarios && (
             <button
               type="button"
               className="boton boton-primario"
@@ -135,7 +135,7 @@ export function EscenarioDetallePage() {
 
       <Errores errores={erroresAccion} />
 
-      {esAdministrador && e.estado === 'borrador' && pendientes.length > 0 && (
+      {puedeGestionarEscenarios && e.estado === 'borrador' && pendientes.length > 0 && (
         <div className="alerta alerta-aviso">
           <strong>Pendiente para publicar:</strong>
           <ul>

@@ -1,4 +1,4 @@
-# Modelo de datos — Usuarios, roles y permisos (PC-11)
+# Modelo de datos — Usuarios, roles, permisos y accesos (PC-11, PC-12)
 
 Base de PB-01 (autenticación y acceso por rol), PB-02 (gestión de usuarios) y del C4 Nivel 4 de la sección 7.1.
 
@@ -7,6 +7,7 @@ Base de PB-01 (autenticación y acceso por rol), PB-02 (gestión de usuarios) y 
 ```mermaid
 erDiagram
     ROL ||--o{ USUARIO : "asignado a"
+    USUARIO |o--o{ ACCESO : "registra"
     ROL ||--o{ ROL_PERMISO : tiene
     PERMISO ||--o{ ROL_PERMISO : "otorgado en"
 
@@ -33,6 +34,15 @@ erDiagram
     ROL_PERMISO {
         smallint rol_id PK, FK
         smallint permiso_id PK, FK
+    }
+    ACCESO {
+        bigint id PK "identity"
+        uuid usuario_id FK "NULL si el correo no existe; RESTRICT"
+        varchar correo_ingresado
+        timestamptz fecha_hora
+        varchar ip "IPv4 o IPv6"
+        varchar user_agent
+        varchar resultado "CHECK: exitoso, credenciales_invalidas, usuario_inactivo, bloqueado"
     }
 ```
 
@@ -63,6 +73,10 @@ erDiagram
 
 La matriz vive en dos lugares que deben coincidir: `backend/app/domain/usuarios.py` (`PERMISOS_POR_ROL`) y la migración `0001`. Si cambia, se crea una migración nueva.
 
-## Pendiente para otras historias
+## Historial de accesos (PB-01, migración 0003)
 
-- **Historial de accesos** (usuario, fecha/hora, IP, resultado): se agrega en PB-01.
+- **Una fila por intento de login**, exitoso o no (RNF-01). Ver `docs/autenticacion.md`.
+- **`usuario_id` nullable:** también se registran intentos con correos que no existen.
+- **FK `RESTRICT`:** una cuenta con accesos no se puede eliminar, solo desactivar.
+- **Índices** `(usuario_id, fecha_hora DESC)`, `(correo_ingresado, fecha_hora DESC)`
+  (para el bloqueo por intentos fallidos) y `(fecha_hora DESC)` (para el listado).

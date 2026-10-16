@@ -30,6 +30,11 @@ services:
       APP_ENV: ${APP_ENV}
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
+      JWT_SECRETO: ${JWT_SECRETO:-}
+      COOKIE_SEGURA: ${COOKIE_SEGURA:-}
+      # El backend solo es alcanzable a través de NGINX (salvo el 8000 en local),
+      # así que se confía en su X-Forwarded-For para obtener la IP del cliente.
+      FORWARDED_ALLOW_IPS: "*"
     depends_on:
       postgres:
         condition: service_healthy

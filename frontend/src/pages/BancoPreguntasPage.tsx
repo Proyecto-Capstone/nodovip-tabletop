@@ -8,7 +8,7 @@ import {
   type TareaBanco,
   type TipoEscenario,
 } from '../api/escenarios'
-import { useRol } from '../auth/rolContext'
+import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, NivelBadge, SinPermiso } from '../components/Etiquetas'
 import {
   ETIQUETA_NIVEL,
@@ -20,7 +20,7 @@ import {
 import { useGet } from '../lib/useGet'
 
 export function BancoPreguntasPage() {
-  const { rol, puedeLeerEscenarios } = useRol()
+  const { rol, puedeLeerEscenarios } = useSesion()
   const [tipo, setTipo] = useState('')
   const [rolFiltro, setRolFiltro] = useState('')
   const [dificultad, setDificultad] = useState('')

@@ -1,0 +1,109 @@
+"""Dobles de prueba en memoria para los puertos de usuarios y autenticación.
+
+Permiten probar casos de uso y API sin PostgreSQL (corren igual en el CI).
+"""
+
+import copy
+from datetime import UTC, datetime, timedelta
+
+from app.domain.autenticacion import RegistroAcceso, ResultadoAcceso
+from app.ports.autenticacion import FiltroAccesos
+from app.ports.usuario_repository import FiltroUsuarios
+
+
+class RepoUsuariosEnMemoria:
+    def __init__(self):
+        self.datos = {}
+
+    def obtener_por_id(self, usuario_id):
+        u = self.datos.get(usuario_id)
+        return copy.deepcopy(u) if u else None
+
+    def obtener_por_correo(self, correo):
+        for u in self.datos.values():
+            if u.correo.lower() == correo.lower():
+                return copy.deepcopy(u)
+        return None
+
+    def listar(self, filtro: FiltroUsuarios | None = None):
+        filtro = filtro or FiltroUsuarios()
+        res = list(self.datos.values())
+        if filtro.texto:
+            t = filtro.texto.lower()
+            res = [u for u in res if t in (u.nombre + u.correo).lower()]
+        if filtro.rol:
+            res = [u for u in res if u.rol == filtro.rol]
+        if filtro.activo is not None:
+            res = [u for u in res if u.activo == filtro.activo]
+        return [copy.deepcopy(u) for u in sorted(res, key=lambda u: u.nombre)]
+
+    def contar_activos(self, rol):
+        return sum(1 for u in self.datos.values() if u.rol == rol and u.activo)
+
+    def guardar(self, usuario):
+        self.datos[usuario.id] = copy.deepcopy(usuario)
+        return copy.deepcopy(usuario)
+
+    def eliminar(self, usuario_id):
+        self.datos.pop(usuario_id, None)
+
+
+class HasherFalso:
+    """Rápido y reversible; cuenta las verificaciones para probar el relleno."""
+
+    def __init__(self):
+        self.verificaciones = 0
+
+    def hashear(self, contrasena):
+        return f"hash::{contrasena[::-1]}"
+
+    def verificar(self, contrasena, hash_guardado):
+        self.verificaciones += 1
+        return hash_guardado == self.hashear(contrasena)
+
+
+class RepoAccesosEnMemoria:
+    def __init__(self):
+        self.registros: list[RegistroAcceso] = []
+
+    def registrar(self, registro):
+        registro = copy.deepcopy(registro)
+        registro.id = len(self.registros) + 1
+        self.registros.append(registro)
+
+    def _recientes_primero(self):
+        return sorted(self.registros, key=lambda r: (r.fecha_hora, r.id), reverse=True)
+
+    def resultados_recientes(self, correo, desde, limite):
+        return [
+            r.resultado
+            for r in self._recientes_primero()
+            if r.correo == correo
+            and r.fecha_hora >= desde
+            and r.resultado != ResultadoAcceso.BLOQUEADO
+        ][:limite]
+
+    def listar(self, filtro: FiltroAccesos):
+        res = self._recientes_primero()
+        if filtro.usuario_id:
+            res = [r for r in res if r.usuario_id == filtro.usuario_id]
+        if filtro.correo:
+            res = [r for r in res if filtro.correo.lower() in r.correo]
+        if filtro.resultado:
+            res = [r for r in res if r.resultado == filtro.resultado]
+        if filtro.desde:
+            res = [r for r in res if r.fecha_hora >= filtro.desde]
+        if filtro.hasta:
+            res = [r for r in res if r.fecha_hora <= filtro.hasta]
+        return copy.deepcopy(res[: filtro.limite])
+
+
+class RelojFalso:
+    def __init__(self, inicio=datetime(2026, 10, 15, 9, 0, tzinfo=UTC)):
+        self.ahora = inicio
+
+    def __call__(self):
+        return self.ahora
+
+    def avanzar(self, **kwargs):
+        self.ahora += timedelta(**kwargs)

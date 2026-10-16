@@ -25,7 +25,7 @@ cd backend
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-uvicorn app.main:app --reload
+APP_ENV=local uvicorn app.main:app --reload   # sin APP_ENV exige JWT_SECRETO
 ```
 
 API disponible en http://localhost:8000 (verificación: http://localhost:8000/health). Documentación interactiva en http://localhost:8000/docs.
@@ -60,6 +60,18 @@ cp .env.example .env
 
 El archivo `.env` contiene credenciales y no se versiona.
 
+Después de levantar el stack, aplica las migraciones y crea el primer
+administrador (pide nombre, correo y contraseña); con él se inicia sesión en la
+aplicación y se crean los demás usuarios:
+
+```bash
+docker compose exec backend alembic upgrade head
+docker compose exec backend python -m app.crear_admin
+```
+
+Si cambias `nginx/default.conf.template`, reinicia NGINX (`docker compose restart nginx`):
+la plantilla solo se procesa al arrancar el contenedor.
+
 ### Ambientes
 
 | Ambiente | Archivos | Características |
@@ -81,10 +93,10 @@ docker compose -f docker-compose.yml -f docker-compose.staging.yml --env-file .e
 docker compose -f docker-compose.yml -f docker-compose.prod.yml --env-file .env.production up -d --build
 ```
 
-Para staging y producción, crea `.env.staging` o `.env.production` a partir de `.env.example`, con `APP_ENV` y contraseñas propias de cada ambiente.
+Para staging y producción, crea `.env.staging` o `.env.production` a partir de `.env.example`, con `APP_ENV`, contraseñas y `JWT_SECRETO` propios de cada ambiente.
 
 ### URLs
 
-- Aplicación: http://localhost:8080
-- Verificación de la API: http://localhost:8080/api/health
+- Aplicación: http://localhost:8080 (pide iniciar sesión)
+- Verificación de la API: http://localhost:8000/health (solo local; NGINX solo publica `/api/*`)
 - Documentación de la API (solo local): http://localhost:8000/docs

@@ -177,8 +177,8 @@ def eliminar_usuario(usuario_id: UUID, servicio: Servicio, _: Administrador):
             {
                 "errores": [
                     (
-                        "El usuario tiene registros asociados (sesiones o "
-                        "respuestas) y no se puede eliminar; déjalo desactivado"
+                        "El usuario tiene registros asociados (accesos, sesiones "
+                        "o respuestas) y no se puede eliminar; déjalo desactivado"
                     )
                 ]
             },

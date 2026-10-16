@@ -1,3 +1,4 @@
+import type { ResultadoAcceso } from '../api/accesos'
 import type { EstadoEscenario, Nivel, RolEjercicio, TipoEscenario } from '../api/escenarios'
 
 export const NIVELES: Nivel[] = ['bajo', 'medio', 'alto']
@@ -12,6 +13,13 @@ export const ETIQUETA_ESTADO: Record<EstadoEscenario, string> = {
   borrador: 'Borrador',
   publicado: 'Publicado',
   archivado: 'Archivado',
+}
+
+export const ETIQUETA_RESULTADO: Record<ResultadoAcceso, string> = {
+  exitoso: 'Exitoso',
+  credenciales_invalidas: 'Credenciales inválidas',
+  usuario_inactivo: 'Cuenta inactiva',
+  bloqueado: 'Bloqueado',
 }
 
 export function nombreTipo(tipos: TipoEscenario[] | undefined, codigo: string) {

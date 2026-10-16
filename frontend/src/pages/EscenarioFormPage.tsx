@@ -13,7 +13,7 @@ import {
   type RolEjercicio,
   type TipoEscenario,
 } from '../api/escenarios'
-import { useRol } from '../auth/rolContext'
+import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { ETIQUETA_NIVEL, NIVELES, nombreRol } from '../lib/etiquetas'
 import { useGet } from '../lib/useGet'
@@ -129,15 +129,15 @@ function aEntrada(f: Formulario): EscenarioEntrada {
 
 export function EscenarioFormPage() {
   const { id } = useParams()
-  const { rol, esAdministrador } = useRol()
-  const tipos = useGet<TipoEscenario[]>(esAdministrador ? rutas.tipos : null, rol)
-  const roles = useGet<RolEjercicio[]>(esAdministrador ? rutas.roles : null, rol)
+  const { rol, puedeGestionarEscenarios } = useSesion()
+  const tipos = useGet<TipoEscenario[]>(puedeGestionarEscenarios ? rutas.tipos : null, rol)
+  const roles = useGet<RolEjercicio[]>(puedeGestionarEscenarios ? rutas.roles : null, rol)
   const existente = useGet<EscenarioDetalle>(
-    esAdministrador && id ? rutas.escenario(id) : null,
+    puedeGestionarEscenarios && id ? rutas.escenario(id) : null,
     rol,
   )
 
-  if (!esAdministrador) return <SinPermiso />
+  if (!puedeGestionarEscenarios) return <SinPermiso />
   const errores = tipos.errores ?? roles.errores ?? existente.errores
   if (errores) return <Errores errores={errores} />
   if (!tipos.datos || !roles.datos || (id && !existente.datos)) return <Cargando />

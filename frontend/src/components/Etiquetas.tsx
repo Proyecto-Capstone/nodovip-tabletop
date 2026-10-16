@@ -1,5 +1,6 @@
 import type { EstadoEscenario, Nivel } from '../api/escenarios'
-import { ETIQUETA_ESTADO, ETIQUETA_NIVEL } from '../lib/etiquetas'
+import type { EstadoSesion } from '../api/sesiones'
+import { ETIQUETA_ESTADO, ETIQUETA_ESTADO_SESION, ETIQUETA_NIVEL } from '../lib/etiquetas'
 
 export function NivelBadge({ nivel }: { nivel: Nivel }) {
   return <span className={`badge nivel-${nivel}`}>{ETIQUETA_NIVEL[nivel]}</span>
@@ -8,6 +9,12 @@ export function NivelBadge({ nivel }: { nivel: Nivel }) {
 export function EstadoBadge({ estado }: { estado: EstadoEscenario }) {
   return (
     <span className={`badge estado-${estado}`}>{ETIQUETA_ESTADO[estado]}</span>
+  )
+}
+
+export function EstadoSesionBadge({ estado }: { estado: EstadoSesion }) {
+  return (
+    <span className={`badge sesion-${estado}`}>{ETIQUETA_ESTADO_SESION[estado]}</span>
   )
 }
 

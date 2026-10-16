@@ -5,10 +5,13 @@ import { RutaProtegida } from './components/RutaProtegida'
 import { AccesosPage } from './pages/AccesosPage'
 import { BancoPreguntasPage } from './pages/BancoPreguntasPage'
 import { BibliotecaPage } from './pages/BibliotecaPage'
+import { DisenadorPage } from './pages/DisenadorPage'
 import { EscenarioDetallePage } from './pages/EscenarioDetallePage'
 import { EscenarioFormPage } from './pages/EscenarioFormPage'
 import { InicioPage } from './pages/InicioPage'
 import { LoginPage } from './pages/LoginPage'
+import { NuevaSesionPage } from './pages/NuevaSesionPage'
+import { SesionesPage } from './pages/SesionesPage'
 import { UsuariosPage } from './pages/UsuariosPage'
 
 export default function App() {
@@ -28,6 +31,11 @@ export default function App() {
               <Route element={<RutaProtegida permiso="escenarios:gestionar" />}>
                 <Route path="escenarios/nuevo" element={<EscenarioFormPage />} />
                 <Route path="escenarios/:id/editar" element={<EscenarioFormPage />} />
+              </Route>
+              <Route element={<RutaProtegida permiso="sesiones:disenar" />}>
+                <Route path="sesiones" element={<SesionesPage />} />
+                <Route path="sesiones/nueva" element={<NuevaSesionPage />} />
+                <Route path="sesiones/:id/disenar" element={<DisenadorPage />} />
               </Route>
               <Route element={<RutaProtegida permiso="usuarios:gestionar" />}>
                 <Route path="usuarios" element={<UsuariosPage />} />

@@ -741,6 +741,282 @@ a {
   color: var(--naranja);
 }
 
+/* --- Diseñador de tabletop (PB-05, prototipo P-03) ------------------------- */
+
+.disenador {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 1.25rem;
+  align-items: start;
+}
+
+.disenador-contenido {
+  min-width: 0;
+}
+
+.pasos-diseno {
+  position: sticky;
+  top: 1rem;
+  background: var(--navy);
+  border-radius: var(--radio);
+  padding: 1rem 0.5rem;
+  color: #c9cbe0;
+}
+
+.pasos-titulo {
+  margin: 0 0.75rem 0.75rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #9a9dbb;
+}
+
+.pasos-diseno ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.paso {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #9a9dbb;
+  font: inherit;
+  font-size: 0.875rem;
+  text-align: left;
+}
+
+button.paso {
+  cursor: pointer;
+}
+
+button.paso:hover {
+  background: var(--navy-claro);
+  color: #fff;
+}
+
+.paso.completo {
+  color: #fff;
+}
+
+.paso.actual {
+  background: var(--navy-claro);
+  border-left-color: var(--acento);
+  color: #fff;
+  font-weight: 700;
+}
+
+.paso-numero {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 1.6rem;
+  height: 1.6rem;
+  border-radius: 50%;
+  background: #34365a;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.paso.completo .paso-numero {
+  background: var(--verde);
+  color: #fff;
+}
+
+.paso.actual .paso-numero {
+  background: #fff;
+  color: var(--navy);
+}
+
+.sin-borde {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+
+.disenador-columnas {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.lista-roles,
+.roles-configurados {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+}
+
+.lista-roles li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem 1rem;
+  padding: 0.5rem 0;
+  border-top: 1px solid var(--borde);
+}
+
+.lista-roles .opcion {
+  flex: 1 1 180px;
+}
+
+.lista-roles .campo {
+  flex: 2 1 240px;
+  margin: 0;
+}
+
+.lista-roles li.activo .opcion {
+  font-weight: 600;
+}
+
+.rol-item {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  margin-bottom: 0.5rem;
+  padding: 0.6rem 0.85rem;
+  border: 1px solid var(--borde);
+  border-left: 3px solid transparent;
+  border-radius: 8px;
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.rol-item span {
+  font-size: 0.8rem;
+  color: var(--texto-suave);
+}
+
+.rol-item span.texto-peligro {
+  color: var(--rojo);
+}
+
+.rol-item.seleccionado {
+  background: var(--azul-fondo);
+  border-left-color: var(--navy);
+}
+
+.tarea-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.35rem;
+}
+
+.tarea.incompleta {
+  border-left: 3px solid var(--naranja);
+}
+
+.inject-badge {
+  color: #fff;
+}
+.inject-0 {
+  background: var(--navy);
+}
+.inject-1 {
+  background: #e8930c;
+}
+.inject-2 {
+  background: var(--acento);
+}
+.inject-ninguno {
+  background: var(--gris-fondo);
+  color: var(--texto-suave);
+}
+
+.injects-compactos {
+  margin: 0;
+  padding-left: 1.25rem;
+  font-size: 0.875rem;
+}
+
+.boton-agregar {
+  width: 100%;
+  border: 1.5px solid var(--acento);
+  background: var(--azul-fondo);
+  color: var(--acento);
+}
+
+.editor-tarea {
+  padding-top: 0.25rem;
+}
+
+.fila-opcion {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.4rem;
+}
+
+.fila-opcion input:not([type='checkbox']) {
+  flex: 1;
+  min-width: 0;
+  font: inherit;
+  font-size: 0.9rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  background: #f8f9fb;
+}
+
+.suma-pesos {
+  margin: 0;
+  font-weight: 600;
+}
+
+.suma-pesos.ok {
+  color: var(--verde);
+}
+
+.input-puntaje {
+  width: 5rem;
+  font: inherit;
+  padding: 0.3rem 0.5rem;
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+}
+
+.tabla tfoot td {
+  border-top: 2px solid var(--borde);
+}
+
+.navegacion-pasos {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.sesion-borrador {
+  background: var(--gris-fondo);
+  color: var(--texto-suave);
+}
+.sesion-programada {
+  background: var(--azul-fondo);
+  color: var(--acento);
+}
+.sesion-en_curso {
+  background: var(--verde-fondo);
+  color: var(--verde);
+}
+.sesion-finalizada {
+  background: var(--gris-fondo);
+  color: var(--texto);
+}
+
 /* --- Responsive (RNF-07: desde 360 px) ------------------------------------- */
 
 @media (max-width: 900px) {
@@ -749,6 +1025,29 @@ a {
   }
   .resumen-lateral {
     position: static;
+  }
+  .disenador,
+  .disenador-columnas {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .pasos-diseno {
+    position: static;
+    padding: 0.5rem;
+  }
+  .pasos-titulo {
+    display: none;
+  }
+  .pasos-diseno ol {
+    display: flex;
+    overflow-x: auto;
+  }
+  .paso {
+    white-space: nowrap;
+    border-left: 0;
+    border-bottom: 3px solid transparent;
+  }
+  .paso.actual {
+    border-bottom-color: var(--acento);
   }
 }
 

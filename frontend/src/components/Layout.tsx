@@ -9,6 +9,7 @@ export function Layout() {
     puedeLeerEscenarios,
     puedeGestionarEscenarios,
     puedeGestionarUsuarios,
+    puede,
   } = useSesion()
   const navegar = useNavigate()
   const [saliendo, setSaliendo] = useState(false)
@@ -56,6 +57,7 @@ export function Layout() {
         {puedeGestionarEscenarios && (
           <NavLink to="/escenarios/nuevo">Nuevo escenario</NavLink>
         )}
+        {puede('sesiones:disenar') && <NavLink to="/sesiones">Mis tabletops</NavLink>}
         {puedeGestionarUsuarios && (
           <>
             <NavLink to="/usuarios">Gestión de usuarios</NavLink>

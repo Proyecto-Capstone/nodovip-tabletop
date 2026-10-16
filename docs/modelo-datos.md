@@ -80,3 +80,11 @@ La matriz vive en dos lugares que deben coincidir: `backend/app/domain/usuarios.
 - **FK `RESTRICT`:** una cuenta con accesos no se puede eliminar, solo desactivar.
 - **Índices** `(usuario_id, fecha_hora DESC)`, `(correo_ingresado, fecha_hora DESC)`
   (para el bloqueo por intentos fallidos) y `(fecha_hora DESC)` (para el listado).
+
+## Sesiones tabletop (PB-05, migración 0004)
+
+- `sesion.moderador_id` y `sesion_participante.usuario_id` apuntan a `usuario`
+  con **RESTRICT**: una cuenta que diseñó o fue invitada a una sesión no se puede
+  eliminar, solo desactivar (la API responde 409, igual que con los accesos).
+- Solo se asignan como participantes usuarios activos con rol `participante`.
+- Detalle del modelo en `docs/sesiones.md`.

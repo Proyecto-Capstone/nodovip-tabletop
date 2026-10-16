@@ -1,5 +1,6 @@
 import type { ResultadoAcceso } from '../api/accesos'
 import type { EstadoEscenario, Nivel, RolEjercicio, TipoEscenario } from '../api/escenarios'
+import type { EstadoSesion } from '../api/sesiones'
 
 export const NIVELES: Nivel[] = ['bajo', 'medio', 'alto']
 
@@ -13,6 +14,13 @@ export const ETIQUETA_ESTADO: Record<EstadoEscenario, string> = {
   borrador: 'Borrador',
   publicado: 'Publicado',
   archivado: 'Archivado',
+}
+
+export const ETIQUETA_ESTADO_SESION: Record<EstadoSesion, string> = {
+  borrador: 'Borrador',
+  programada: 'Programada',
+  en_curso: 'En curso',
+  finalizada: 'Finalizada',
 }
 
 export const ETIQUETA_RESULTADO: Record<ResultadoAcceso, string> = {

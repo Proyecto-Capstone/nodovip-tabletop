@@ -22,6 +22,20 @@ export const ADMINISTRADOR: Sesion = {
   ],
 }
 
+export const MODERADOR: Sesion = {
+  id: '33333333-3333-3333-3333-333333333333',
+  nombre: 'Mónica Moderadora',
+  correo: 'monica@example.com',
+  rol: 'moderador',
+  permisos: [
+    'escenarios:leer',
+    'leaderboard:ver',
+    'reportes:ver',
+    'sesiones:conducir',
+    'sesiones:disenar',
+  ],
+}
+
 export const PARTICIPANTE: Sesion = {
   id: '22222222-2222-2222-2222-222222222222',
   nombre: 'Pedro Participante',

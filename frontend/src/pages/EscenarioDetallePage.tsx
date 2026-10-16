@@ -1,7 +1,8 @@
 // PB-04: detalle del escenario. PB-03: acciones del Administrador.
+// PB-05: el Moderador lo usa como base de una sesión tabletop.
 
 import { useState } from 'react'
-import { Link, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
   archivarEscenario,
@@ -11,6 +12,7 @@ import {
   type RolEjercicio,
   type TipoEscenario,
 } from '../api/escenarios'
+import { crearSesion } from '../api/sesiones'
 import { useSesion } from '../auth/sesionContext'
 import {
   Cargando,
@@ -24,7 +26,8 @@ import { useGet } from '../lib/useGet'
 
 export function EscenarioDetallePage() {
   const { id = '' } = useParams()
-  const { rol, puedeGestionarEscenarios, puedeLeerEscenarios } = useSesion()
+  const { rol, puedeGestionarEscenarios, puedeLeerEscenarios, puede } = useSesion()
+  const navegar = useNavigate()
   const habilitado = puedeLeerEscenarios
   const escenario = useGet<EscenarioDetalle>(
     habilitado ? rutas.escenario(id) : null,
@@ -120,12 +123,17 @@ export function EscenarioDetallePage() {
               </button>
             </>
           )}
-          {!puedeGestionarEscenarios && (
+          {puede('sesiones:disenar') && e.estado === 'publicado' && (
             <button
               type="button"
               className="boton boton-primario"
-              disabled
-              title="Disponible con el diseñador de tabletop (PB-05)"
+              disabled={enviando}
+              onClick={() =>
+                ejecutar(async () => {
+                  const sesion = await crearSesion(e.id)
+                  navegar(`/sesiones/${sesion.id}/disenar?paso=2`)
+                })
+              }
             >
               Usar como base
             </button>

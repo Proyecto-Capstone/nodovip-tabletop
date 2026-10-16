@@ -1,0 +1,162 @@
+"""Implementación SQLAlchemy del puerto de sesiones (adaptador de salida)."""
+
+from uuid import UUID
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session, selectinload
+
+from app.adapters.outbound.persistence.models_escenarios import RolEjercicioModel
+from app.adapters.outbound.persistence.models_sesiones import (
+    SesionInjectModel,
+    SesionModel,
+    SesionParticipanteModel,
+    SesionTareaModel,
+)
+from app.domain.escenarios import Inject, Nivel
+from app.domain.sesiones import (
+    EstadoSesion,
+    OpcionRespuesta,
+    ParticipanteSesion,
+    PesosPuntuacion,
+    SesionTabletop,
+    TareaSesion,
+    TipoTarea,
+)
+
+
+def _a_dominio(m: SesionModel) -> SesionTabletop:
+    return SesionTabletop(
+        id=m.id,
+        nombre=m.nombre,
+        escenario_id=m.escenario_id,
+        moderador_id=m.moderador_id,
+        estado=EstadoSesion(m.estado),
+        roles=sorted(r.codigo for r in m.roles),
+        injects=[
+            Inject(
+                id=i.id,
+                orden=i.orden,
+                titulo=i.titulo,
+                descripcion=i.descripcion,
+                minuto_sugerido=i.minuto_sugerido,
+            )
+            for i in m.injects
+        ],
+        tareas=[
+            TareaSesion(
+                id=t.id,
+                inject_id=t.inject_id,
+                rol_codigo=t.rol_codigo,
+                tipo=TipoTarea(t.tipo),
+                enunciado=t.enunciado,
+                opciones=[OpcionRespuesta(**o) for o in t.opciones],
+                criterios=list(t.criterios),
+                dificultad=Nivel(t.dificultad),
+                puntaje_maximo=t.puntaje_maximo,
+                tiempo_limite_segundos=t.tiempo_limite_segundos,
+                respuesta_esperada=t.respuesta_esperada,
+            )
+            for t in m.tareas
+        ],
+        participantes=sorted(
+            (ParticipanteSesion(p.usuario_id, p.rol_codigo) for p in m.participantes),
+            key=lambda p: (p.rol_codigo, str(p.usuario_id)),
+        ),
+        pesos=PesosPuntuacion(m.peso_completitud, m.peso_precision, m.peso_tiempo),
+        fecha_programada=m.fecha_programada,
+        duracion_minutos=m.duracion_minutos,
+    )
+
+
+class SqlSesionRepository:
+    def __init__(self, session: Session):
+        self.session = session
+
+    def _consulta(self):
+        return select(SesionModel).options(
+            selectinload(SesionModel.roles),
+            selectinload(SesionModel.injects),
+            selectinload(SesionModel.tareas),
+            selectinload(SesionModel.participantes),
+        )
+
+    def obtener(self, sesion_id: UUID) -> SesionTabletop | None:
+        modelo = self.session.scalar(
+            self._consulta().where(SesionModel.id == sesion_id)
+        )
+        return _a_dominio(modelo) if modelo else None
+
+    def listar_por_moderador(self, moderador_id: UUID) -> list[SesionTabletop]:
+        q = (
+            self._consulta()
+            .where(SesionModel.moderador_id == moderador_id)
+            .order_by(SesionModel.actualizado_en.desc())
+        )
+        return [_a_dominio(m) for m in self.session.scalars(q)]
+
+    def guardar(self, sesion: SesionTabletop) -> SesionTabletop:
+        modelo = self.session.get(SesionModel, sesion.id)
+        if modelo is None:
+            modelo = SesionModel(id=sesion.id)
+            self.session.add(modelo)
+        modelo.nombre = sesion.nombre
+        modelo.escenario_id = sesion.escenario_id
+        modelo.moderador_id = sesion.moderador_id
+        modelo.estado = sesion.estado.value
+        modelo.fecha_programada = sesion.fecha_programada
+        modelo.duracion_minutos = sesion.duracion_minutos
+        modelo.peso_completitud = sesion.pesos.completitud
+        modelo.peso_precision = sesion.pesos.precision
+        modelo.peso_tiempo = sesion.pesos.tiempo
+        modelo.roles = [
+            self.session.get(RolEjercicioModel, codigo) for codigo in sesion.roles
+        ]
+        # Se reemplaza el contenido conservando los id. Primero las tareas,
+        # que apuntan a los injects, y después los injects.
+        modelo.tareas.clear()
+        modelo.participantes.clear()
+        self.session.flush()
+        modelo.injects.clear()
+        self.session.flush()
+        modelo.injects = [
+            SesionInjectModel(
+                id=i.id,
+                orden=i.orden,
+                titulo=i.titulo,
+                descripcion=i.descripcion,
+                minuto_sugerido=i.minuto_sugerido,
+            )
+            for i in sesion.injects
+        ]
+        self.session.flush()
+        modelo.tareas = [
+            SesionTareaModel(
+                id=t.id,
+                posicion=pos,
+                inject_id=t.inject_id,
+                rol_codigo=t.rol_codigo,
+                tipo=t.tipo.value,
+                enunciado=t.enunciado,
+                opciones=[
+                    {"texto": o.texto, "correcta": o.correcta} for o in t.opciones
+                ],
+                criterios=t.criterios,
+                dificultad=t.dificultad.value,
+                puntaje_maximo=t.puntaje_maximo,
+                tiempo_limite_segundos=t.tiempo_limite_segundos,
+                respuesta_esperada=t.respuesta_esperada,
+            )
+            for pos, t in enumerate(sesion.tareas)
+        ]
+        modelo.participantes = [
+            SesionParticipanteModel(usuario_id=p.usuario_id, rol_codigo=p.rol_codigo)
+            for p in sesion.participantes
+        ]
+        self.session.commit()
+        return self.obtener(sesion.id)  # type: ignore[return-value]
+
+    def eliminar(self, sesion_id: UUID) -> None:
+        modelo = self.session.get(SesionModel, sesion_id)
+        if modelo is not None:
+            self.session.delete(modelo)
+            self.session.commit()

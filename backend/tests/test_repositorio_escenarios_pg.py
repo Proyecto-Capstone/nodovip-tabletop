@@ -13,6 +13,7 @@ from sqlalchemy import create_engine, delete
 from sqlalchemy.orm import Session
 
 from app.adapters.outbound.persistence.models_escenarios import EscenarioModel
+from app.adapters.outbound.persistence.models_sesiones import SesionModel
 from app.adapters.outbound.persistence.repositorio_escenarios import (
     SqlCatalogoRepository,
     SqlEscenarioRepository,
@@ -30,12 +31,15 @@ pytestmark = pytest.mark.skipif(not URL, reason="TEST_DATABASE_URL no definido")
 def servicio():
     url = URL.replace("postgresql://", "postgresql+psycopg://", 1)
     with Session(create_engine(url)) as session:
+        # Las sesiones apuntan a los escenarios (RESTRICT): se borran antes.
+        session.execute(delete(SesionModel))
         session.execute(delete(EscenarioModel))
         session.commit()
         yield ServicioEscenarios(
             SqlEscenarioRepository(session), SqlCatalogoRepository(session)
         )
         session.rollback()
+        session.execute(delete(SesionModel))
         session.execute(delete(EscenarioModel))
         session.commit()
 

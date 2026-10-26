@@ -1,4 +1,4 @@
-"""Dobles de prueba en memoria para los puertos de usuarios y autenticación.
+"""Dobles de prueba en memoria para los puertos (usuarios, accesos, sesiones, correo).
 
 Permiten probar casos de uso y API sin PostgreSQL (corren igual en el CI).
 """
@@ -8,6 +8,7 @@ from datetime import UTC, datetime, timedelta
 
 from app.domain.autenticacion import RegistroAcceso, ResultadoAcceso
 from app.ports.autenticacion import FiltroAccesos
+from app.ports.correo import ErrorEnvioCorreo
 from app.ports.usuario_repository import FiltroUsuarios
 
 
@@ -107,3 +108,52 @@ class RelojFalso:
 
     def avanzar(self, **kwargs):
         self.ahora += timedelta(**kwargs)
+
+
+# --- Sesiones e invitaciones (PB-05, PB-06) -----------------------------------
+
+
+class RepoSesionesEnMemoria:
+    def __init__(self):
+        self.datos = {}
+
+    def obtener(self, sesion_id):
+        s = self.datos.get(sesion_id)
+        return copy.deepcopy(s) if s else None
+
+    def listar_por_moderador(self, moderador_id):
+        return [
+            copy.deepcopy(s)
+            for s in self.datos.values()
+            if s.moderador_id == moderador_id
+        ]
+
+    def listar_por_participante(self, usuario_id):
+        return [
+            copy.deepcopy(s)
+            for s in self.datos.values()
+            if any(p.usuario_id == usuario_id for p in s.participantes)
+        ]
+
+    def guardar(self, sesion):
+        self.datos[sesion.id] = copy.deepcopy(sesion)
+        return copy.deepcopy(sesion)
+
+    def eliminar(self, sesion_id):
+        self.datos.pop(sesion_id, None)
+
+
+class EnviadorFalso:
+    """Guarda los correos en vez de enviarlos; puede fallar para ciertos correos."""
+
+    def __init__(self, fallar_para: set[str] | None = None):
+        self.enviados = []
+        self.fallar_para = fallar_para or set()
+
+    def enviar(self, mensaje):
+        if mensaje.destinatario_correo in self.fallar_para:
+            raise ErrorEnvioCorreo("Brevo respondió 400: invalid email")
+        self.enviados.append(mensaje)
+
+    def para(self, correo):
+        return [m for m in self.enviados if m.destinatario_correo == correo]

@@ -43,6 +43,23 @@ def cookie_segura() -> bool:
     return not es_desarrollo()
 
 
+def url_aplicacion() -> str:
+    """URL pública del frontend, para los enlaces de los correos."""
+    return os.getenv("APP_URL", "").strip().rstrip("/") or "http://localhost:8080"
+
+
+def brevo_api_key() -> str:
+    """Vacía = los correos se escriben en el log en vez de enviarse (local)."""
+    return os.getenv("BREVO_API_KEY", "").strip()
+
+
+def correo_remitente() -> tuple[str, str]:
+    """Remitente verificado en Brevo: (correo, nombre)."""
+    correo = os.getenv("CORREO_REMITENTE", "").strip() or "no-responder@nodovip.test"
+    nombre = os.getenv("CORREO_REMITENTE_NOMBRE", "").strip() or "NODOVIP Tabletop"
+    return correo, nombre
+
+
 def verificar_configuracion() -> None:
     """Falla al arrancar si falta algo obligatorio, en vez de en el primer login."""
     jwt_secreto()

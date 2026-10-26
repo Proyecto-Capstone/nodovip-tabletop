@@ -8,6 +8,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 from app.adapters.inbound.api.schemas_escenarios import InjectSalida
 from app.domain.escenarios import Inject, Nivel
 from app.domain.sesiones import (
+    EstadoInvitacion,
     EstadoSesion,
     OpcionRespuesta,
     ParticipanteSesion,
@@ -161,6 +162,10 @@ class TareaSesionSalida(BaseModel):
 class ParticipanteSalida(BaseModel):
     usuario_id: UUID
     rol_codigo: str
+    invitacion: EstadoInvitacion
+    invitacion_enviada_en: datetime | None
+    invitacion_aceptada_en: datetime | None
+    invitacion_error: str | None
 
 
 class PesosSalida(BaseModel):

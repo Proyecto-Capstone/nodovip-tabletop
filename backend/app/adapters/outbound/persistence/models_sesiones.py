@@ -128,3 +128,12 @@ class SesionParticipanteModel(Base):
     rol_codigo: Mapped[str] = mapped_column(
         String(40), ForeignKey("rol_ejercicio.codigo")
     )
+    # PB-06: seguimiento de la invitación por correo.
+    invitacion: Mapped[str] = mapped_column(String(15), default="pendiente")
+    invitacion_enviada_en: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    invitacion_aceptada_en: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    invitacion_error: Mapped[str | None] = mapped_column(String(300), nullable=True)

@@ -28,6 +28,7 @@ from app.adapters.outbound.persistence.repositorio_usuarios import (
 from app.application.escenarios import ServicioEscenarios
 from app.application.sesiones import ServicioSesiones
 from app.domain.sesiones import (
+    EstadoInvitacion,
     EstadoSesion,
     OpcionRespuesta,
     ParticipanteSesion,
@@ -166,3 +167,40 @@ def test_eliminar_borrador_borra_su_contenido(entorno):
     servicio.eliminar(sesion.id, moderadora)
 
     assert servicio.repo.obtener(sesion.id) is None
+
+
+def test_invitaciones_se_guardan_y_el_participante_ve_su_sesion(entorno):
+    servicio = entorno["servicio"]
+    moderadora = entorno["moderadora"].id
+    sesion = servicio.crear(entorno["escenario"].id, moderadora)
+    sesion.participantes = [
+        ParticipanteSesion(entorno[n].id, rol)
+        for n, rol in zip(
+            ["ana", "luis", "eva", "pia", "raul"], sesion.roles, strict=False
+        )
+    ]
+    sesion.fecha_programada = datetime.now(UTC) + timedelta(days=5)
+    sesion.duracion_minutos = 60
+    servicio.actualizar(sesion.id, moderadora, sesion)
+    sesion = servicio.programar(sesion.id, moderadora)
+
+    ahora = datetime.now(UTC)
+    sesion.participantes[0].marcar_enviada(ahora)
+    sesion.participantes[1].marcar_fallida("Brevo respondió 400")
+    servicio.repo.guardar(sesion)
+    sesion.aceptar_invitacion(sesion.participantes[0].usuario_id, ahora)
+    servicio.repo.guardar(sesion)
+
+    leida = servicio.repo.obtener(sesion.id)
+    por_usuario = {p.usuario_id: p for p in leida.participantes}
+    primero = por_usuario[sesion.participantes[0].usuario_id]
+    segundo = por_usuario[sesion.participantes[1].usuario_id]
+    assert primero.invitacion == EstadoInvitacion.ACEPTADA
+    assert primero.invitacion_enviada_en is not None
+    assert primero.invitacion_aceptada_en is not None
+    assert segundo.invitacion == EstadoInvitacion.FALLIDA
+    assert segundo.invitacion_error == "Brevo respondió 400"
+
+    de_ana = servicio.repo.listar_por_participante(entorno["ana"].id)
+    assert [s.id for s in de_ana] == [sesion.id]
+    assert servicio.repo.listar_por_participante(entorno["moderadora"].id) == []

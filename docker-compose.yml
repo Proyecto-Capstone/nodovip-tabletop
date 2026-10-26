@@ -32,6 +32,11 @@ services:
       REDIS_URL: redis://:${REDIS_PASSWORD}@redis:6379/0
       JWT_SECRETO: ${JWT_SECRETO:-}
       COOKIE_SEGURA: ${COOKIE_SEGURA:-}
+      # Invitaciones por correo (PB-06). Sin BREVO_API_KEY se escriben en el log.
+      APP_URL: ${APP_URL:-}
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      CORREO_REMITENTE: ${CORREO_REMITENTE:-}
+      CORREO_REMITENTE_NOMBRE: ${CORREO_REMITENTE_NOMBRE:-}
       # El backend solo es alcanzable a través de NGINX (salvo el 8000 en local),
       # así que se confía en su X-Forwarded-For para obtener la IP del cliente.
       FORWARDED_ALLOW_IPS: "*"

@@ -14,6 +14,7 @@ from app.adapters.outbound.persistence.models_sesiones import (
 )
 from app.domain.escenarios import Inject, Nivel
 from app.domain.sesiones import (
+    EstadoInvitacion,
     EstadoSesion,
     OpcionRespuesta,
     ParticipanteSesion,
@@ -59,7 +60,17 @@ def _a_dominio(m: SesionModel) -> SesionTabletop:
             for t in m.tareas
         ],
         participantes=sorted(
-            (ParticipanteSesion(p.usuario_id, p.rol_codigo) for p in m.participantes),
+            (
+                ParticipanteSesion(
+                    usuario_id=p.usuario_id,
+                    rol_codigo=p.rol_codigo,
+                    invitacion=EstadoInvitacion(p.invitacion),
+                    invitacion_enviada_en=p.invitacion_enviada_en,
+                    invitacion_aceptada_en=p.invitacion_aceptada_en,
+                    invitacion_error=p.invitacion_error,
+                )
+                for p in m.participantes
+            ),
             key=lambda p: (p.rol_codigo, str(p.usuario_id)),
         ),
         pesos=PesosPuntuacion(m.peso_completitud, m.peso_precision, m.peso_tiempo),
@@ -91,6 +102,14 @@ class SqlSesionRepository:
             self._consulta()
             .where(SesionModel.moderador_id == moderador_id)
             .order_by(SesionModel.actualizado_en.desc())
+        )
+        return [_a_dominio(m) for m in self.session.scalars(q)]
+
+    def listar_por_participante(self, usuario_id: UUID) -> list[SesionTabletop]:
+        q = self._consulta().where(
+            SesionModel.participantes.any(
+                SesionParticipanteModel.usuario_id == usuario_id
+            )
         )
         return [_a_dominio(m) for m in self.session.scalars(q)]
 
@@ -149,7 +168,14 @@ class SqlSesionRepository:
             for pos, t in enumerate(sesion.tareas)
         ]
         modelo.participantes = [
-            SesionParticipanteModel(usuario_id=p.usuario_id, rol_codigo=p.rol_codigo)
+            SesionParticipanteModel(
+                usuario_id=p.usuario_id,
+                rol_codigo=p.rol_codigo,
+                invitacion=p.invitacion.value,
+                invitacion_enviada_en=p.invitacion_enviada_en,
+                invitacion_aceptada_en=p.invitacion_aceptada_en,
+                invitacion_error=p.invitacion_error,
+            )
             for p in sesion.participantes
         ]
         self.session.commit()

@@ -93,11 +93,38 @@ function simularApi(sesion = sesionBase()) {
         ...actual,
         ...cuerpo,
         injects: cuerpo.injects.map((i: object, n: number) => ({ ...i, orden: n + 1 })),
+        participantes: cuerpo.participantes.map((p: object) => ({
+          ...p,
+          invitacion: 'pendiente',
+          invitacion_enviada_en: null,
+          invitacion_aceptada_en: null,
+          invitacion_error: null,
+        })),
       }
       return respuesta(200, actual)
     }
     if (url === `/api/sesiones/${actual.id}/programar`) {
-      actual = { ...actual, estado: 'programada' }
+      // Al programar se envían las invitaciones; la de Luis falla.
+      actual = {
+        ...actual,
+        estado: 'programada',
+        participantes: actual.participantes.map((p) =>
+          p.usuario_id === LUIS
+            ? { ...p, invitacion: 'fallida', invitacion_error: 'Brevo respondió 400: invalid email' }
+            : { ...p, invitacion: 'enviada', invitacion_enviada_en: '2026-10-25T15:00:00Z' },
+        ),
+      }
+      return respuesta(200, actual)
+    }
+    if (url === `/api/sesiones/${actual.id}/invitaciones`) {
+      actual = {
+        ...actual,
+        participantes: actual.participantes.map((p) => ({
+          ...p,
+          invitacion: p.invitacion === 'aceptada' ? 'aceptada' : 'enviada',
+          invitacion_error: null,
+        })),
+      }
       return respuesta(200, actual)
     }
     if (url === `/api/sesiones/${actual.id}`) return respuesta(200, actual)
@@ -234,6 +261,48 @@ describe('DisenadorPage', () => {
       fetchFalso.mock.calls.some(([url]) => String(url).endsWith('/programar')),
     ).toBe(true)
     expect(screen.getByText('Programada')).toBeInTheDocument()
+    // Al programar pasa al paso 6 para revisar las invitaciones.
+    expect(
+      screen.getByRole('heading', { name: 'Paso 6 — Enviar invitaciones' }),
+    ).toBeInTheDocument()
+  })
+
+  it('paso 6: muestra el estado de cada invitación y reenvía las fallidas', async () => {
+    const sesion = sesionBase()
+    sesion.estado = 'programada'
+    sesion.participantes = [
+      {
+        usuario_id: ANA,
+        rol_codigo: 'ti',
+        invitacion: 'aceptada',
+        invitacion_enviada_en: '2026-10-25T15:00:00Z',
+        invitacion_aceptada_en: '2026-10-25T16:00:00Z',
+        invitacion_error: null,
+      },
+      {
+        usuario_id: LUIS,
+        rol_codigo: 'legal',
+        invitacion: 'fallida',
+        invitacion_enviada_en: null,
+        invitacion_aceptada_en: null,
+        invitacion_error: 'Brevo respondió 400: invalid email',
+      },
+    ]
+    const fetchFalso = simularApi(sesion)
+    abrir(6)
+
+    expect(await screen.findByText('1 de 2 participantes confirmaron su asistencia.')).toBeInTheDocument()
+    expect(screen.getByText('Aceptada')).toBeInTheDocument()
+    expect(screen.getByText('Falló el envío')).toBeInTheDocument()
+    expect(screen.getByText('Brevo respondió 400: invalid email')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Enviar 1 pendiente(s)' }))
+
+    expect(await screen.findByText(/Invitaciones reenviadas\. Invitaciones enviadas: 2 de 2/)).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Todas enviadas' })).toBeDisabled()
+    expect(
+      fetchFalso.mock.calls.some(([url]) => String(url).endsWith('/invitaciones')),
+    ).toBe(true)
   })
 
   it('muestra los errores del backend y no avanza', async () => {

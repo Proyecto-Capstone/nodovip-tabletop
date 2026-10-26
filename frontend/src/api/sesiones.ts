@@ -1,10 +1,11 @@
-// Tipos y llamadas del diseñador de tabletop (PB-05).
+// Tipos y llamadas del diseñador de tabletop (PB-05) e invitaciones (PB-06).
 
 import { api } from './client'
 import type { Inject, Nivel } from './escenarios'
 
 export type EstadoSesion = 'borrador' | 'programada' | 'en_curso' | 'finalizada'
 export type TipoTarea = 'texto_libre' | 'seleccion_multiple'
+export type EstadoInvitacion = 'pendiente' | 'enviada' | 'fallida' | 'aceptada'
 
 export interface Opcion {
   texto: string
@@ -30,6 +31,14 @@ export interface Participante {
   rol_codigo: string
 }
 
+/** Participante tal como lo devuelve el backend, con su invitación. */
+export interface ParticipanteInvitado extends Participante {
+  invitacion: EstadoInvitacion
+  invitacion_enviada_en: string | null
+  invitacion_aceptada_en: string | null
+  invitacion_error: string | null
+}
+
 export interface Pesos {
   completitud: number
   precision: number
@@ -51,7 +60,7 @@ export interface SesionResumen {
 export interface SesionDetalle extends SesionResumen {
   injects: Inject[]
   tareas: TareaSesion[]
-  participantes: Participante[]
+  participantes: ParticipanteInvitado[]
   pesos: Pesos
   pendientes_para_programar: string[]
 }
@@ -89,6 +98,9 @@ export const guardarSesion = (id: string, datos: SesionDiseno) =>
 export const programarSesion = (id: string) =>
   api<SesionDetalle>(`/sesiones/${id}/programar`, { metodo: 'POST' })
 
+export const enviarInvitaciones = (id: string) =>
+  api<SesionDetalle>(`/sesiones/${id}/invitaciones`, { metodo: 'POST' })
+
 export const eliminarSesion = (id: string) =>
   api<null>(`/sesiones/${id}`, { metodo: 'DELETE' })
 
@@ -103,7 +115,10 @@ export function aDiseno(s: SesionDetalle): SesionDiseno {
       minuto_sugerido: i.minuto_sugerido,
     })),
     tareas: s.tareas,
-    participantes: s.participantes,
+    participantes: s.participantes.map((p) => ({
+      usuario_id: p.usuario_id,
+      rol_codigo: p.rol_codigo,
+    })),
     pesos: s.pesos,
     fecha_programada: s.fecha_programada,
     duracion_minutos: s.duracion_minutos,

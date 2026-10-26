@@ -4,12 +4,13 @@ import { Navigate } from 'react-router-dom'
 import { nombreRolSistema, useSesion } from '../auth/sesionContext'
 
 export function InicioPage() {
-  const { usuario, puedeLeerEscenarios } = useSesion()
+  const { usuario, puedeLeerEscenarios, puede } = useSesion()
 
   if (puedeLeerEscenarios) return <Navigate to="/escenarios" replace />
+  if (puede('sesiones:participar')) return <Navigate to="/mis-sesiones" replace />
 
-  // Participante, Observador y Analista: sus pantallas llegan en los
-  // sprints 3 a 5 (vista de participante, leaderboard y reportes).
+  // Observador y Analista: sus pantallas llegan en los sprints 4 y 5
+  // (leaderboard y reportes).
   return (
     <div className="tarjeta">
       <h1>Hola, {usuario?.nombre}</h1>

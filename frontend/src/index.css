@@ -1017,6 +1017,86 @@ button.paso:hover {
   color: var(--texto);
 }
 
+/* --- Invitaciones y vista del participante (PB-06) ------------------------- */
+
+.invitacion-pendiente {
+  background: var(--gris-fondo);
+  color: var(--texto-suave);
+}
+.invitacion-enviada {
+  background: var(--azul-fondo);
+  color: var(--acento);
+}
+.invitacion-fallida {
+  background: var(--rojo-fondo);
+  color: var(--rojo);
+}
+.invitacion-aceptada {
+  background: var(--verde-fondo);
+  color: var(--verde);
+}
+
+.lista-mis-sesiones {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.tarjeta-sesion {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.tarjeta-sesion:hover {
+  border-color: #b9bfd1;
+}
+
+.tarjeta-sesion h2 {
+  margin: 0;
+}
+
+.mi-sesion {
+  max-width: 640px;
+}
+
+.tu-rol {
+  background: var(--navy);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+.tu-rol .texto-suave {
+  color: #c9cbe0;
+}
+
+.rol-destacado {
+  margin: 0.15rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.datos-sesion {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 0.75rem;
+  margin: 0 0 1rem;
+}
+
+.datos-sesion dt {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--texto-suave);
+}
+
+.datos-sesion dd {
+  margin: 0;
+  font-weight: 600;
+}
+
 /* --- Responsive (RNF-07: desde 360 px) ------------------------------------- */
 
 @media (max-width: 900px) {

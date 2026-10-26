@@ -58,6 +58,9 @@ export function Layout() {
           <NavLink to="/escenarios/nuevo">Nuevo escenario</NavLink>
         )}
         {puede('sesiones:disenar') && <NavLink to="/sesiones">Mis tabletops</NavLink>}
+        {puede('sesiones:participar') && (
+          <NavLink to="/mis-sesiones">Mis sesiones</NavLink>
+        )}
         {puedeGestionarUsuarios && (
           <>
             <NavLink to="/usuarios">Gestión de usuarios</NavLink>

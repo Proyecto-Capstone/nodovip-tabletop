@@ -20,36 +20,13 @@ from app.domain.escenarios import (
 from app.domain.sesiones import SesionTabletop
 from app.domain.usuarios import RolNombre, Usuario
 from app.main import app
-from tests.fakes import RelojFalso, RepoUsuariosEnMemoria
+from tests.fakes import RelojFalso, RepoSesionesEnMemoria, RepoUsuariosEnMemoria
 
 MODERADOR = {"X-Rol-Prueba": "moderador"}
 ADMIN = {"X-Rol-Prueba": "administrador"}
 PARTICIPANTE = {"X-Rol-Prueba": "participante"}
 ID_MODERADOR = uuid5(NAMESPACE_URL, "prueba:moderador")
 AHORA = datetime(2026, 10, 20, 9, 0, tzinfo=UTC)
-
-
-class RepoSesionesEnMemoria:
-    def __init__(self):
-        self.datos = {}
-
-    def obtener(self, sesion_id):
-        s = self.datos.get(sesion_id)
-        return copy.deepcopy(s) if s else None
-
-    def listar_por_moderador(self, moderador_id):
-        return [
-            copy.deepcopy(s)
-            for s in self.datos.values()
-            if s.moderador_id == moderador_id
-        ]
-
-    def guardar(self, sesion):
-        self.datos[sesion.id] = copy.deepcopy(sesion)
-        return copy.deepcopy(sesion)
-
-    def eliminar(self, sesion_id):
-        self.datos.pop(sesion_id, None)
 
 
 class RepoEscenariosEnMemoria:

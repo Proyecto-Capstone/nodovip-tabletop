@@ -1,6 +1,7 @@
 // PB-05: diseñador de tabletop en 6 pasos (prototipo P-03, Figura 18).
 // El paso 1 (elegir escenario) está en NuevaSesionPage; aquí se edita el
 // borrador que nació de ese escenario. Cada cambio de paso guarda el borrador.
+// PB-06: al programar se envían las invitaciones; el paso 6 muestra su estado.
 
 import { useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
@@ -8,6 +9,7 @@ import { ApiError } from '../api/client'
 import { rutas, type EscenarioDetalle, type RolEjercicio } from '../api/escenarios'
 import {
   aDiseno,
+  enviarInvitaciones,
   guardarSesion,
   programarSesion,
   rutasSesiones,
@@ -19,6 +21,7 @@ import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, EstadoSesionBadge, SinPermiso } from '../components/Etiquetas'
 import { useGet } from '../lib/useGet'
 import { formatoFecha, limpiarDiseno, pasosCompletos, PASOS } from './disenador/comun'
+import { PasoInvitaciones } from './disenador/PasoInvitaciones'
 import { PasoProgramar } from './disenador/PasoProgramar'
 import { PasoPuntuacion } from './disenador/PasoPuntuacion'
 import { PasoRoles } from './disenador/PasoRoles'
@@ -140,8 +143,24 @@ function Asistente({
     setEnviando(true)
     setErrores(undefined)
     try {
-      aplicar(await programarSesion(guardada.id))
-      setAviso('Sesión programada. Queda lista para iniciarse en la fecha indicada.')
+      const programada = await programarSesion(guardada.id)
+      aplicar(programada)
+      setAviso(resumenInvitaciones('Sesión programada.', programada))
+      setParametros({ paso: '6' })
+    } catch (error) {
+      setErrores(error instanceof ApiError ? error.errores : ['Error de conexión'])
+    } finally {
+      setEnviando(false)
+    }
+  }
+
+  const reenviar = async () => {
+    setEnviando(true)
+    setErrores(undefined)
+    try {
+      const actualizada = await enviarInvitaciones(guardada.id)
+      aplicar(actualizada)
+      setAviso(resumenInvitaciones('Invitaciones reenviadas.', actualizada))
     } catch (error) {
       setErrores(error instanceof ApiError ? error.errores : ['Error de conexión'])
     } finally {
@@ -150,12 +169,18 @@ function Asistente({
   }
 
   const props = { d, cambiar, roles, disponibles }
+  const completos = pasosCompletos(d)
+  completos[5] =
+    guardada.estado !== 'borrador' &&
+    guardada.participantes.every(
+      (p) => p.invitacion === 'enviada' || p.invitacion === 'aceptada',
+    )
 
   return (
     <div className="disenador">
       <PasosDiseno
         actual={paso}
-        completos={pasosCompletos(d)}
+        completos={completos}
         alElegir={irA}
       />
 
@@ -203,13 +228,13 @@ function Asistente({
           {paso === 4 && <PasoPuntuacion {...props} />}
           {paso === 5 && <PasoProgramar {...props} guardada={guardada} />}
           {paso === 6 && (
-            <section className="tarjeta">
-              <h2>Invitaciones</h2>
-              <p className="parrafo">
-                El envío de invitaciones por correo a los participantes llega con
-                PB-06. Por ahora, programa la sesión en el paso 5.
-              </p>
-            </section>
+            <PasoInvitaciones
+              guardada={guardada}
+              roles={roles}
+              disponibles={disponibles}
+              enviando={enviando}
+              alReenviar={reenviar}
+            />
           )}
         </fieldset>
 
@@ -254,5 +279,16 @@ function Asistente({
         </div>
       </div>
     </div>
+  )
+}
+
+function resumenInvitaciones(inicio: string, s: SesionDetalle) {
+  const enviadas = s.participantes.filter(
+    (p) => p.invitacion === 'enviada' || p.invitacion === 'aceptada',
+  ).length
+  const fallidas = s.participantes.filter((p) => p.invitacion === 'fallida').length
+  return (
+    `${inicio} Invitaciones enviadas: ${enviadas} de ${s.participantes.length}.` +
+    (fallidas ? ` ${fallidas} fallaron: revisa el detalle y reenvíalas.` : '')
   )
 }

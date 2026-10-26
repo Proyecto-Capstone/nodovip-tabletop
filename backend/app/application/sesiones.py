@@ -31,12 +31,15 @@ class ServicioSesiones:
         catalogo: CatalogoRepository,
         usuarios: UsuarioRepository,
         reloj: Callable[[], datetime] = _ahora,
+        invitar: Callable[[SesionTabletop], SesionTabletop] | None = None,
     ):
         self.repo = repo
         self.escenarios = escenarios
         self.catalogo = catalogo
         self.usuarios = usuarios
         self.reloj = reloj
+        # Envía las invitaciones por correo (PB-06); sin él solo se programa.
+        self.invitar = invitar
 
     def crear(
         self, escenario_id: UUID, moderador_id: UUID, nombre: str | None = None
@@ -72,7 +75,17 @@ class ServicioSesiones:
         sesion = self.obtener(sesion_id, moderador_id)
         self._validar_participantes(sesion)
         sesion.programar(self.reloj())
-        return self.repo.guardar(sesion)
+        sesion = self.repo.guardar(sesion)
+        # RF-01: al programar se invita a cada participante.
+        return self.invitar(sesion) if self.invitar else sesion
+
+    def enviar_invitaciones(
+        self, sesion_id: UUID, moderador_id: UUID
+    ) -> SesionTabletop:
+        """Paso 6: reenvía las invitaciones pendientes o que fallaron."""
+        sesion = self.obtener(sesion_id, moderador_id)
+        sesion.invitaciones_por_enviar()  # 422 si todavía es borrador
+        return self.invitar(sesion) if self.invitar else sesion
 
     def eliminar(self, sesion_id: UUID, moderador_id: UUID) -> None:
         sesion = self.obtener(sesion_id, moderador_id)

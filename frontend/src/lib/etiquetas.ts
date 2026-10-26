@@ -1,6 +1,6 @@
 import type { ResultadoAcceso } from '../api/accesos'
 import type { EstadoEscenario, Nivel, RolEjercicio, TipoEscenario } from '../api/escenarios'
-import type { EstadoSesion } from '../api/sesiones'
+import type { EstadoInvitacion, EstadoSesion } from '../api/sesiones'
 
 export const NIVELES: Nivel[] = ['bajo', 'medio', 'alto']
 
@@ -21,6 +21,13 @@ export const ETIQUETA_ESTADO_SESION: Record<EstadoSesion, string> = {
   programada: 'Programada',
   en_curso: 'En curso',
   finalizada: 'Finalizada',
+}
+
+export const ETIQUETA_INVITACION: Record<EstadoInvitacion, string> = {
+  pendiente: 'Pendiente',
+  enviada: 'Enviada',
+  fallida: 'Falló el envío',
+  aceptada: 'Aceptada',
 }
 
 export const ETIQUETA_RESULTADO: Record<ResultadoAcceso, string> = {

@@ -101,12 +101,46 @@ class PesosPuntuacion:
         return []
 
 
+class EstadoInvitacion(StrEnum):
+    """Seguimiento de la invitación por correo (PB-06)."""
+
+    PENDIENTE = "pendiente"
+    ENVIADA = "enviada"
+    FALLIDA = "fallida"
+    ACEPTADA = "aceptada"
+
+
+# Se (re)envían al programar o cuando el moderador lo pide en el paso 6.
+POR_ENVIAR = (EstadoInvitacion.PENDIENTE, EstadoInvitacion.FALLIDA)
+# Estados en los que el participante ve la sesión y puede aceptar.
+VISIBLES_PARA_PARTICIPANTE = (EstadoSesion.PROGRAMADA, EstadoSesion.EN_CURSO)
+
+
 @dataclass
 class ParticipanteSesion:
     """Usuario invitado a la sesión con el rol de ejercicio que asumirá."""
 
     usuario_id: UUID
     rol_codigo: str
+    invitacion: EstadoInvitacion = EstadoInvitacion.PENDIENTE
+    invitacion_enviada_en: datetime | None = None
+    invitacion_aceptada_en: datetime | None = None
+    invitacion_error: str | None = None
+
+    def marcar_enviada(self, ahora: datetime) -> None:
+        # Si ya aceptó (p. ej. con un reenvío), no se retrocede.
+        if self.invitacion != EstadoInvitacion.ACEPTADA:
+            self.invitacion = EstadoInvitacion.ENVIADA
+        self.invitacion_enviada_en = ahora
+        self.invitacion_error = None
+
+    def marcar_fallida(self, error: str) -> None:
+        if self.invitacion != EstadoInvitacion.ACEPTADA:
+            self.invitacion = EstadoInvitacion.FALLIDA
+        self.invitacion_error = error[:300]
+
+    def mismo_puesto(self, otro: "ParticipanteSesion") -> bool:
+        return self.usuario_id == otro.usuario_id and self.rol_codigo == otro.rol_codigo
 
 
 @dataclass
@@ -256,6 +290,20 @@ class SesionTabletop:
             errores = nuevo.errores_para_programar(ahora)
             if errores:
                 raise ReglaSesionError(errores)
+        # La invitación se conserva si el participante sigue con el mismo rol;
+        # si es nuevo o cambió de rol, queda pendiente de enviar.
+        for p in nuevo.participantes:
+            anterior = next((a for a in self.participantes if a.mismo_puesto(p)), None)
+            p.invitacion = (
+                anterior.invitacion if anterior else EstadoInvitacion.PENDIENTE
+            )
+            p.invitacion_enviada_en = (
+                anterior.invitacion_enviada_en if anterior else None
+            )
+            p.invitacion_aceptada_en = (
+                anterior.invitacion_aceptada_en if anterior else None
+            )
+            p.invitacion_error = anterior.invitacion_error if anterior else None
         self.nombre = nuevo.nombre
         self.roles = nuevo.roles
         self.injects = nuevo.injects
@@ -264,3 +312,31 @@ class SesionTabletop:
         self.pesos = nuevo.pesos
         self.fecha_programada = nuevo.fecha_programada
         self.duracion_minutos = nuevo.duracion_minutos
+
+    # --- Invitaciones y acceso del participante (PB-06) ------------------------
+
+    def participante_de(self, usuario_id: UUID) -> ParticipanteSesion | None:
+        return next((p for p in self.participantes if p.usuario_id == usuario_id), None)
+
+    def visible_para(self, usuario_id: UUID) -> bool:
+        """Un participante solo ve sesiones a las que fue invitado y que ya
+        fueron programadas (un borrador todavía puede cambiar)."""
+        return (
+            self.estado in VISIBLES_PARA_PARTICIPANTE
+            and self.participante_de(usuario_id) is not None
+        )
+
+    def invitaciones_por_enviar(self) -> list[ParticipanteSesion]:
+        if self.estado not in VISIBLES_PARA_PARTICIPANTE:
+            raise ReglaSesionError(
+                ["Las invitaciones se envían cuando la sesión está programada"]
+            )
+        return [p for p in self.participantes if p.invitacion in POR_ENVIAR]
+
+    def aceptar_invitacion(self, usuario_id: UUID, ahora: datetime) -> None:
+        participante = self.participante_de(usuario_id)
+        if participante is None or not self.visible_para(usuario_id):
+            raise ReglaSesionError(["No tienes una invitación a esta sesión"])
+        if participante.invitacion != EstadoInvitacion.ACEPTADA:
+            participante.invitacion = EstadoInvitacion.ACEPTADA
+            participante.invitacion_aceptada_en = ahora

@@ -1,4 +1,4 @@
-"""Endpoints REST del diseñador de tabletop (PB-05, RF-01).
+"""Endpoints REST del diseñador de tabletop (PB-05, RF-01) e invitaciones (PB-06).
 
 Solo el Moderador (permiso `sesiones:disenar`) y solo sobre sus sesiones.
 """
@@ -9,6 +9,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy.orm import Session
 
+from app import config
 from app.adapters.inbound.api.schemas_sesiones import (
     ParticipanteDisponible,
     SesionDetalle,
@@ -17,6 +18,7 @@ from app.adapters.inbound.api.schemas_sesiones import (
     SesionResumen,
 )
 from app.adapters.inbound.api.seguridad import UsuarioActual, requiere_permiso
+from app.adapters.outbound.correo import crear_enviador
 from app.adapters.outbound.persistence.database import get_session
 from app.adapters.outbound.persistence.repositorio_escenarios import (
     SqlCatalogoRepository,
@@ -28,6 +30,7 @@ from app.adapters.outbound.persistence.repositorio_sesiones import (
 from app.adapters.outbound.persistence.repositorio_usuarios import (
     SqlUsuarioRepository,
 )
+from app.application.invitaciones import ServicioInvitaciones
 from app.application.sesiones import ServicioSesiones, SesionNoEncontrada
 from app.domain.sesiones import ReglaSesionError
 from app.domain.usuarios import PermisoCodigo
@@ -38,11 +41,18 @@ router = APIRouter(prefix="/api/sesiones", tags=["sesiones"])
 def get_servicio(
     session: Annotated[Session, Depends(get_session)],
 ) -> ServicioSesiones:
+    repo = SqlSesionRepository(session)
+    catalogo = SqlCatalogoRepository(session)
+    usuarios = SqlUsuarioRepository(session)
+    invitaciones = ServicioInvitaciones(
+        repo, catalogo, usuarios, crear_enviador(), config.url_aplicacion()
+    )
     return ServicioSesiones(
-        SqlSesionRepository(session),
+        repo,
         SqlEscenarioRepository(session),
-        SqlCatalogoRepository(session),
-        SqlUsuarioRepository(session),
+        catalogo,
+        usuarios,
+        invitar=invitaciones.enviar_pendientes,
     )
 
 
@@ -104,7 +114,17 @@ def guardar_diseno(
 
 @router.post("/{sesion_id}/programar", response_model=SesionDetalle)
 def programar_sesion(sesion_id: UUID, servicio: Servicio, usuario: Disenador):
+    """Programa la sesión y envía las invitaciones por correo."""
     sesion = _manejar_errores(lambda: servicio.programar(sesion_id, usuario.id))
+    return SesionDetalle.desde(sesion, servicio.reloj())
+
+
+@router.post("/{sesion_id}/invitaciones", response_model=SesionDetalle)
+def enviar_invitaciones(sesion_id: UUID, servicio: Servicio, usuario: Disenador):
+    """Paso 6: reenvía las invitaciones pendientes o que fallaron."""
+    sesion = _manejar_errores(
+        lambda: servicio.enviar_invitaciones(sesion_id, usuario.id)
+    )
     return SesionDetalle.desde(sesion, servicio.reloj())
 
 

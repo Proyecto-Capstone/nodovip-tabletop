@@ -14,6 +14,7 @@ from app.adapters.outbound.persistence.models_sesiones import (
 )
 from app.domain.escenarios import Inject, Nivel
 from app.domain.sesiones import (
+    ESTADOS_EDITABLES,
     EstadoInvitacion,
     EstadoSesion,
     OpcionRespuesta,
@@ -137,6 +138,34 @@ class SqlSesionRepository:
         modelo.peso_completitud = sesion.pesos.completitud
         modelo.peso_precision = sesion.pesos.precision
         modelo.peso_tiempo = sesion.pesos.tiempo
+        if sesion.estado in ESTADOS_EDITABLES or not modelo.tareas:
+            self._reemplazar_contenido(modelo, sesion)
+        else:
+            self._actualizar_invitaciones(modelo, sesion)
+        self.session.commit()
+        return self.obtener(sesion.id)  # type: ignore[return-value]
+
+    @staticmethod
+    def _actualizar_invitaciones(modelo: SesionModel, sesion: SesionTabletop) -> None:
+        """Con el contenido fijo, solo cambia el seguimiento de las invitaciones
+        (por ejemplo, alguien acepta con la sesión ya en curso)."""
+        por_usuario = {p.usuario_id: p for p in sesion.participantes}
+        for fila in modelo.participantes:
+            p = por_usuario.get(fila.usuario_id)
+            if p:
+                fila.invitacion = p.invitacion.value
+                fila.invitacion_enviada_en = p.invitacion_enviada_en
+                fila.invitacion_aceptada_en = p.invitacion_aceptada_en
+                fila.invitacion_error = p.invitacion_error
+
+    def _reemplazar_contenido(
+        self, modelo: SesionModel, sesion: SesionTabletop
+    ) -> None:
+        """Reescribe roles, injects, tareas y participantes del diseño.
+
+        Solo mientras la sesión es editable: una vez en curso, las respuestas
+        apuntan a sus tareas (PB-08/PB-09) y el contenido queda fijo.
+        """
         modelo.roles = [
             self.session.get(RolEjercicioModel, codigo) for codigo in sesion.roles
         ]
@@ -188,8 +217,6 @@ class SqlSesionRepository:
             )
             for p in sesion.participantes
         ]
-        self.session.commit()
-        return self.obtener(sesion.id)  # type: ignore[return-value]
 
     def eliminar(self, sesion_id: UUID) -> None:
         modelo = self.session.get(SesionModel, sesion_id)

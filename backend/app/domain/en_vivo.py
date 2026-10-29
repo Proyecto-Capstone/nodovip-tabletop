@@ -7,7 +7,7 @@ El tiempo transcurrido descuenta las pausas.
 Núcleo de dominio: no depende de FastAPI, Redis ni SQLAlchemy.
 """
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import UUID
 
@@ -26,6 +26,9 @@ class EstadoEnVivo:
     finalizada_en: datetime | None = None
     # Aumenta con cada cambio: el cliente descarta mensajes viejos.
     version: int = 1
+    # Orden del inject → segundos efectivos de la sesión cuando se lanzó. El
+    # tiempo de cada tarea corre desde ahí y se detiene en las pausas (PB-08).
+    lanzamientos: dict[int, int] = field(default_factory=dict)
 
     @property
     def pausada(self) -> bool:
@@ -46,6 +49,16 @@ class EstadoEnVivo:
             pausa += (ahora - self.pausada_desde).total_seconds()
         return max(0, int((fin - self.iniciada_en).total_seconds() - pausa))
 
+    def segundos_desde_lanzamiento(self, orden: int, ahora: datetime) -> int | None:
+        """Tiempo efectivo desde que se lanzó el inject; None si no se lanzó."""
+        if orden < 1 or orden > self.inject_actual:
+            return None
+        # Si Redis se perdió y se reconstruyó, no hay registro: corre desde ahora.
+        inicio = self.lanzamientos.get(orden)
+        if inicio is None:
+            inicio = self.lanzamientos[orden] = self.segundos_transcurridos(ahora)
+        return max(0, self.segundos_transcurridos(ahora) - inicio)
+
     def lanzar_siguiente_inject(self, ahora: datetime) -> None:
         self._exigir_activa()
         if self.pausada:
@@ -54,6 +67,7 @@ class EstadoEnVivo:
             raise ReglaSesionError(["Ya se lanzaron todos los injects"])
         self.inject_actual += 1
         self.inject_lanzado_en = ahora
+        self.lanzamientos[self.inject_actual] = self.segundos_transcurridos(ahora)
         self.version += 1
 
     def pausar(self, ahora: datetime) -> None:

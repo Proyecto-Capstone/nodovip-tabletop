@@ -142,7 +142,7 @@ class ServicioEnVivo:
         raise SesionNoEncontrada(str(sesion_id))
 
     def vista(self, sesion: SesionTabletop) -> VistaEnVivo:
-        estado = self._estado(sesion)
+        estado = self.estado_de(sesion)
         return componer_vista(
             sesion, estado, self.almacen.conectados(sesion.id), self.reloj()
         )
@@ -167,12 +167,12 @@ class ServicioEnVivo:
         self, sesion_id: UUID, moderador_id: UUID
     ) -> tuple[SesionTabletop, EstadoEnVivo]:
         sesion = self._de_moderador(sesion_id, moderador_id)
-        estado = self._estado(sesion)
+        estado = self.estado_de(sesion)
         if estado is None:
             raise ReglaSesionError(["La sesión no está en curso"])
         return sesion, estado
 
-    def _estado(self, sesion: SesionTabletop) -> EstadoEnVivo | None:
+    def estado_de(self, sesion: SesionTabletop) -> EstadoEnVivo | None:
         """Estado en Redis o, si se perdió, reconstruido desde PostgreSQL."""
         if sesion.estado != EstadoSesion.EN_CURSO:
             return None
@@ -183,6 +183,12 @@ class ServicioEnVivo:
                 total_injects=len(sesion.injects),
                 iniciada_en=sesion.iniciada_en or self.reloj(),
                 inject_actual=sesion.inject_actual,
+            )
+            # Sin registro de cuándo se lanzó cada inject, sus tareas vuelven a
+            # tener el tiempo completo desde ahora (a favor del participante).
+            ahora = estado.segundos_transcurridos(self.reloj())
+            estado.lanzamientos = dict.fromkeys(
+                range(1, estado.inject_actual + 1), ahora
             )
             self.almacen.guardar(estado)
         return estado

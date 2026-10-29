@@ -26,3 +26,32 @@ export const rutasMisSesiones = {
 
 export const aceptarInvitacion = (id: string) =>
   api<MiSesion>(`/mis-sesiones/${id}/aceptar`, { metodo: 'POST' })
+
+// --- Tareas del rol y respuestas (PB-08) ---------------------------------------------
+
+export type EstadoTarea = 'pendiente' | 'respondida' | 'vencida'
+
+export interface TareaParticipante {
+  id: string
+  inject_orden: number
+  tipo: 'texto_libre' | 'seleccion_multiple'
+  enunciado: string
+  /** Solo el texto de cada opción: la correcta no se envía al participante. */
+  opciones: string[]
+  tiempo_limite_segundos: number
+  segundos_restantes: number
+  estado: EstadoTarea
+  respuesta: { texto: string | null; opciones_elegidas: number[]; recibida_en: string } | null
+}
+
+export const rutaTareas = (sesionId: string) => `/mis-sesiones/${sesionId}/tareas`
+
+export const responderTarea = (
+  sesionId: string,
+  tareaId: string,
+  datos: { texto?: string; opciones?: number[] },
+) =>
+  api<TareaParticipante>(`/mis-sesiones/${sesionId}/tareas/${tareaId}/respuesta`, {
+    metodo: 'POST',
+    cuerpo: datos,
+  })

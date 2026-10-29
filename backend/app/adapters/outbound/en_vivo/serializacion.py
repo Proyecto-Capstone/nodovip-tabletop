@@ -15,6 +15,8 @@ def estado_a_dict(e: EstadoEnVivo) -> dict:
         "inject_actual": e.inject_actual,
         "segundos_en_pausa": e.segundos_en_pausa,
         "version": e.version,
+        # JSON solo admite claves de texto.
+        "lanzamientos": {str(k): v for k, v in e.lanzamientos.items()},
     }
     for campo in _FECHAS:
         valor = getattr(e, campo)
@@ -30,6 +32,7 @@ def estado_desde_dict(d: dict) -> EstadoEnVivo:
         inject_actual=d["inject_actual"],
         segundos_en_pausa=d["segundos_en_pausa"],
         version=d["version"],
+        lanzamientos={int(k): v for k, v in d.get("lanzamientos", {}).items()},
         **fechas,
     )
 

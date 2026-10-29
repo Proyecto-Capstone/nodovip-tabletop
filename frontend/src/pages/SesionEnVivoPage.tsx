@@ -1,6 +1,6 @@
 // PB-07: el participante sigue la sesión en vivo (prototipo P-04, Figura 19).
 // Recibe el inject actual por WebSocket; si pierde la conexión, se reconecta y
-// recupera el estado. Las tareas de su rol y la respuesta llegan con PB-08.
+// recupera el estado. PB-08: las tareas de su rol y su respuesta.
 
 import { Link, useParams } from 'react-router-dom'
 import { rutasMisSesiones, type MiSesion } from '../api/misSesiones'
@@ -9,6 +9,7 @@ import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { formatoReloj, useCronometro, useEnVivo } from '../lib/useEnVivo'
 import { useGet } from '../lib/useGet'
 import { EstadoVivo, InjectActual } from './ConducirSesionPage'
+import { TareasDelRol } from './TareasDelRol'
 
 export function SesionEnVivoPage() {
   const { id = '' } = useParams()
@@ -58,7 +59,11 @@ export function SesionEnVivoPage() {
           Inject {vista?.inject_actual ?? 0} de {vista?.total_injects ?? '…'}
         </span>
         <span>{formatoReloj(segundos)}</span>
-        <span>{vista ? `${vista.total_conectados} conectados` : ''}</span>
+        <span>
+          {vista
+            ? `${vista.total_conectados} ${vista.total_conectados === 1 ? 'conectado' : 'conectados'}`
+            : ''}
+        </span>
       </div>
 
       {conexion === 'reconectando' && (
@@ -85,11 +90,14 @@ export function SesionEnVivoPage() {
               moderador la inicie.
             </p>
           )}
-          {estado === 'en_curso' && (
-            <section className="tarjeta narrativa">
-              <h2>Narrativa del escenario</h2>
-              <InjectActual vista={vista} />
-            </section>
+          {estado === 'en_curso' && vista && (
+            <>
+              <section className="tarjeta narrativa">
+                <h2>Narrativa del escenario</h2>
+                <InjectActual vista={vista} />
+              </section>
+              <TareasDelRol sesionId={id} rolNombre={mia.datos.rol_nombre} vista={vista} />
+            </>
           )}
         </>
       )}

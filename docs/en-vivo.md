@@ -1,0 +1,146 @@
+# Motor en tiempo real (PB-07)
+
+Módulo M3, requisito RF-02. El moderador conduce la sesión programada y los
+participantes la siguen en vivo desde su dispositivo. Pantallas según los
+prototipos P-05 (panel del moderador, Figura 20) y P-04 (vista del
+participante, Figura 19); el progreso por participante y las respuestas llegan
+con PB-08, PB-09 y PB-11.
+
+## Flujo
+
+```mermaid
+stateDiagram-v2
+    [*] --> programada
+    programada --> en_curso: iniciar
+    en_curso --> en_curso: lanzar inject (1..n)
+    en_curso --> pausa: pausar
+    pausa --> en_curso: reanudar
+    en_curso --> finalizada: cerrar
+    pausa --> finalizada: cerrar
+    finalizada --> [*]
+```
+
+- **Fases = injects.** La fase 0 es la apertura (todavía no se lanzó ninguno); el
+  moderador lanza los injects en orden hasta el último.
+- **Pausa.** No se pueden lanzar injects y el tiempo transcurrido no corre.
+- **Cerrar.** La sesión queda `finalizada` en PostgreSQL con su hora de inicio,
+  de fin y el último inject; el estado en Redis se borra.
+
+## Arquitectura
+
+```mermaid
+flowchart LR
+    M["Moderador\n(navegador)"] -- "POST /en-vivo/... (REST)" --> API
+    API["Comandos REST"] --> S["ServicioEnVivo"]
+    S --> A{{"AlmacenEnVivo"}}
+    A --> R[("Redis\nestado + pub/sub")]
+    S --> PG[("PostgreSQL\nsesion")]
+    R -- "evento" --> WS["WebSocket\n/api/ws/sesiones/{id}"]
+    WS -- "vista" --> M
+    WS -- "vista" --> P["Participantes\n(navegador)"]
+```
+
+- **Comandos por REST, estado por WebSocket.** Los comandos (`iniciar`,
+  `lanzar-inject`, `pausar`, `reanudar`, `cerrar`) usan la misma autenticación
+  y permisos que el resto de la API. El WebSocket es de **solo recepción**: el
+  participante no puede cambiar el estado de la sesión.
+- **Dominio** (`app/domain/en_vivo.py`): `EstadoEnVivo` (fase, pausa, tiempo,
+  versión) y `EventoEnVivo`. `SesionTabletop.iniciar()` y `finalizar()` aplican
+  las transiciones de la sesión.
+- **Puertos** (`app/ports/en_vivo.py`): `AlmacenEnVivo` (estado, conexiones y
+  publicación; usado por los comandos, código síncrono) y `SuscriptorEnVivo`
+  (eventos para cada WebSocket, código asíncrono).
+- **Adaptadores** (`app/adapters/outbound/en_vivo/`): `EnVivoRedis` en los
+  servidores y `EnVivoEnMemoria` para pruebas, CI y desarrollo sin Redis. Se
+  elige por la variable `REDIS_URL` (una instancia por proceso).
+
+## Redis
+
+| Clave | Contenido |
+|---|---|
+| `nodovip:sesion:{id}:estado` | JSON del `EstadoEnVivo` (expira a las 24 h) |
+| `nodovip:sesion:{id}:conectados` | hash usuario → conexiones abiertas (varias pestañas cuentan una vez) |
+| `nodovip:sesion:{id}:eventos` | canal pub/sub hacia todos los WebSocket de la sesión, en cualquier proceso |
+
+Cada sesión usa sus propias claves, lo que aísla las sesiones simultáneas
+(RNF-04). **PostgreSQL es la fuente de verdad**: cada inject lanzado se refleja
+en `sesion.inject_actual`, de modo que si Redis pierde el estado, el servicio lo
+reconstruye desde la base al siguiente comando o conexión (RNF-05).
+
+## WebSocket
+
+`ws(s)://<host>/api/ws/sesiones/{id}`, autenticado con la cookie de sesión.
+
+1. Solo se aceptan el **moderador dueño** de la sesión y los **participantes
+   invitados** a una sesión programada o en curso.
+2. Al conectarse, el servidor se suscribe al canal y **recién entonces** envía
+   la foto completa del estado (`{"tipo": "estado", "vista": {...}}`). Así no se
+   pierden eventos y quien se reconecta recupera la sesión donde va.
+3. Cada comando y cada (des)conexión generan un mensaje con la vista
+   actualizada. La vista lleva `version`: el cliente ignora mensajes viejos.
+4. El moderador recibe además la lista de usuarios conectados; el participante,
+   solo el número.
+
+| Código de cierre | Significado | ¿Reintenta el cliente? |
+|---|---|---|
+| 1000 | La sesión terminó | No |
+| 4401 | Sin sesión iniciada | No |
+| 4403 | El rol no puede seguir sesiones | No |
+| 4404 | Sesión inexistente o sin invitación | No |
+| otro | Corte de red, reinicio del servidor | Sí, con espera creciente (0,5 s a 5 s) |
+
+**Detalles de implementación**
+
+- El WebSocket no retiene una conexión de PostgreSQL: carga la sesión al inicio
+  y la libera (puede durar horas).
+- Las tareas del WebSocket usan un *task group* de AnyIO; el registro de la
+  desconexión está protegido para que ocurra aunque el servidor cancele la
+  conexión.
+- NGINX tiene una ruta propia `/api/ws/` con las cabeceras `Upgrade` y
+  `Connection` y 1 h de espera (una sesión puede pasar minutos sin mensajes).
+- El frontend cierra el socket en `pagehide` y reconecta en `pageshow`: si no,
+  Chrome guarda la página en su caché de navegación con el socket abierto y la
+  persona seguiría figurando como conectada.
+
+## Endpoints
+
+| Método | Ruta | Permiso | Descripción |
+|---|---|---|---|
+| GET | `/api/sesiones/{id}/en-vivo` | `sesiones:conducir` | Vista actual (moderador dueño) |
+| POST | `/api/sesiones/{id}/en-vivo/iniciar` | `sesiones:conducir` | Programada → en curso |
+| POST | `/api/sesiones/{id}/en-vivo/lanzar-inject` | `sesiones:conducir` | Siguiente inject (422 en pausa o si no quedan) |
+| POST | `/api/sesiones/{id}/en-vivo/pausar` | `sesiones:conducir` | Pausa el tiempo |
+| POST | `/api/sesiones/{id}/en-vivo/reanudar` | `sesiones:conducir` | Reanuda |
+| POST | `/api/sesiones/{id}/en-vivo/cerrar` | `sesiones:conducir` | Finaliza y persiste |
+| WS | `/api/ws/sesiones/{id}` | moderador dueño o participante invitado | Estado en vivo |
+
+## Modelo de datos (migración 0006)
+
+Columnas nuevas en `sesion`: `iniciada_en` y `finalizada_en` (`timestamptz`) e
+`inject_actual` (`smallint`, CHECK ≥ 0, por defecto 0).
+
+## Frontend
+
+- **Panel del moderador** (`/sesiones/{id}/conducir`): tiempo transcurrido,
+  participantes conectados, inject actual, lista de participantes con su
+  conexión y controles (iniciar, lanzar inject, pausar/reanudar, cerrar).
+  Desde *Mis tabletops*, botón **Conducir**.
+- **Sala del participante** (`/mis-sesiones/{id}/en-vivo`): rol, avance, tiempo
+  y narrativa del inject actual; avisos de espera, pausa, reconexión y fin.
+  Desde *Mi sesión*, botón **Entrar a la sala**.
+- `useEnVivo` (`src/lib/useEnVivo.ts`): conexión, reconexión y cronómetro local
+  entre mensajes.
+
+## Pruebas
+
+- `tests/test_en_vivo_dominio.py`: fases, pausa y tiempo, cierre, serialización.
+- `tests/test_api_en_vivo.py`: comandos y permisos, reglas (422), reconstrucción
+  si Redis se pierde, WebSocket (rechazos, latencia < 3 s, reconexión,
+  presencia, cierre).
+- `tests/test_en_vivo_redis.py`: adaptador contra Redis real (requiere
+  `TEST_REDIS_URL`, usa la base 1).
+- `frontend/src/pages/EnVivo.test.tsx`: sala y panel con un WebSocket simulado
+  (reconexión, cierre definitivo, bfcache, mensajes viejos, comandos).
+
+Prueba de punta a punta contra la aplicación real (NGINX + Redis + PostgreSQL):
+el inject llegó al participante en 27–34 ms.

@@ -1247,6 +1247,84 @@ button.paso:hover {
   margin-bottom: 0.75rem;
 }
 
+/* Tareas del participante (PB-08, prototipo P-04) */
+
+.tarea-vivo {
+  display: block;
+}
+
+.tarea-vivo-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  margin: -1.1rem -1.25rem 0.9rem;
+  padding: 0.8rem 1.25rem;
+  background: var(--navy);
+  border-radius: var(--radio) var(--radio) 0 0;
+  color: #fff;
+}
+
+.tarea-vivo-cabecera h2 {
+  margin: 0;
+}
+
+.reloj-tarea {
+  flex: none;
+  padding: 0.3rem 0.7rem;
+  border-radius: 8px;
+  background: var(--navy-claro);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.reloj-tarea.urgente {
+  background: var(--rojo);
+}
+
+.tarea-vivo-enunciado {
+  margin: 0.6rem 0 0.9rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.opciones-tarea {
+  border: 0;
+  margin: 0 0 0.75rem;
+  padding: 0;
+}
+
+.opcion-tarea {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.5rem;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.opcion-tarea.marcada {
+  border-color: var(--acento);
+  background: var(--azul-fondo);
+}
+
+.respuesta-enviada-texto {
+  white-space: pre-line;
+  background: #f8f9fb;
+  border: 1px solid var(--borde);
+  border-radius: 8px;
+  padding: 0.65rem 0.8rem;
+}
+
+.boton-enviar {
+  background: var(--verde);
+  border-color: var(--verde);
+  color: #fff;
+  padding: 0.7rem 1.4rem;
+}
+
 /* --- Responsive (RNF-07: desde 360 px) ------------------------------------- */
 
 @media (max-width: 900px) {

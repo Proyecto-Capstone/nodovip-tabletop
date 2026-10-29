@@ -1097,6 +1097,156 @@ button.paso:hover {
   font-weight: 600;
 }
 
+/* --- Sesión en vivo (PB-07, prototipos P-04 y P-05) ------------------------ */
+
+.metricas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.metrica {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.metrica strong {
+  font-size: 1.6rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.metrica-verde {
+  color: var(--verde);
+}
+
+.metrica-azul {
+  color: var(--acento);
+}
+
+.badge-live {
+  background: var(--rojo);
+  color: #fff;
+}
+
+.badge-pausa {
+  background: #f6eecb;
+  color: #7a5b06;
+}
+
+.lista-conectados {
+  list-style: none;
+  margin: 0.5rem 0 0;
+  padding: 0;
+}
+
+.lista-conectados li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid var(--borde);
+  font-size: 0.9rem;
+}
+
+.punto {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #c5c9d6;
+}
+
+.punto.conectado {
+  background: var(--verde);
+}
+
+.inject-vivo {
+  background: var(--azul-fondo);
+  border-radius: var(--radio);
+  padding: 0.9rem 1rem;
+  margin-bottom: 1rem;
+}
+
+.inject-vivo h3 {
+  margin: 0.5rem 0 0.25rem;
+}
+
+.vacio-vivo {
+  color: var(--texto-suave);
+}
+
+.controles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.boton-grande {
+  flex: 1 1 160px;
+  padding: 0.8rem 1rem;
+  font-size: 0.95rem;
+}
+
+.boton-pausa {
+  background: #f6eecb;
+  border-color: #eadb9c;
+  color: #6d5206;
+}
+
+.boton-cerrar {
+  background: var(--rojo);
+  border-color: var(--rojo);
+  color: #fff;
+}
+
+.sala-vivo {
+  max-width: 900px;
+}
+
+.sala-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.chip-rol {
+  background: var(--azul-fondo);
+  color: var(--acento);
+  font-weight: 600;
+}
+
+.barra-avance {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--gris-fondo);
+  overflow: hidden;
+}
+
+.barra-avance span {
+  display: block;
+  height: 100%;
+  background: var(--verde);
+  transition: width 0.4s;
+}
+
+.sala-datos {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin: 0.4rem 0 1rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.narrativa h2 {
+  margin-bottom: 0.75rem;
+}
+
 /* --- Responsive (RNF-07: desde 360 px) ------------------------------------- */
 
 @media (max-width: 900px) {

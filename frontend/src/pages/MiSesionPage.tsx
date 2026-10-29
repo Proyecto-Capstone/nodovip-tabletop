@@ -91,6 +91,12 @@ export function MiSesionPage() {
         )}
       </section>
 
+      {(s.estado === 'programada' || s.estado === 'en_curso') && (
+        <Link className="boton boton-primario boton-bloque" to={`/mis-sesiones/${s.id}/en-vivo`}>
+          {s.estado === 'en_curso' ? '● Entrar a la sesión en vivo' : 'Entrar a la sala de espera'}
+        </Link>
+      )}
+
       {s.invitacion === 'aceptada' ? (
         <div className="alerta alerta-exito" role="status">
           Confirmaste tu asistencia. El día de la sesión entra desde aquí: las tareas de

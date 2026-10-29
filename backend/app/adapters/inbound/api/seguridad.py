@@ -17,7 +17,7 @@ from fastapi import Cookie, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app import config
-from app.adapters.outbound.persistence.database import get_session
+from app.adapters.outbound.persistence.database import abrir_sesion, get_session
 from app.adapters.outbound.persistence.repositorio_accesos import (
     SqlRegistroAccesoRepository,
 )
@@ -102,3 +102,24 @@ def requiere_permiso(permiso: PermisoCodigo):
         return usuario
 
     return _verificar
+
+
+def obtener_usuario_ws(
+    token: Annotated[str | None, Cookie(alias=NOMBRE_COOKIE)] = None,
+) -> UsuarioActual | None:
+    """Usuario de un WebSocket (misma cookie que la API). None si no hay sesión.
+
+    Abre y cierra su propia sesión de base de datos: el WebSocket puede durar
+    horas y no debe retener una conexión del pool.
+    """
+    if not token:
+        return None
+    with abrir_sesion() as session:
+        usuario = ServicioAutenticacion(
+            SqlUsuarioRepository(session),
+            SqlRegistroAccesoRepository(session),
+            BcryptHasher(),
+            JwtTokens(config.jwt_secreto()),
+            hash_relleno=_hash_relleno(),
+        ).usuario_desde_token(token)
+    return UsuarioActual.desde(usuario) if usuario else None

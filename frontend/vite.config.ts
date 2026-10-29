@@ -8,7 +8,8 @@ export default defineConfig({
   server: {
     // En `npm run dev`, las llamadas a /api van al backend a través de NGINX.
     proxy: {
-      '/api': 'http://localhost:8080',
+      // ws: también reenvía el WebSocket del motor en tiempo real (PB-07).
+      '/api': { target: 'http://localhost:8080', ws: true },
     },
   },
   test: {

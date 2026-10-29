@@ -19,6 +19,7 @@ from fastapi import Header, HTTPException, status
 from app.adapters.inbound.api.seguridad import (
     UsuarioActual,
     obtener_usuario_actual,
+    obtener_usuario_ws,
 )
 from app.domain.usuarios import RolNombre
 from app.main import app
@@ -39,8 +40,20 @@ def _usuario_por_cabecera(
     )
 
 
+def _usuario_ws_por_cabecera(
+    x_rol_prueba: Annotated[str | None, Header()] = None,
+) -> UsuarioActual | None:
+    """Igual que _usuario_por_cabecera, para WebSocket: None si no hay rol."""
+    try:
+        return _usuario_por_cabecera(x_rol_prueba)
+    except HTTPException:
+        return None
+
+
 @pytest.fixture
 def sesion_por_cabecera():
     app.dependency_overrides[obtener_usuario_actual] = _usuario_por_cabecera
+    app.dependency_overrides[obtener_usuario_ws] = _usuario_ws_por_cabecera
     yield
     app.dependency_overrides.pop(obtener_usuario_actual, None)
+    app.dependency_overrides.pop(obtener_usuario_ws, None)

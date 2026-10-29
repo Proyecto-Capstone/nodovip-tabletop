@@ -9,6 +9,7 @@ from datetime import UTC, datetime, timedelta
 from app.domain.autenticacion import RegistroAcceso, ResultadoAcceso
 from app.ports.autenticacion import FiltroAccesos
 from app.ports.correo import ErrorEnvioCorreo
+from app.ports.respuesta_repository import RespuestaDuplicada
 from app.ports.usuario_repository import FiltroUsuarios
 
 
@@ -157,3 +158,26 @@ class EnviadorFalso:
 
     def para(self, correo):
         return [m for m in self.enviados if m.destinatario_correo == correo]
+
+
+class RepoRespuestasEnMemoria:
+    """Como la tabla respuesta: solo inserta y rechaza la segunda respuesta."""
+
+    def __init__(self):
+        self.datos = []
+
+    def guardar(self, respuesta):
+        if any(
+            r.tarea_id == respuesta.tarea_id and r.usuario_id == respuesta.usuario_id
+            for r in self.datos
+        ):
+            raise RespuestaDuplicada(str(respuesta.tarea_id))
+        self.datos.append(copy.deepcopy(respuesta))
+        return copy.deepcopy(respuesta)
+
+    def de_participante(self, sesion_id, usuario_id):
+        return [
+            copy.deepcopy(r)
+            for r in self.datos
+            if r.sesion_id == sesion_id and r.usuario_id == usuario_id
+        ]

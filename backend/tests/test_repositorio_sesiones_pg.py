@@ -6,6 +6,7 @@ Borran sesiones y escenarios: después correr de nuevo `seed_escenarios`.
 
 import os
 from datetime import UTC, datetime, timedelta
+from uuid import uuid4
 
 import pytest
 from sqlalchemy import create_engine, delete
@@ -14,6 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.adapters.outbound.persistence.models import UsuarioModel
 from app.adapters.outbound.persistence.models_escenarios import EscenarioModel
+from app.adapters.outbound.persistence.models_respuestas import RespuestaModel
 from app.adapters.outbound.persistence.models_sesiones import SesionModel
 from app.adapters.outbound.persistence.repositorio_escenarios import (
     SqlCatalogoRepository,
@@ -45,6 +47,8 @@ DOMINIO = "%@sesiones.test"
 
 def _limpiar(session: Session) -> None:
     session.rollback()
+    # Las respuestas impiden borrar sesiones (RESTRICT): van primero.
+    session.execute(delete(RespuestaModel))
     session.execute(delete(SesionModel))
     session.execute(delete(EscenarioModel))
     session.execute(delete(UsuarioModel).where(UsuarioModel.correo.like(DOMINIO)))
@@ -204,3 +208,63 @@ def test_invitaciones_se_guardan_y_el_participante_ve_su_sesion(entorno):
     de_ana = servicio.repo.listar_por_participante(entorno["ana"].id)
     assert [s.id for s in de_ana] == [sesion.id]
     assert servicio.repo.listar_por_participante(entorno["moderadora"].id) == []
+
+
+def test_en_curso_guardar_no_recrea_tareas_y_la_respuesta_es_unica(entorno):
+    """Las respuestas apuntan a las tareas: guardar una sesión en curso no
+    debe borrarlas ni recrearlas (PB-08)."""
+    from app.adapters.outbound.persistence.repositorio_respuestas import (
+        SqlRespuestaRepository,
+    )
+    from app.domain.respuestas import Respuesta
+    from app.ports.respuesta_repository import RespuestaDuplicada
+
+    servicio = entorno["servicio"]
+    moderadora = entorno["moderadora"].id
+    sesion = servicio.crear(entorno["escenario"].id, moderadora)
+    sesion.participantes = [
+        ParticipanteSesion(entorno[n].id, rol)
+        for n, rol in zip(
+            ["ana", "luis", "eva", "pia", "raul"], sesion.roles, strict=False
+        )
+    ]
+    sesion.fecha_programada = datetime.now(UTC) + timedelta(days=1)
+    sesion.duracion_minutos = 60
+    servicio.actualizar(sesion.id, moderadora, sesion)
+    servicio.programar(sesion.id, moderadora)
+    sesion = servicio.repo.obtener(sesion.id)
+    ahora = datetime.now(UTC)
+    sesion.iniciar(ahora)
+    servicio.repo.guardar(sesion)
+
+    participante = sesion.participantes[0]
+    tarea = next(t for t in sesion.tareas if t.rol_codigo == participante.rol_codigo)
+    respuestas = SqlRespuestaRepository(entorno["session"])
+    nueva = Respuesta(
+        sesion_id=sesion.id,
+        tarea_id=tarea.id,
+        inject_id=tarea.inject_id,
+        usuario_id=participante.usuario_id,
+        rol_codigo=participante.rol_codigo,
+        recibida_en=ahora,
+        segundos_usados=12,
+        texto="Aíslo el file server",
+    )
+    respuestas.guardar(nueva)
+
+    # Varios guardados en curso (lanzar injects, aceptar invitación) no tocan las tareas.
+    ids_antes = [t.id for t in sesion.tareas]
+    sesion.inject_actual = 2
+    sesion.participantes[1].invitacion = EstadoInvitacion.ACEPTADA
+    servicio.repo.guardar(sesion)
+    leida = servicio.repo.obtener(sesion.id)
+    assert [t.id for t in leida.tareas] == ids_antes
+    assert leida.inject_actual == 2
+    assert leida.participante_de(sesion.participantes[1].usuario_id).invitacion == (
+        EstadoInvitacion.ACEPTADA
+    )
+
+    with pytest.raises(RespuestaDuplicada):
+        respuestas.guardar(Respuesta(**{**vars(nueva), "id": uuid4(), "texto": "Otra"}))
+    [guardada] = respuestas.de_participante(sesion.id, participante.usuario_id)
+    assert guardada.texto == "Aíslo el file server" and guardada.segundos_usados == 12

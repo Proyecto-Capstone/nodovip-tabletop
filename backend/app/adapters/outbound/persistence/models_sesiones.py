@@ -56,6 +56,14 @@ class SesionModel(Base):
         DateTime(timezone=True), nullable=True
     )
     duracion_minutos: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    # Ejecución en vivo (PB-07, migración 0006).
+    iniciada_en: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    finalizada_en: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    inject_actual: Mapped[int] = mapped_column(SmallInteger, default=0)
     peso_completitud: Mapped[int] = mapped_column(SmallInteger)
     peso_precision: Mapped[int] = mapped_column(SmallInteger)
     peso_tiempo: Mapped[int] = mapped_column(SmallInteger)

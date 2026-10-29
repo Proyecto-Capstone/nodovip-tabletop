@@ -76,6 +76,9 @@ def _a_dominio(m: SesionModel) -> SesionTabletop:
         pesos=PesosPuntuacion(m.peso_completitud, m.peso_precision, m.peso_tiempo),
         fecha_programada=m.fecha_programada,
         duracion_minutos=m.duracion_minutos,
+        iniciada_en=m.iniciada_en,
+        finalizada_en=m.finalizada_en,
+        inject_actual=m.inject_actual,
     )
 
 
@@ -105,6 +108,10 @@ class SqlSesionRepository:
         )
         return [_a_dominio(m) for m in self.session.scalars(q)]
 
+    def liberar(self) -> None:
+        """Devuelve la conexión al pool (el WebSocket la usa solo al empezar)."""
+        self.session.close()
+
     def listar_por_participante(self, usuario_id: UUID) -> list[SesionTabletop]:
         q = self._consulta().where(
             SesionModel.participantes.any(
@@ -124,6 +131,9 @@ class SqlSesionRepository:
         modelo.estado = sesion.estado.value
         modelo.fecha_programada = sesion.fecha_programada
         modelo.duracion_minutos = sesion.duracion_minutos
+        modelo.iniciada_en = sesion.iniciada_en
+        modelo.finalizada_en = sesion.finalizada_en
+        modelo.inject_actual = sesion.inject_actual
         modelo.peso_completitud = sesion.pesos.completitud
         modelo.peso_precision = sesion.pesos.precision
         modelo.peso_tiempo = sesion.pesos.tiempo

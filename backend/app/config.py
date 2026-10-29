@@ -60,6 +60,11 @@ def correo_remitente() -> tuple[str, str]:
     return correo, nombre
 
 
+def redis_url() -> str:
+    """Vacía = estado en vivo en memoria (pruebas o desarrollo sin Redis)."""
+    return os.getenv("REDIS_URL", "").strip()
+
+
 def verificar_configuracion() -> None:
     """Falla al arrancar si falta algo obligatorio, en vez de en el primer login."""
     jwt_secreto()

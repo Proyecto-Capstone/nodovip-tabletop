@@ -2,6 +2,7 @@
 
 import os
 from collections.abc import Iterator
+from contextlib import contextmanager
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -37,9 +38,16 @@ def get_engine():
     return _engine
 
 
-def get_session() -> Iterator[Session]:
-    """Dependencia de FastAPI: abre una sesión por request y la cierra al final."""
+@contextmanager
+def abrir_sesion() -> Iterator[Session]:
+    """Sesión de corta duración fuera de un request (p. ej. al abrir un WebSocket)."""
     get_engine()
     assert _SessionLocal is not None
     with _SessionLocal() as session:
+        yield session
+
+
+def get_session() -> Iterator[Session]:
+    """Dependencia de FastAPI: abre una sesión por request y la cierra al final."""
+    with abrir_sesion() as session:
         yield session

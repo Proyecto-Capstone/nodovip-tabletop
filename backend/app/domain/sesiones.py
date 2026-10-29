@@ -156,6 +156,11 @@ class SesionTabletop:
     fecha_programada: datetime | None = None
     duracion_minutos: int | None = None
     estado: EstadoSesion = EstadoSesion.BORRADOR
+    # Ejecución en vivo (PB-07). Se guardan para reconstruir el estado si
+    # Redis se pierde y como registro de la sesión ya realizada.
+    iniciada_en: datetime | None = None
+    finalizada_en: datetime | None = None
+    inject_actual: int = 0
     id: UUID = field(default_factory=uuid4)
 
     @classmethod
@@ -340,3 +345,20 @@ class SesionTabletop:
         if participante.invitacion != EstadoInvitacion.ACEPTADA:
             participante.invitacion = EstadoInvitacion.ACEPTADA
             participante.invitacion_aceptada_en = ahora
+
+    # --- Ejecución en vivo (PB-07) ----------------------------------------------
+
+    def iniciar(self, ahora: datetime) -> None:
+        """El moderador abre la sesión programada: pasa a en curso."""
+        if self.estado != EstadoSesion.PROGRAMADA:
+            raise ReglaSesionError(["Solo se puede iniciar una sesión programada"])
+        self.estado = EstadoSesion.EN_CURSO
+        self.iniciada_en = ahora
+        self.inject_actual = 0
+
+    def finalizar(self, ahora: datetime, inject_actual: int) -> None:
+        if self.estado != EstadoSesion.EN_CURSO:
+            raise ReglaSesionError(["Solo se puede cerrar una sesión en curso"])
+        self.estado = EstadoSesion.FINALIZADA
+        self.finalizada_en = ahora
+        self.inject_actual = inject_actual

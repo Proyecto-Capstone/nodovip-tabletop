@@ -4,6 +4,7 @@ from app import config
 from app.adapters.inbound.api import (
     accesos,
     autenticacion,
+    en_vivo,
     escenarios,
     mis_sesiones,
     sesiones,
@@ -19,6 +20,7 @@ app.include_router(accesos.router)
 app.include_router(escenarios.router)
 app.include_router(sesiones.router)
 app.include_router(mis_sesiones.router)
+app.include_router(en_vivo.router)
 app.include_router(usuarios.router)
 
 

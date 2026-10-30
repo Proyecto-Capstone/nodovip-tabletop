@@ -1,11 +1,19 @@
 // PB-07: el moderador conduce la sesión en vivo (prototipo P-05, Figura 20).
 // Los comandos van por REST; el estado llega por WebSocket a todos, también
-// a esta misma pantalla. El progreso y las respuestas llegan con PB-09/PB-11.
+// a esta misma pantalla.
+// PB-11: panel de control. Cuando el WebSocket avisa de una respuesta (o cambia
+// el inject), recarga el avance por rol, los puntajes y las últimas respuestas.
 
 import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { comandoEnVivo, type ComandoEnVivo, type VistaEnVivo } from '../api/enVivo'
+import {
+  rutaPuntajes,
+  rutaRespuestas,
+  type PuntajesSesion,
+  type RespuestaRegistrada,
+} from '../api/respuestas'
 import { rutas, type RolEjercicio } from '../api/escenarios'
 import {
   rutasSesiones,
@@ -16,7 +24,8 @@ import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { nombreRol } from '../lib/etiquetas'
 import { formatoReloj, useCronometro, useEnVivo } from '../lib/useEnVivo'
-import { useGet } from '../lib/useGet'
+import { useGet, useGetVigente } from '../lib/useGet'
+import { AvancePorRol, InjectsLanzados, UltimasRespuestas } from './PanelAvance'
 
 export function ConducirSesionPage() {
   const { id = '' } = useParams()
@@ -60,6 +69,7 @@ function Panel({
   conexion,
   error,
   recibidaEn,
+  avisosRespuesta,
 }: {
   sesion: SesionDetalle
   roles: RolEjercicio[]
@@ -91,6 +101,22 @@ function Panel({
   ).length
   const persona = (id: string) => disponibles.find((u) => u.id === id)
 
+  // Se recarga con cada respuesta nueva y cada cambio de inject o de estado.
+  const conDatos = estado === 'en_curso' || estado === 'finalizada'
+  const recarga = `${avisosRespuesta}-${vista?.inject_actual ?? 0}-${estado}`
+  const puntajes = useGetVigente<PuntajesSesion>(
+    conDatos ? rutaPuntajes(sesion.id) : null,
+    recarga,
+  )
+  const respuestas = useGetVigente<RespuestaRegistrada[]>(
+    conDatos ? rutaRespuestas(sesion.id) : null,
+    recarga,
+  )
+  const avance = new Map((puntajes.datos?.participantes ?? []).map((p) => [p.usuario_id, p]))
+  const recibidas = puntajes.datos?.participantes.reduce((n, p) => n + p.respondidas, 0) ?? 0
+  const esperadas =
+    puntajes.datos?.participantes.reduce((n, p) => n + p.respondidas + p.sin_responder, 0) ?? 0
+
   return (
     <div className="panel-vivo">
       <Link to="/sesiones" className="volver">
@@ -113,7 +139,9 @@ function Panel({
         </div>
       </div>
 
-      <Errores errores={errores ?? (error ? [error] : undefined)} />
+      <Errores
+        errores={errores ?? (error ? [error] : undefined) ?? puntajes.errores ?? respuestas.errores}
+      />
 
       <div className="metricas">
         <Metrica valor={formatoReloj(segundos)} nombre="Tiempo transcurrido" />
@@ -127,6 +155,7 @@ function Panel({
           nombre="Inject actual"
           color="azul"
         />
+        <Metrica valor={`${recibidas}/${esperadas}`} nombre="Respuestas recibidas" />
       </div>
 
       <div className="disenador-columnas">
@@ -135,6 +164,7 @@ function Panel({
           <ul className="lista-conectados">
             {sesion.participantes.map((p) => {
               const conectado = conectados.has(p.usuario_id)
+              const suyo = avance.get(p.usuario_id)
               return (
                 <li key={p.usuario_id}>
                   <span className={conectado ? 'punto conectado' : 'punto'} aria-hidden="true" />
@@ -142,7 +172,16 @@ function Panel({
                     <strong>{persona(p.usuario_id)?.nombre ?? 'Participante'}</strong>
                     <span className="texto-suave"> · {nombreRol(roles, p.rol_codigo)}</span>
                   </span>
-                  <span className="texto-suave">{conectado ? 'Conectado' : 'Sin conexión'}</span>
+                  <span className="texto-suave">
+                    {conectado ? 'Conectado' : 'Sin conexión'}
+                    {suyo && suyo.respondidas + suyo.sin_responder > 0 && (
+                      <>
+                        {' '}
+                        · {suyo.respondidas}/{suyo.respondidas + suyo.sin_responder} resp. ·{' '}
+                        {suyo.puntaje.toLocaleString('es-EC', { maximumFractionDigits: 2 })} pts
+                      </>
+                    )}
+                  </span>
                 </li>
               )
             })}
@@ -160,6 +199,18 @@ function Panel({
           />
         </section>
       </div>
+
+      {conDatos && (
+        <div className="disenador-columnas">
+          <AvancePorRol
+            roles={puntajes.datos?.roles ?? []}
+            participantes={sesion.participantes}
+            conectados={conectados}
+          />
+          <InjectsLanzados injects={sesion.injects} actual={vista?.inject_actual ?? 0} />
+        </div>
+      )}
+      {conDatos && <UltimasRespuestas sesionId={sesion.id} respuestas={respuestas.datos ?? []} />}
     </div>
   )
 }

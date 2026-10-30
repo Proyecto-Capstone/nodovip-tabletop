@@ -1490,3 +1490,85 @@ button.paso:hover {
 .tabla-respuestas .chip-rol {
   margin-top: 0.3rem;
 }
+
+/* PB-11: panel del moderador */
+.panel-vivo .disenador-columnas + .disenador-columnas,
+.panel-vivo .disenador-columnas + .tarjeta {
+  margin-top: 1rem;
+}
+
+.avance-roles,
+.lista-injects-vivo,
+.ultimas-respuestas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.avance-rol-cabecera,
+.avance-rol-datos {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.avance-roles .barra-avance {
+  margin: 0.35rem 0;
+}
+
+.avance-rol-datos {
+  font-size: 0.85rem;
+}
+
+.lista-injects-vivo li,
+.ultimas-respuestas li {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.6rem;
+  align-items: baseline;
+}
+
+.inject-marca {
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  background: var(--gris-fondo);
+  font-size: 0.8rem;
+}
+
+.inject-lanzado .inject-marca {
+  background: var(--verde-fondo);
+  color: var(--verde);
+}
+
+.inject-actual .inject-marca {
+  background: var(--azul-fondo);
+  color: var(--acento);
+}
+
+.inject-actual {
+  font-weight: 600;
+}
+
+.encabezado-seccion {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 480px) {
+  .ultimas-respuestas li {
+    grid-template-columns: 1fr auto;
+  }
+
+  .ultimas-respuestas li > :first-child {
+    grid-column: 1 / -1;
+  }
+}

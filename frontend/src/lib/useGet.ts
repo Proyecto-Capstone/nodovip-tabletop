@@ -48,6 +48,20 @@ export function useGet<T>(ruta: string | null, dependencia = '') {
   }
 }
 
+/**
+ * Como useGet, pero al recargar (cambia `dependencia`) sigue mostrando los datos
+ * anteriores hasta que llegan los nuevos: sin parpadeos en paneles en vivo.
+ */
+export function useGetVigente<T>(ruta: string | null, dependencia = '') {
+  const consulta = useGet<T>(ruta, dependencia)
+  const [ultimos, setUltimos] = useState<{ ruta: string | null; datos: T }>()
+  if (consulta.datos !== undefined && consulta.datos !== ultimos?.datos) {
+    setUltimos({ ruta, datos: consulta.datos })
+  }
+  const previos = ultimos?.ruta === ruta ? ultimos.datos : undefined
+  return { ...consulta, datos: consulta.datos ?? previos }
+}
+
 /** Espera `ms` antes de devolver el valor (para no consultar en cada tecla). */
 export function useDebounce<T>(valor: T, ms = 300): T {
   const [demorado, setDemorado] = useState(valor)

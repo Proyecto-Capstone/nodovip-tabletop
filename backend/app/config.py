@@ -6,6 +6,8 @@ es la opción segura, porque exige `JWT_SECRETO` y cookies `Secure`.
 
 import os
 
+from app.domain.sesiones import MAX_SESIONES_ACTIVAS_POR_DEFECTO
+
 AMBIENTES_DESARROLLO = {"local", "test"}
 JWT_SECRETO_MIN = 32
 # Solo para local y test. Nunca se usa en staging ni en la Demo.
@@ -65,6 +67,21 @@ def redis_url() -> str:
     return os.getenv("REDIS_URL", "").strip()
 
 
+def max_sesiones_activas() -> int:
+    """Máximo de sesiones en_curso a la vez (PC-24, RNF). Por defecto 10."""
+    valor = os.getenv("MAX_SESIONES_ACTIVAS", "").strip()
+    if not valor:
+        return MAX_SESIONES_ACTIVAS_POR_DEFECTO
+    try:
+        n = int(valor)
+    except ValueError:
+        n = 0
+    if n < 1:
+        raise RuntimeError("MAX_SESIONES_ACTIVAS debe ser un entero mayor o igual a 1")
+    return n
+
+
 def verificar_configuracion() -> None:
     """Falla al arrancar si falta algo obligatorio, en vez de en el primer login."""
     jwt_secreto()
+    max_sesiones_activas()

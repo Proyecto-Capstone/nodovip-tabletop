@@ -252,12 +252,14 @@ class ServicioRegistroRespuestas:
         respuestas: RespuestaRepository,
         catalogo: CatalogoRepository,
         usuarios: UsuarioRepository,
+        almacen: AlmacenEnVivo,
         reloj: Callable[[], datetime] = _ahora,
     ):
         self.sesiones = sesiones
         self.respuestas = respuestas
         self.catalogo = catalogo
         self.usuarios = usuarios
+        self.almacen = almacen
         self.reloj = reloj
         # Cachés de una petición: nombres de roles y de participantes.
         self._nombres_roles: dict[str, str] | None = None
@@ -297,6 +299,8 @@ class ServicioRegistroRespuestas:
             ),
             sesion.id,
         )
+        # Aviso para el leaderboard (PB-12) y para el panel del moderador (PB-11).
+        self.almacen.publicar(EventoEnVivo(sesion.id, "ajuste"))
         return next(r for r in self._registro(sesion) if r.respuesta.id == respuesta_id)
 
     def puntajes(self, sesion_id: UUID, moderador_id: UUID) -> PuntajesSesion:

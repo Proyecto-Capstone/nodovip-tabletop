@@ -91,7 +91,9 @@ def e(sesion_por_cabecera):
             id=ID_PARTICIPANTE,
         )
     )
-    registro = ServicioRegistroRespuestas(repo, respuestas, CatalogoFalso(), usuarios)
+    registro = ServicioRegistroRespuestas(
+        repo, respuestas, CatalogoFalso(), usuarios, almacen
+    )
     app.dependency_overrides[api_respuestas.get_servicio_registro] = lambda: registro
     with TestClient(app) as client:
         yield {"client": client, "sesion": sesion}

@@ -7,8 +7,9 @@
   cambiar el estado de la sesión.
 
 Mensajes: `{"tipo": "estado", "vista": ...}` para todos y, solo al moderador,
-`{"tipo": "respuesta"}` cuando llega una respuesta (PB-11: el panel recarga el
-avance y los puntajes).
+`{"tipo": "respuesta"}` cuando llega una respuesta o `{"tipo": "ajuste"}`
+cuando se ajusta un puntaje (PB-11: el panel recarga el avance y los
+puntajes). Ninguno de los dos cambia la vista ni la lista de conectados.
 
 Códigos de cierre del WebSocket: 4401 sin sesión iniciada, 4403 rol sin
 permiso, 4404 sesión inexistente o sin invitación, 1000 la sesión terminó.
@@ -203,10 +204,11 @@ async def ws_sesion(
         estado = None
         conectados = frozenset()
         async for evento in suscriptor.escuchar(sesion_id):
-            if evento.tipo == "respuesta":
-                # Solo el moderador: el participante no sabe cuándo responden otros.
+            if evento.tipo in ("respuesta", "ajuste"):
+                # Solo el moderador: el participante no sabe cuándo responden
+                # otros ni cuándo se ajusta un puntaje (no cambia su vista).
                 if es_moderador:
-                    await websocket.send_json({"tipo": "respuesta"})
+                    await websocket.send_json({"tipo": evento.tipo})
                 continue
             if evento.tipo == "suscrito":
                 # Foto inicial: recién ahora, para no perder eventos intermedios.
@@ -216,9 +218,13 @@ async def ws_sesion(
             elif evento.tipo == "estado":
                 estado, conectados = evento.estado, evento.conectados
                 vista = componer_vista(sesion, estado, conectados, servicio.reloj())
-            else:  # presencia
+            elif evento.tipo == "presencia":
                 conectados = evento.conectados
                 vista = componer_vista(sesion, estado, conectados, servicio.reloj())
+            else:
+                # Tipo desconocido (futuro): se ignora en vez de tratarlo como
+                # presencia y vaciar por error la lista de conectados.
+                continue
             await enviar(vista)
             if vista.estado == EstadoSesion.FINALIZADA:
                 await websocket.close(code=1000)

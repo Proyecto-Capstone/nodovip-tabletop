@@ -335,3 +335,46 @@ def test_el_moderador_recibe_el_aviso_de_respuesta_y_el_participante_no(e):
             assert mensaje["tipo"] == "estado"
             mensaje = par.receive_json()
         assert mensaje["tipo"] == "estado"
+
+
+def test_el_moderador_recibe_el_aviso_de_ajuste_y_el_participante_no(e):
+    fila = _responder_bien(e)
+    client, sid = e["client"], e["sesion"].id
+    url = f"/api/ws/sesiones/{sid}"
+    with (
+        client.websocket_connect(url, headers=MODERADOR) as mod,
+        client.websocket_connect(url, headers=PARTICIPANTE) as par,
+    ):
+        mod.receive_json()
+        par.receive_json()
+
+        ajuste_url = f"/api/sesiones/{sid}/respuestas/{fila['id']}/ajustes"
+        r = client.post(
+            ajuste_url,
+            json={"puntaje": 5, "motivo": "Se revisó a mano"},
+            headers=MODERADOR,
+        )
+        assert r.status_code == 201
+
+        # Llega tal cual, sin pasar por "estado": antes del fix, un evento que
+        # no fuera "respuesta"/"suscrito"/"estado" caía en la rama de
+        # presencia y vaciaba por error la lista de conectados del moderador.
+        # (Puede haber de por medio un "estado" de presencia por la conexión
+        # del participante; si lo hay, su lista de conectados no está vacía.)
+        vistos, mensaje = [], None
+        for _ in range(6):
+            mensaje = mod.receive_json()
+            if mensaje["tipo"] != "estado":
+                break
+            vistos.append(mensaje)
+        assert mensaje == {"tipo": "ajuste"}
+        assert all(m["vista"]["conectados"] for m in vistos)
+
+        # Al participante no le llega ningún aviso de ajuste: solo el
+        # siguiente cambio de estado real (la pausa).
+        client.post(f"/api/sesiones/{sid}/en-vivo/pausar", headers=MODERADOR)
+        mensaje = par.receive_json()
+        while not mensaje["vista"]["pausada"]:
+            assert mensaje["tipo"] == "estado"
+            mensaje = par.receive_json()
+        assert mensaje["tipo"] == "estado"

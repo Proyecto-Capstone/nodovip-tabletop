@@ -121,6 +121,16 @@ class SqlSesionRepository:
         )
         return [_a_dominio(m) for m in self.session.scalars(q)]
 
+    def listar_por_estados(
+        self, estados: tuple[EstadoSesion, ...]
+    ) -> list[SesionTabletop]:
+        q = (
+            self._consulta()
+            .where(SesionModel.estado.in_([e.value for e in estados]))
+            .order_by(SesionModel.actualizado_en.desc())
+        )
+        return [_a_dominio(m) for m in self.session.scalars(q)]
+
     def guardar(self, sesion: SesionTabletop) -> SesionTabletop:
         modelo = self.session.get(SesionModel, sesion.id)
         if modelo is None:

@@ -11,6 +11,7 @@ queda guardado con ella. El moderador puede ajustarlo dejando un motivo; el
 puntaje vigente es el del último ajuste. Se acumula por participante y por rol.
 """
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -48,6 +49,8 @@ from app.ports.respuesta_repository import RespuestaRepository
 from app.ports.sesion_repository import SesionRepository
 from app.ports.usuario_repository import UsuarioRepository
 
+log = logging.getLogger(__name__)
+
 
 class TareaNoEncontrada(LookupError):
     pass
@@ -55,6 +58,19 @@ class TareaNoEncontrada(LookupError):
 
 def _ahora() -> datetime:
     return datetime.now(UTC)
+
+
+def _avisar(almacen: AlmacenEnVivo, evento: EventoEnVivo) -> None:
+    """El aviso en vivo es una mejora, no una garantía: si Redis falla, la
+    respuesta o el ajuste ya guardados no deben devolver error al usuario."""
+    try:
+        almacen.publicar(evento)
+    except Exception:
+        log.exception(
+            "No se pudo publicar el evento %s de la sesión %s",
+            evento.tipo,
+            evento.sesion_id,
+        )
 
 
 @dataclass
@@ -153,7 +169,7 @@ class ServicioRespuestas:
             )
         )
         # Aviso para el panel del moderador (PB-11): se actualiza sin recargar.
-        self.en_vivo.almacen.publicar(EventoEnVivo(sesion.id, "respuesta"))
+        _avisar(self.en_vivo.almacen, EventoEnVivo(sesion.id, "respuesta"))
         return guardada
 
     # --- apoyo ----------------------------------------------------------------------
@@ -300,7 +316,7 @@ class ServicioRegistroRespuestas:
             sesion.id,
         )
         # Aviso para el leaderboard (PB-12) y para el panel del moderador (PB-11).
-        self.almacen.publicar(EventoEnVivo(sesion.id, "ajuste"))
+        _avisar(self.almacen, EventoEnVivo(sesion.id, "ajuste"))
         return next(r for r in self._registro(sesion) if r.respuesta.id == respuesta_id)
 
     def puntajes(self, sesion_id: UUID, moderador_id: UUID) -> PuntajesSesion:

@@ -96,7 +96,14 @@ def e(sesion_por_cabecera):
     )
     app.dependency_overrides[api_respuestas.get_servicio_registro] = lambda: registro
     with TestClient(app) as client:
-        yield {"client": client, "sesion": sesion}
+        yield {
+            "client": client,
+            "sesion": sesion,
+            "repo": repo,
+            "respuestas": respuestas,
+            "usuarios": usuarios,
+            "almacen": almacen,
+        }
     app.dependency_overrides.pop(en_vivo.get_servicio_en_vivo, None)
     app.dependency_overrides.pop(en_vivo.get_suscriptor, None)
     app.dependency_overrides.pop(mis_sesiones.get_servicio_respuestas, None)
@@ -378,3 +385,53 @@ def test_el_moderador_recibe_el_aviso_de_ajuste_y_el_participante_no(e):
             assert mensaje["tipo"] == "estado"
             mensaje = par.receive_json()
         assert mensaje["tipo"] == "estado"
+
+
+# --- Robustez: Redis no debe poder romper una respuesta o un ajuste ya guardados ------
+
+
+class AlmacenPublicarFalla:
+    """Delega todo salvo publicar(), que siempre falla (Redis caído)."""
+
+    def __init__(self, interno):
+        self._interno = interno
+
+    def __getattr__(self, nombre):
+        return getattr(self._interno, nombre)
+
+    def publicar(self, evento):
+        raise RuntimeError("Redis no disponible")
+
+
+def test_responder_devuelve_exito_aunque_publicar_falle(e):
+    _iniciar_y_lanzar(e)
+    falla = AlmacenPublicarFalla(e["almacen"])
+    app.dependency_overrides[mis_sesiones.get_servicio_respuestas] = lambda: (
+        ServicioRespuestas(e["repo"], falla, e["respuestas"])
+    )
+
+    tarea = e["sesion"].tareas[0]
+    r = e["client"].post(_url(e, tarea), json={"opciones": [0]}, headers=PARTICIPANTE)
+    assert r.status_code == 201
+    estados = [
+        t["estado"] for t in e["client"].get(_url(e), headers=PARTICIPANTE).json()
+    ]
+    assert estados == ["respondida"]
+
+
+def test_ajustar_devuelve_exito_aunque_publicar_falle(e):
+    fila = _responder_bien(e)
+    falla = AlmacenPublicarFalla(e["almacen"])
+    registro_con_falla = ServicioRegistroRespuestas(
+        e["repo"], e["respuestas"], CatalogoFalso(), e["usuarios"], falla
+    )
+    app.dependency_overrides[api_respuestas.get_servicio_registro] = lambda: (
+        registro_con_falla
+    )
+
+    url = f"/api/sesiones/{e['sesion'].id}/respuestas/{fila['id']}/ajustes"
+    r = e["client"].post(
+        url, json={"puntaje": 5, "motivo": "Se revisó a mano"}, headers=MODERADOR
+    )
+    assert r.status_code == 201
+    assert r.json()["puntaje"] == 5

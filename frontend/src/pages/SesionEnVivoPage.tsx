@@ -6,9 +6,10 @@ import { Link, useParams } from 'react-router-dom'
 import { rutasMisSesiones, type MiSesion } from '../api/misSesiones'
 import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
+import { EstadoVivo } from '../components/EstadoVivo'
 import { formatoReloj, useCronometro, useEnVivo } from '../lib/useEnVivo'
 import { useGet } from '../lib/useGet'
-import { EstadoVivo, InjectActual } from './ConducirSesionPage'
+import { InjectActual } from './ConducirSesionPage'
 import { TareasDelRol } from './TareasDelRol'
 
 export function SesionEnVivoPage() {

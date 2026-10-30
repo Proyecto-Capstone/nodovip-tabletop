@@ -165,6 +165,7 @@ class RepoRespuestasEnMemoria:
 
     def __init__(self):
         self.datos = []
+        self.ajustes = []
 
     def guardar(self, respuesta):
         if any(
@@ -186,4 +187,19 @@ class RepoRespuestasEnMemoria:
         return sorted(
             (copy.deepcopy(r) for r in self.datos if r.sesion_id == sesion_id),
             key=lambda r: r.recibida_en,
+        )
+
+    def obtener(self, respuesta_id):
+        return next(
+            (copy.deepcopy(r) for r in self.datos if r.id == respuesta_id), None
+        )
+
+    def agregar_ajuste(self, ajuste, sesion_id):
+        self.ajustes.append((sesion_id, copy.deepcopy(ajuste)))
+        return copy.deepcopy(ajuste)
+
+    def ajustes_de_sesion(self, sesion_id):
+        return sorted(
+            (copy.deepcopy(a) for s, a in self.ajustes if s == sesion_id),
+            key=lambda a: a.creado_en,
         )

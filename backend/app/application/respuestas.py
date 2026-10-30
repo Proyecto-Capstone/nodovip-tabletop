@@ -5,6 +5,10 @@ inject ya se lanzó. Responde una vez cada una, dentro del tiempo límite.
 
 PB-09: registro trazable. El moderador consulta, en solo lectura, todas las
 respuestas de su sesión con participante, rol, inject, tarea y hora.
+
+PB-10: cada respuesta se evalúa al recibirla (domain/evaluacion.py) y el puntaje
+queda guardado con ella. El moderador puede ajustarlo dejando un motivo; el
+puntaje vigente es el del último ajuste. Se acumula por participante y por rol.
 """
 
 from collections.abc import Callable
@@ -15,6 +19,15 @@ from uuid import UUID
 from app.application.en_vivo import ServicioEnVivo
 from app.application.sesiones import SesionNoEncontrada
 from app.domain.en_vivo import EstadoEnVivo
+from app.domain.evaluacion import (
+    Acumulado,
+    AjustePuntaje,
+    Evaluacion,
+    acumular,
+    evaluar,
+    puntaje_vigente,
+    validar_ajuste,
+)
 from app.domain.respuestas import (
     EstadoTarea,
     Respuesta,
@@ -122,6 +135,8 @@ class ServicioRespuestas:
         errores = errores_de_contenido(tarea, texto, opciones)
         if errores:
             raise ReglaSesionError(errores)
+        # Se evalúa al recibirla: el puntaje automático queda guardado con ella.
+        evaluacion = evaluar(tarea, sesion.pesos, texto, opciones, usados)
         # Si ya respondió, el repositorio lanza RespuestaDuplicada.
         return self.respuestas.guardar(
             Respuesta(
@@ -134,6 +149,7 @@ class ServicioRespuestas:
                 segundos_usados=usados,
                 texto=texto.strip() if texto else None,
                 opciones_elegidas=opciones,
+                evaluacion=evaluacion,
             )
         )
 
@@ -165,12 +181,16 @@ class ServicioRespuestas:
         ]
 
 
-# --- Registro de respuestas de la sesión (PB-09) -------------------------------------
+# --- Registro, puntaje y ajustes de la sesión (PB-09, PB-10) ------------------------
+
+
+class RespuestaNoEncontrada(LookupError):
+    pass
 
 
 @dataclass
 class RespuestaRegistrada:
-    """Una respuesta con todo lo necesario para auditarla."""
+    """Una respuesta con todo lo necesario para auditarla y su puntaje."""
 
     respuesta: Respuesta
     participante_nombre: str
@@ -179,6 +199,13 @@ class RespuestaRegistrada:
     inject_orden: int
     inject_titulo: str
     tarea: TareaSesion
+    evaluacion: Evaluacion
+    # Del más antiguo al más reciente.
+    ajustes: list[AjustePuntaje]
+
+    @property
+    def puntaje(self) -> float:
+        return puntaje_vigente(self.evaluacion, self.ajustes)
 
     @property
     def opciones_elegidas_texto(self) -> list[str]:
@@ -190,8 +217,31 @@ class RespuestaRegistrada:
         ]
 
 
+@dataclass
+class PuntajeParticipante:
+    usuario_id: UUID
+    nombre: str
+    rol_codigo: str
+    rol_nombre: str
+    acumulado: Acumulado
+
+
+@dataclass
+class PuntajeRol:
+    rol_codigo: str
+    rol_nombre: str
+    participantes: int
+    acumulado: Acumulado
+
+
+@dataclass
+class PuntajesSesion:
+    participantes: list[PuntajeParticipante]
+    roles: list[PuntajeRol]
+
+
 class ServicioRegistroRespuestas:
-    """Consulta de solo lectura: no hay forma de modificar ni borrar respuestas."""
+    """Registro de solo lectura y ajustes de puntaje (nunca se modifica una respuesta)."""
 
     def __init__(
         self,
@@ -199,30 +249,122 @@ class ServicioRegistroRespuestas:
         respuestas: RespuestaRepository,
         catalogo: CatalogoRepository,
         usuarios: UsuarioRepository,
+        reloj: Callable[[], datetime] = _ahora,
     ):
         self.sesiones = sesiones
         self.respuestas = respuestas
         self.catalogo = catalogo
         self.usuarios = usuarios
+        self.reloj = reloj
+        # Cachés de una petición: nombres de roles y de participantes.
+        self._nombres_roles: dict[str, str] | None = None
+        self._personas: dict[UUID, tuple[str, str]] = {}
 
     def de_sesion(
         self, sesion_id: UUID, moderador_id: UUID
     ) -> list[RespuestaRegistrada]:
         """Respuestas de la sesión en orden de llegada. Solo para su moderador."""
+        return self._registro(self._del_moderador(sesion_id, moderador_id))
+
+    def ajustar(
+        self,
+        sesion_id: UUID,
+        moderador_id: UUID,
+        respuesta_id: UUID,
+        puntaje: float,
+        motivo: str,
+    ) -> RespuestaRegistrada:
+        """Cambia el puntaje vigente y deja el registro del cambio."""
+        sesion = self._del_moderador(sesion_id, moderador_id)
+        actual = next(
+            (r for r in self._registro(sesion) if r.respuesta.id == respuesta_id),
+            None,
+        )
+        if actual is None:
+            raise RespuestaNoEncontrada(str(respuesta_id))
+        validar_ajuste(puntaje, actual.tarea.puntaje_maximo, motivo)
+        self.respuestas.agregar_ajuste(
+            AjustePuntaje(
+                respuesta_id=respuesta_id,
+                moderador_id=moderador_id,
+                puntaje_anterior=actual.puntaje,
+                puntaje_nuevo=round(puntaje, 2),
+                motivo=motivo.strip(),
+                creado_en=self.reloj(),
+            ),
+            sesion.id,
+        )
+        return next(r for r in self._registro(sesion) if r.respuesta.id == respuesta_id)
+
+    def puntajes(self, sesion_id: UUID, moderador_id: UUID) -> PuntajesSesion:
+        """Puntaje acumulado por participante (de mayor a menor) y por rol."""
+        sesion = self._del_moderador(sesion_id, moderador_id)
+        vigentes = {
+            (r.respuesta.tarea_id, r.respuesta.usuario_id): r.puntaje
+            for r in self._registro(sesion)
+        }
+        por_participante, por_rol = acumular(sesion, vigentes)
+        roles = self._roles()
+        participantes = [
+            PuntajeParticipante(
+                usuario_id=p.usuario_id,
+                nombre=self._persona(p.usuario_id)[0],
+                rol_codigo=p.rol_codigo,
+                rol_nombre=roles.get(p.rol_codigo, p.rol_codigo),
+                acumulado=por_participante[p.usuario_id],
+            )
+            for p in sesion.participantes
+        ]
+        participantes.sort(key=lambda p: (-p.acumulado.puntaje, p.nombre))
+        cuantos = {r: 0 for r in por_rol}
+        for p in sesion.participantes:
+            cuantos[p.rol_codigo] = cuantos.get(p.rol_codigo, 0) + 1
+        return PuntajesSesion(
+            participantes=participantes,
+            roles=[
+                PuntajeRol(
+                    rol_codigo=codigo,
+                    rol_nombre=roles.get(codigo, codigo),
+                    participantes=cuantos.get(codigo, 0),
+                    acumulado=acumulado,
+                )
+                for codigo, acumulado in por_rol.items()
+            ],
+        )
+
+    # --- apoyo ----------------------------------------------------------------------
+
+    def _del_moderador(self, sesion_id: UUID, moderador_id: UUID) -> SesionTabletop:
         sesion = self.sesiones.obtener(sesion_id)
         if sesion is None or sesion.moderador_id != moderador_id:
             raise SesionNoEncontrada(str(sesion_id))
-        roles = {r.codigo: r.nombre for r in self.catalogo.roles_ejercicio()}
+        return sesion
+
+    def _roles(self) -> dict[str, str]:
+        if self._nombres_roles is None:
+            self._nombres_roles = {
+                r.codigo: r.nombre for r in self.catalogo.roles_ejercicio()
+            }
+        return self._nombres_roles
+
+    def _persona(self, usuario_id: UUID) -> tuple[str, str]:
+        if usuario_id not in self._personas:
+            u = self.usuarios.obtener_por_id(usuario_id)
+            self._personas[usuario_id] = (u.nombre, u.correo) if u else ("—", "—")
+        return self._personas[usuario_id]
+
+    def _registro(self, sesion: SesionTabletop) -> list[RespuestaRegistrada]:
+        roles = self._roles()
         injects = {i.id: i for i in sesion.injects}
         tareas = {t.id: t for t in sesion.tareas}
-        personas: dict[UUID, tuple[str, str]] = {}
+        ajustes: dict[UUID, list[AjustePuntaje]] = {}
+        for a in self.respuestas.ajustes_de_sesion(sesion.id):
+            ajustes.setdefault(a.respuesta_id, []).append(a)
         resultado = []
         for r in self.respuestas.de_sesion(sesion.id):
-            if r.usuario_id not in personas:
-                u = self.usuarios.obtener_por_id(r.usuario_id)
-                personas[r.usuario_id] = (u.nombre, u.correo) if u else ("—", "—")
-            nombre, correo = personas[r.usuario_id]
+            nombre, correo = self._persona(r.usuario_id)
             inject = injects[r.inject_id]
+            tarea = tareas[r.tarea_id]
             resultado.append(
                 RespuestaRegistrada(
                     respuesta=r,
@@ -231,7 +373,17 @@ class ServicioRegistroRespuestas:
                     rol_nombre=roles.get(r.rol_codigo, r.rol_codigo),
                     inject_orden=inject.orden,
                     inject_titulo=inject.titulo,
-                    tarea=tareas[r.tarea_id],
+                    tarea=tarea,
+                    # Respuestas anteriores a la migración 0009: se evalúan ahora.
+                    evaluacion=r.evaluacion
+                    or evaluar(
+                        tarea,
+                        sesion.pesos,
+                        r.texto,
+                        r.opciones_elegidas,
+                        r.segundos_usados,
+                    ),
+                    ajustes=ajustes.get(r.id, []),
                 )
             )
         return resultado

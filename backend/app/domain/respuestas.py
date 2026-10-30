@@ -12,11 +12,11 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
+# TOLERANCIA_SEGUNDOS: margen para la latencia de la red. Una respuesta enviada
+# en el último segundo puede llegar un poco después del límite y se acepta igual.
+from app.domain.evaluacion import TOLERANCIA_SEGUNDOS, Evaluacion
 from app.domain.sesiones import ReglaSesionError, TareaSesion, TipoTarea
 
-# Margen para la latencia de la red: una respuesta enviada en el último segundo
-# puede llegar un poco después del límite y se acepta igual.
-TOLERANCIA_SEGUNDOS = 2
 MAX_TEXTO = 5000
 
 
@@ -38,6 +38,9 @@ class Respuesta:
     segundos_usados: int
     texto: str | None = None
     opciones_elegidas: list[int] = field(default_factory=list)
+    # Puntaje automático calculado al recibirla (PB-10). None solo en respuestas
+    # guardadas antes de la migración 0009.
+    evaluacion: Evaluacion | None = None
     id: UUID = field(default_factory=uuid4)
 
 

@@ -145,6 +145,94 @@ def test_empates_comparten_posicion(entorno):
     assert {p.acumulado.puntaje for p in ranking.participantes} == {0}
 
 
+def test_el_ranking_ordena_por_porcentaje_no_por_puntos_absolutos(entorno):
+    # TI responde una tarea de máximo 10 y Legal una de máximo 20: con
+    # puntos absolutos, Legal (9) ganaría a TI (8) aunque TI tenga mejor
+    # desempeño relativo (80 % contra 45 %). El ranking debe reflejar eso.
+    sesiones = entorno["sesiones"]
+    respuestas = entorno["respuestas"]
+    usuarios = entorno["usuarios"]
+    servicio = entorno["servicio"]
+
+    i1 = Inject("Detección", "Archivos cifrados", orden=1)
+    sesion = SesionTabletop(
+        nombre="Simulacro",
+        escenario_id=uuid4(),
+        moderador_id=ID_MODERADOR,
+        roles=["ti", "legal"],
+        injects=[i1],
+        tareas=[
+            TareaSesion(
+                "¿Qué haces?",
+                "ti",
+                Nivel.ALTO,
+                ["Aislar"],
+                inject_id=i1.id,
+                puntaje_maximo=10,
+            ),
+            TareaSesion(
+                "¿A quién avisas?",
+                "legal",
+                Nivel.BAJO,
+                ["Regulador"],
+                inject_id=i1.id,
+                puntaje_maximo=20,
+            ),
+        ],
+        participantes=[
+            ParticipanteSesion(ID_P1, "ti"),
+            ParticipanteSesion(ID_P2, "legal"),
+        ],
+        estado=EstadoSesion.EN_CURSO,
+        inject_actual=1,
+    )
+    sesiones.guardar(sesion)
+    tarea_ti = next(t for t in sesion.tareas if t.rol_codigo == "ti")
+    tarea_legal = next(t for t in sesion.tareas if t.rol_codigo == "legal")
+    for usuario_id, tarea, rol in [
+        (ID_P1, tarea_ti, "ti"),
+        (ID_P2, tarea_legal, "legal"),
+    ]:
+        evaluacion = evaluar(tarea, sesion.pesos, None, [], segundos_usados=0)
+        respuestas.guardar(
+            Respuesta(
+                sesion_id=sesion.id,
+                tarea_id=tarea.id,
+                inject_id=tarea.inject_id,
+                usuario_id=usuario_id,
+                rol_codigo=rol,
+                recibida_en=datetime.now(UTC),
+                segundos_usados=0,
+                texto=None,
+                opciones_elegidas=[],
+                evaluacion=evaluacion,
+            )
+        )
+
+    registro = ServicioRegistroRespuestas(
+        sesiones, respuestas, CatalogoFalso(), usuarios, EnVivoEnMemoria()
+    )
+    r_ti = next(r for r in respuestas.de_sesion(sesion.id) if r.tarea_id == tarea_ti.id)
+    r_legal = next(
+        r for r in respuestas.de_sesion(sesion.id) if r.tarea_id == tarea_legal.id
+    )
+    registro.ajustar(sesion.id, ID_MODERADOR, r_ti.id, 8.0, "80 % de la tarea")
+    registro.ajustar(sesion.id, ID_MODERADOR, r_legal.id, 9.0, "45 % de la tarea")
+
+    ranking = servicio.ranking(sesion.id, ID_OBSERVADOR, es_moderador=False)
+    por_usuario = {p.usuario_id: p for p in ranking.participantes}
+    assert por_usuario[ID_P1].acumulado.puntaje == 8.0  # TI: 80 %
+    assert (
+        por_usuario[ID_P2].acumulado.puntaje == 9.0
+    )  # Legal: 45 %, más puntos absolutos
+    assert por_usuario[ID_P1].posicion == 1
+    assert por_usuario[ID_P2].posicion == 2
+
+    por_rol = {r.rol_codigo: r for r in ranking.roles}
+    assert por_rol["ti"].posicion == 1
+    assert por_rol["legal"].posicion == 2
+
+
 def test_un_ajuste_cambia_el_ranking(entorno):
     sesiones = entorno["sesiones"]
     respuestas = entorno["respuestas"]

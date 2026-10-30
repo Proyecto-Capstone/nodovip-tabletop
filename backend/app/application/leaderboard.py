@@ -87,20 +87,27 @@ class RankingLeaderboard:
     roles: list[PosicionRol]
 
 
-def _con_posiciones(items: list, puntaje_de: Callable) -> list[tuple[int, object]]:
+def _con_posiciones(items: list, clave_de: Callable) -> list[tuple[int, object]]:
     """Ranking de competencia estándar: los empates comparten posición y la
-    siguiente salta (1, 1, 3), ordenado de mayor a menor puntaje."""
-    ordenados = sorted(items, key=puntaje_de, reverse=True)
+    siguiente salta (1, 1, 3), ordenado de mayor a menor según `clave_de`
+    (una tupla: solo comparten posición quienes empatan en todos sus valores)."""
+    ordenados = sorted(items, key=clave_de, reverse=True)
     resultado = []
     posicion = 0
     anterior = None
     for i, item in enumerate(ordenados, start=1):
-        puntaje = puntaje_de(item)
-        if puntaje != anterior:
+        clave = clave_de(item)
+        if clave != anterior:
             posicion = i
-            anterior = puntaje
+            anterior = clave
         resultado.append((posicion, item))
     return resultado
+
+
+def _clave_ranking(acumulado: Acumulado) -> tuple[float, float]:
+    """Porcentaje primero (desempata tareas con distinto puntaje máximo, p.
+    ej. 10 vs 15), puntos absolutos como desempate si el porcentaje coincide."""
+    return (acumulado.porcentaje, acumulado.puntaje)
 
 
 class ServicioLeaderboard:
@@ -168,7 +175,7 @@ class ServicioLeaderboard:
                 acumulado=p.acumulado,
             )
             for posicion, p in _con_posiciones(
-                puntajes.participantes, lambda p: p.acumulado.puntaje
+                puntajes.participantes, lambda p: _clave_ranking(p.acumulado)
             )
         ]
 
@@ -183,6 +190,6 @@ class ServicioLeaderboard:
                 acumulado=r.acumulado,
             )
             for posicion, r in _con_posiciones(
-                puntajes.roles, lambda r: r.acumulado.puntaje
+                puntajes.roles, lambda r: _clave_ranking(r.acumulado)
             )
         ]

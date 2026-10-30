@@ -144,3 +144,52 @@ Columnas nuevas en `sesion`: `iniciada_en` y `finalizada_en` (`timestamptz`) e
 
 Prueba de punta a punta contra la aplicación real (NGINX + Redis + PostgreSQL):
 el inject llegó al participante en 27–34 ms.
+
+# Panel de control del moderador (PB-11)
+
+El panel `/sesiones/:id/conducir` sigue el prototipo **P-05 (Figura 20 del
+documento)** y muestra el progreso de la sesión en tiempo real, sin recargar:
+
+- **Métricas:** tiempo transcurrido, participantes conectados, inject actual y
+  respuestas recibidas sobre las esperadas (en naranja, como el prototipo).
+- **Progreso por participante — Inject N** (columna izquierda):
+  - nombre, rol y conexión de cada participante;
+  - barra con el % de sus tareas lanzadas que ya respondió;
+  - estado: *Respondido* (verde), *En progreso* (azul), *Sin respuesta* (rojo) o
+    *Sin tareas aún* (gris).
+- **Control de sesión** (columna derecha):
+  - inject actual con "Lanzado hace mm:ss minutos";
+  - comandos de PB-07 (lanzar inject, pausar, reanudar, cerrar);
+  - **Respuestas recientes:** las 5 últimas con participante — rol, hora,
+    extracto de la respuesta (texto u opciones elegidas), inject y puntaje.
+- **Avance por rol** e **Injects**, debajo. No están en el dibujo, pero el ticket
+  pide respuestas pendientes por rol e injects lanzados:
+  - por rol: conectados, respuestas recibidas sobre esperadas y puntaje;
+  - injects: lanzados, en curso y pendientes, con su minuto sugerido.
+
+## Actualización en tiempo real
+
+1. Al guardar una respuesta, `ServicioRespuestas.responder` publica un evento
+   `respuesta` en el canal de la sesión (Redis pub/sub).
+2. El WebSocket lo reenvía **solo al moderador** como `{"tipo": "respuesta"}`, sin
+   datos. Los participantes no lo reciben: no saben cuándo responden los demás.
+3. El panel cuenta esos avisos (`useEnVivo().avisosRespuesta`) y vuelve a pedir
+   `GET /api/sesiones/{id}/puntajes` y `GET /api/sesiones/{id}/respuestas`.
+   También recarga al cambiar el inject o el estado.
+4. `useGetVigente` mantiene los datos anteriores hasta que llegan los nuevos, para
+   que el panel no parpadee.
+
+No hay endpoints nuevos: el panel reutiliza los de PB-09 y PB-10.
+
+**Latencia medida** (app real: NGINX, Redis, PostgreSQL): desde que el
+participante envía la respuesta hasta que el aviso llega al moderador, **22 a 27
+ms**. El requisito es ≤ 3 s.
+
+## Pruebas de PB-11
+
+- `tests/test_api_respuestas.py`: el moderador recibe `{"tipo": "respuesta"}` y
+  el participante no (se ejecutó 15 veces seguidas sin fallos).
+- `frontend/src/pages/EnVivo.test.tsx`: el panel muestra el progreso (*Sin
+  respuesta*, 0 %) y, al llegar el aviso por WebSocket, recarga y pasa a
+  *Respondido* (100 %), con el extracto en *Respuestas recientes* y el contador
+  actualizado, sin recargar la página.

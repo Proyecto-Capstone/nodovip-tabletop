@@ -18,7 +18,7 @@ from uuid import UUID
 
 from app.application.en_vivo import ServicioEnVivo
 from app.application.sesiones import SesionNoEncontrada
-from app.domain.en_vivo import EstadoEnVivo
+from app.domain.en_vivo import EstadoEnVivo, EventoEnVivo
 from app.domain.evaluacion import (
     Acumulado,
     AjustePuntaje,
@@ -138,7 +138,7 @@ class ServicioRespuestas:
         # Se evalúa al recibirla: el puntaje automático queda guardado con ella.
         evaluacion = evaluar(tarea, sesion.pesos, texto, opciones, usados)
         # Si ya respondió, el repositorio lanza RespuestaDuplicada.
-        return self.respuestas.guardar(
+        guardada = self.respuestas.guardar(
             Respuesta(
                 sesion_id=sesion.id,
                 tarea_id=tarea.id,
@@ -152,6 +152,9 @@ class ServicioRespuestas:
                 evaluacion=evaluacion,
             )
         )
+        # Aviso para el panel del moderador (PB-11): se actualiza sin recargar.
+        self.en_vivo.almacen.publicar(EventoEnVivo(sesion.id, "respuesta"))
+        return guardada
 
     # --- apoyo ----------------------------------------------------------------------
 

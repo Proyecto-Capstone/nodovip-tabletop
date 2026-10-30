@@ -1,6 +1,8 @@
 // Conexión WebSocket a una sesión en vivo (PB-07), con reconexión automática.
 // Al (re)conectarse, el servidor envía primero el estado completo: así quien
 // pierde la conexión recupera la sesión donde va.
+// PB-11: al moderador también le llega {tipo: 'respuesta'} cada vez que un
+// participante responde; `avisosRespuesta` cuenta esos avisos para recargar el panel.
 
 import { useEffect, useRef, useState } from 'react'
 import { CIERRE_DEFINITIVO, urlWebSocket, type VistaEnVivo } from '../api/enVivo'
@@ -15,6 +17,7 @@ export function useEnVivo(sesionId: string | undefined) {
   const [error, setError] = useState<string>()
   // Momento en que llegó la vista: el cronómetro avanza a partir de ahí.
   const [recibidaEn, setRecibidaEn] = useState(() => Date.now())
+  const [avisosRespuesta, setAvisosRespuesta] = useState(0)
   const ultimaVersion = useRef(-1)
 
   // Si se cambia de sesión, se reinicia el estado durante el render.
@@ -42,6 +45,10 @@ export function useEnVivo(sesionId: string | undefined) {
       }
       socket.onmessage = (mensaje) => {
         const datos = JSON.parse(String(mensaje.data)) as { tipo: string; vista: VistaEnVivo }
+        if (datos.tipo === 'respuesta') {
+          setAvisosRespuesta((n) => n + 1)
+          return
+        }
         if (datos.tipo !== 'estado') return
         // Los eventos de presencia repiten la versión; nunca se retrocede.
         if (datos.vista.version < ultimaVersion.current) return
@@ -93,7 +100,7 @@ export function useEnVivo(sesionId: string | undefined) {
     }
   }, [sesionId])
 
-  return { vista, conexion, error, recibidaEn }
+  return { vista, conexion, error, recibidaEn, avisosRespuesta }
 }
 
 /** Segundos transcurridos que avanzan solos mientras la sesión corre. */

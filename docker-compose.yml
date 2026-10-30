@@ -37,6 +37,8 @@ services:
       BREVO_API_KEY: ${BREVO_API_KEY:-}
       CORREO_REMITENTE: ${CORREO_REMITENTE:-}
       CORREO_REMITENTE_NOMBRE: ${CORREO_REMITENTE_NOMBRE:-}
+      # Máximo de sesiones en curso a la vez (PC-24). Vacío = 10.
+      MAX_SESIONES_ACTIVAS: ${MAX_SESIONES_ACTIVAS:-}
       # El backend solo es alcanzable a través de NGINX (salvo el 8000 en local),
       # así que se confía en su X-Forwarded-For para obtener la IP del cliente.
       FORWARDED_ALLOW_IPS: "*"

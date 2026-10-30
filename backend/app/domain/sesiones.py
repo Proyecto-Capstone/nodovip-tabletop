@@ -28,6 +28,11 @@ class EstadoSesion(StrEnum):
 
 ESTADOS_EDITABLES = (EstadoSesion.BORRADOR, EstadoSesion.PROGRAMADA)
 
+# Tope de sesiones en_curso a la vez cuando no se configura MAX_SESIONES_ACTIVAS
+# (PC-24, RNF). Única fuente del valor: lo usan tanto config.max_sesiones_activas()
+# como el constructor de ServicioEnVivo, para no tener el "10" repetido en dos sitios.
+MAX_SESIONES_ACTIVAS_POR_DEFECTO = 10
+
 
 class TipoTarea(StrEnum):
     TEXTO_LIBRE = "texto_libre"

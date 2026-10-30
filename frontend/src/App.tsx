@@ -17,6 +17,8 @@ import { NuevaSesionPage } from './pages/NuevaSesionPage'
 import { RespuestasSesionPage } from './pages/RespuestasSesionPage'
 import { MiSesionPage } from './pages/MiSesionPage'
 import { MisSesionesPage } from './pages/MisSesionesPage'
+import { MonitoreoPage } from './pages/MonitoreoPage'
+import { MonitoreoSesionPage } from './pages/MonitoreoSesionPage'
 import { SesionEnVivoPage } from './pages/SesionEnVivoPage'
 import { SesionesPage } from './pages/SesionesPage'
 import { UsuariosPage } from './pages/UsuariosPage'
@@ -51,6 +53,10 @@ export default function App() {
               <Route element={<RutaProtegida permiso="leaderboard:ver" />}>
                 <Route path="leaderboard" element={<LeaderboardPage />} />
                 <Route path="leaderboard/:id" element={<LeaderboardSesionPage />} />
+              </Route>
+              <Route element={<RutaProtegida permiso="sesiones:monitorear" />}>
+                <Route path="monitoreo" element={<MonitoreoPage />} />
+                <Route path="monitoreo/:id" element={<MonitoreoSesionPage />} />
               </Route>
               <Route element={<RutaProtegida permiso="sesiones:participar" />}>
                 <Route path="mis-sesiones" element={<MisSesionesPage />} />

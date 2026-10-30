@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, selectinload
 
 from app.adapters.outbound.persistence.models_escenarios import RolEjercicioModel
@@ -24,6 +24,11 @@ from app.domain.sesiones import (
     TareaSesion,
     TipoTarea,
 )
+
+# Clave arbitraria y fija para el advisory lock de pg_advisory_xact_lock
+# (PC-24): cualquier bigint estable sirve, con tal de que todo el proceso
+# use siempre el mismo valor para serializar los arranques de sesión.
+_CLAVE_LOCK_LIMITE_SESIONES = 924_100_024
 
 
 def _a_dominio(m: SesionModel) -> SesionTabletop:
@@ -154,6 +159,41 @@ class SqlSesionRepository:
             self._actualizar_invitaciones(modelo, sesion)
         self.session.commit()
         return self.obtener(sesion.id)  # type: ignore[return-value]
+
+    def iniciar_si_hay_cupo(
+        self, sesion: SesionTabletop, maximo_activas: int
+    ) -> SesionTabletop | None:
+        """Cuenta las sesiones EN_CURSO y guarda en una sola transacción,
+        serializada con un advisory lock (PC-24, RNF), para que dos
+        arranques simultáneos nunca superen `maximo_activas`.
+
+        Depende de que la sesión de SQLAlchemy esté en READ COMMITTED (el
+        valor por defecto de PostgreSQL y de `database.py`, que no fija
+        `isolation_level`): el conteo debe ver filas confirmadas *después*
+        de tomar el lock, no la foto de antes de pedirlo. Con REPEATABLE
+        READ el conteo vería el mismo snapshot que ya tenía esta
+        transacción al leer `sesion` más arriba (p. ej. en
+        `ServicioEnVivo.iniciar`), aunque otra transacción hubiera
+        confirmado su "en_curso" mientras tanto — y se podría superar el
+        máximo. Si alguna vez se cambia el nivel de aislamiento, el conteo
+        tendría que hacerse con una consulta aparte que fuerce ver el
+        estado ya confirmado tras el lock (por ejemplo, en su propia
+        subtransacción).
+        """
+        self.session.execute(
+            select(func.pg_advisory_xact_lock(_CLAVE_LOCK_LIMITE_SESIONES))
+        )
+        activas = self.session.scalar(
+            select(func.count())
+            .select_from(SesionModel)
+            .where(SesionModel.estado == EstadoSesion.EN_CURSO.value)
+        )
+        if activas is not None and activas >= maximo_activas:
+            # Libera el advisory lock (es de ámbito de transacción) sin
+            # guardar nada.
+            self.session.rollback()
+            return None
+        return self.guardar(sesion)
 
     @staticmethod
     def _actualizar_invitaciones(modelo: SesionModel, sesion: SesionTabletop) -> None:

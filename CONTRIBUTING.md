@@ -52,6 +52,39 @@ Una historia está terminada solo si:
 - **Secretos:** nunca subir `.env`, contraseñas, tokens ni llaves. Usar `.env.example` y GitHub Secrets.
 - **Datos:** solo datos ficticios en Local, Staging y Demo.
 
+## Pruebas contra PostgreSQL y Redis
+
+Los archivos `tests/*_pg.py` necesitan `TEST_DATABASE_URL` y se saltan si no
+está definida; algunos de `tests/*_redis.py` necesitan además `TEST_REDIS_URL`.
+**Nunca apunten `TEST_DATABASE_URL` a la base de desarrollo (`POSTGRES_DB`,
+por defecto `nodovip`):** esas pruebas purgan `escenario`, `sesion`,
+`respuesta` y tablas relacionadas en su `setup`/`teardown` (con la purga
+controlada, `SET LOCAL nodovip.purgar_respuestas = 'si'`), así que correrlas
+contra la base compartida borra datos de demo reales.
+
+Usar siempre una base aparte, **`nodovip_test`**, en el mismo PostgreSQL del
+`docker compose` local:
+
+```bash
+# Una sola vez: crear la base de pruebas
+docker compose exec postgres createdb -U "$POSTGRES_USER" nodovip_test
+
+# Migrarla (desde backend/, con el entorno virtual activado)
+DATABASE_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/nodovip_test" \
+  alembic upgrade head
+
+# Correr las pruebas (desde backend/)
+TEST_DATABASE_URL="postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@localhost:5432/nodovip_test" \
+TEST_REDIS_URL="redis://:$REDIS_PASSWORD@localhost:6379/1" \
+  pytest -q
+```
+
+`$POSTGRES_USER`, `$POSTGRES_PASSWORD` y `$REDIS_PASSWORD` salen de `.env`
+(`set -a; source .env; set +a` los exporta sin necesidad de pegarlos a mano).
+Después de migrar una vez, basta con exportar `TEST_DATABASE_URL` y
+`TEST_REDIS_URL` para las siguientes corridas; vuelvan a migrar `nodovip_test`
+cuando se agregue una migración nueva.
+
 ## Comandos útiles
 
 ```bash

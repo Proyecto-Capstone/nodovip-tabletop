@@ -7,19 +7,38 @@ PostgreSQL cuando corresponde y publica un evento para los WebSocket.
 
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from app.application.sesiones import SesionNoEncontrada
 from app.domain.en_vivo import EstadoEnVivo, EventoEnVivo
 from app.domain.escenarios import Inject
-from app.domain.sesiones import EstadoSesion, ReglaSesionError, SesionTabletop
+from app.domain.sesiones import (
+    MAX_SESIONES_ACTIVAS_POR_DEFECTO,
+    EstadoSesion,
+    ReglaSesionError,
+    SesionTabletop,
+)
 from app.ports.en_vivo import AlmacenEnVivo
 from app.ports.sesion_repository import SesionRepository
 
 
 def _ahora() -> datetime:
     return datetime.now(UTC)
+
+
+def excede_duracion(sesion: SesionTabletop, ahora: datetime) -> bool:
+    """Señal de que una sesión EN_CURSO podría estar abandonada (PC-24):
+    lleva más tiempo de reloj corrido que su `duracion_minutos` programada.
+
+    Se usa el tiempo de reloj puro, no el `segundos_transcurridos` de
+    `EstadoEnVivo` (que descuenta las pausas), porque lo que importa aquí
+    es cuánto tiempo real lleva ocupando un cupo de los `maximo_activas`,
+    con o sin pausas de por medio.
+    """
+    if sesion.iniciada_en is None or sesion.duracion_minutos is None:
+        return False
+    return ahora - sesion.iniciada_en > timedelta(minutes=sesion.duracion_minutos)
 
 
 @dataclass
@@ -80,10 +99,12 @@ class ServicioEnVivo:
         sesiones: SesionRepository,
         almacen: AlmacenEnVivo,
         reloj: Callable[[], datetime] = _ahora,
+        maximo_activas: int = MAX_SESIONES_ACTIVAS_POR_DEFECTO,
     ):
         self.sesiones = sesiones
         self.almacen = almacen
         self.reloj = reloj
+        self.maximo_activas = maximo_activas
 
     # --- Comandos del moderador ---------------------------------------------------
 
@@ -91,11 +112,28 @@ class ServicioEnVivo:
         sesion = self._de_moderador(sesion_id, moderador_id)
         ahora = self.reloj()
         sesion.iniciar(ahora)
+        if self.sesiones.iniciar_si_hay_cupo(sesion, self.maximo_activas) is None:
+            raise ReglaSesionError([self._mensaje_limite_alcanzado(ahora)])
         estado = EstadoEnVivo(
             sesion.id, total_injects=len(sesion.injects), iniciada_en=ahora
         )
-        self.sesiones.guardar(sesion)
         return self._aplicar(sesion, estado)
+
+    def _mensaje_limite_alcanzado(self, ahora: datetime) -> str:
+        mensaje = (
+            f"Se alcanzó el máximo de {self.maximo_activas} sesiones activas. "
+            "Espera a que termine una o pide al administrador que amplíe el límite."
+        )
+        activas = self.sesiones.listar_por_estados((EstadoSesion.EN_CURSO,))
+        excedidas = sum(1 for s in activas if excede_duracion(s, ahora))
+        if excedidas == 1:
+            mensaje += " 1 de las sesiones activas ya supera su duración programada."
+        elif excedidas > 1:
+            mensaje += (
+                f" {excedidas} de las sesiones activas ya superan su duración"
+                " programada."
+            )
+        return mensaje
 
     def lanzar_inject(self, sesion_id: UUID, moderador_id: UUID) -> VistaEnVivo:
         sesion, estado = self._en_curso(sesion_id, moderador_id)

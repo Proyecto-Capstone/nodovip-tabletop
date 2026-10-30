@@ -49,6 +49,16 @@ describe('Layout', () => {
     expect(screen.queryByRole('link', { name: 'Leaderboard' })).toBeNull()
   })
 
+  it('el administrador ve la opción de monitoreo', () => {
+    renderConSesion(rutas(), { sesion: sesionDePrueba(ADMINISTRADOR) })
+    expect(screen.getByRole('link', { name: 'Monitoreo' })).toBeInTheDocument()
+  })
+
+  it('un participante no ve la opción de monitoreo (sin el permiso)', () => {
+    renderConSesion(rutas(), { sesion: sesionDePrueba(PARTICIPANTE) })
+    expect(screen.queryByRole('link', { name: 'Monitoreo' })).toBeNull()
+  })
+
   it('cerrar sesión llama al backend y vuelve al login', async () => {
     const sesion = sesionDePrueba(ADMINISTRADOR)
     renderConSesion(rutas(), { sesion })

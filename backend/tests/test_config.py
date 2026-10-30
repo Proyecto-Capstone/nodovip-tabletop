@@ -33,6 +33,23 @@ def test_sin_app_env_se_asume_servidor_real(monkeypatch):
         config.jwt_secreto()
 
 
+def test_max_sesiones_activas_por_defecto(monkeypatch):
+    monkeypatch.delenv("MAX_SESIONES_ACTIVAS", raising=False)
+    assert config.max_sesiones_activas() == 10
+
+
+def test_max_sesiones_activas_configurable(monkeypatch):
+    monkeypatch.setenv("MAX_SESIONES_ACTIVAS", "25")
+    assert config.max_sesiones_activas() == 25
+
+
+@pytest.mark.parametrize("valor", ["0", "-3", "no-es-un-numero"])
+def test_max_sesiones_activas_invalido_falla(monkeypatch, valor):
+    monkeypatch.setenv("MAX_SESIONES_ACTIVAS", valor)
+    with pytest.raises(RuntimeError, match="MAX_SESIONES_ACTIVAS"):
+        config.max_sesiones_activas()
+
+
 def test_cookie_segura(monkeypatch):
     monkeypatch.setenv("APP_ENV", "production")
     monkeypatch.setenv("COOKIE_SEGURA", "")

@@ -23,13 +23,13 @@ from typing import Annotated
 from uuid import UUID
 
 import anyio
-import anyio.abc
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, status
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette.websockets import WebSocketDisconnect
 
+from app.adapters.inbound.api._websocket_apoyo import enviar_agrupado_por_segundo
 from app.adapters.inbound.api.seguridad import (
     UsuarioActual,
     obtener_usuario_ws,
@@ -216,13 +216,9 @@ def leaderboard_de_la_sesion(sesion_id: UUID, servicio: Servicio, usuario: ConPe
 
 # --- WebSocket -----------------------------------------------------------------------------
 
-# Como máximo un recálculo por segundo por conexión: si llegan varios eventos
-# juntos, se calcula una sola vez con el estado más reciente (sigue
-# cumpliendo el requisito de ≤ 3 s de latencia).
-INTERVALO_MINIMO_SEGUNDOS = 1.0
-
 # Eventos que ameritan recalcular el ranking; "presencia" (y cualquier otro
-# tipo futuro) se ignora.
+# tipo futuro) se ignora. El agrupador de ráfagas (como máximo un recálculo
+# por segundo) vive en _websocket_apoyo.py, compartido con el monitoreo (PC-24).
 EVENTOS_RELEVANTES = frozenset({"suscrito", "respuesta", "ajuste", "estado"})
 
 
@@ -285,38 +281,10 @@ async def ws_leaderboard(
             return True
         return False
 
-    cambio = anyio.Event()
-
-    async def marcar_cambios(grupo: anyio.abc.TaskGroup) -> None:
-        nonlocal cambio
-        async for evento in suscriptor.escuchar(sesion_id):
-            if evento.tipo in EVENTOS_RELEVANTES:
-                cambio.set()
-        grupo.cancel_scope.cancel()
-
-    async def enviar_agrupado(grupo: anyio.abc.TaskGroup) -> None:
-        nonlocal cambio
-        ultimo_envio: float | None = None
-        while True:
-            await cambio.wait()
-            # Se reemplaza antes de calcular: lo que llegue durante el
-            # cálculo o la espera se junta en el próximo envío, no se pierde.
-            cambio = anyio.Event()
-            if ultimo_envio is not None:
-                falta = INTERVALO_MINIMO_SEGUNDOS - (
-                    anyio.current_time() - ultimo_envio
-                )
-                if falta > 0:
-                    await anyio.sleep(falta)
-            terminado = await enviar()
-            ultimo_envio = anyio.current_time()
-            if terminado:
-                grupo.cancel_scope.cancel()
-                return
-
     async with anyio.create_task_group() as grupo:
-        grupo.start_soon(marcar_cambios, grupo)
-        grupo.start_soon(enviar_agrupado, grupo)
+        await enviar_agrupado_por_segundo(
+            grupo, suscriptor.escuchar(sesion_id), EVENTOS_RELEVANTES, enviar
+        )
         try:
             while True:
                 await websocket.receive_text()

@@ -230,7 +230,7 @@ describe('Panel del moderador', () => {
     opciones_elegidas_texto: [],
   }
 
-  function abrirModerador() {
+  function abrirModerador(opciones: { respuestaIniciar?: () => Response } = {}) {
     // Cuántas respuestas devuelve el servidor (cambia cuando "llega" una).
     const servidor = { respondidas: 0 }
     const detalle = {
@@ -244,7 +244,14 @@ describe('Panel del moderador', () => {
       ],
       participantes: [{ usuario_id: ANA, rol_codigo: 'ciso', invitacion: 'aceptada' }],
     } as unknown as SesionDetalle
-    const fetchFalso = vi.fn(async (url: string) => {
+    const fetchFalso = vi.fn(async (url: string, init?: RequestInit) => {
+      if (
+        opciones.respuestaIniciar &&
+        url === `/api/sesiones/${ID}/en-vivo/iniciar` &&
+        init?.method === 'POST'
+      ) {
+        return opciones.respuestaIniciar()
+      }
       if (url === `/api/sesiones/${ID}`) return respuesta(200, detalle)
       if (url === '/api/catalogos/roles-ejercicio') return respuesta(200, [{ codigo: 'ciso', nombre: 'CISO' }])
       if (url === '/api/sesiones/participantes-disponibles') {
@@ -334,6 +341,21 @@ describe('Panel del moderador', () => {
     ).toBeInTheDocument()
     expect(within(recientes).getByText('Inject 1 · 8 / 10 pts')).toBeInTheDocument()
     expect(screen.getByText('1/1', { selector: '.metrica strong:not(.metrica-verde)' })).toBeInTheDocument()
+  })
+
+  it('si el servidor rechaza por el límite de sesiones activas, muestra el mensaje tal cual', async () => {
+    const mensaje =
+      'Se alcanzó el máximo de 10 sesiones activas. Espera a que termine una o pide al administrador que amplíe el límite. 2 de las sesiones activas ya superan su duración programada.'
+    abrirModerador({
+      respuestaIniciar: () => respuesta(422, { detail: { errores: [mensaje] } }),
+    })
+    await screen.findByText('Panel del moderador: Simulacro Q4')
+    ultimo().abrir()
+    ultimo().recibir({ conectados: [ANA], total_conectados: 1 })
+
+    await userEvent.click(screen.getByRole('button', { name: '▶ Iniciar sesión' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(mensaje)
   })
 
   it('también recarga el panel cuando llega un aviso de ajuste', async () => {

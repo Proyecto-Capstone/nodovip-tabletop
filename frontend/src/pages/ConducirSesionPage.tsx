@@ -22,6 +22,7 @@ import {
 } from '../api/sesiones'
 import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
+import { EstadoVivo } from '../components/EstadoVivo'
 import { nombreRol } from '../lib/etiquetas'
 import { formatoReloj, useCronometro, useEnVivo } from '../lib/useEnVivo'
 import { useGet, useGetVigente } from '../lib/useGet'
@@ -313,13 +314,6 @@ export function InjectActual({ vista }: { vista?: VistaEnVivo }) {
       <p className="parrafo">{vista.inject.descripcion}</p>
     </div>
   )
-}
-
-export function EstadoVivo({ estado, pausada }: { estado: string; pausada: boolean }) {
-  if (estado === 'en_curso' && pausada) return <span className="badge badge-pausa">⏸ En pausa</span>
-  if (estado === 'en_curso') return <span className="badge badge-live">● EN VIVO</span>
-  if (estado === 'finalizada') return <span className="badge sesion-finalizada">Finalizada</span>
-  return <span className="badge sesion-programada">Programada</span>
 }
 
 function Metrica({

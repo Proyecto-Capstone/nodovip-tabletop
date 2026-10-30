@@ -45,6 +45,8 @@ class SesionModel(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(Uuid, primary_key=True)
     nombre: Mapped[str] = mapped_column(String(150))
+    # PB-14 (migración 0010): organización; el reporte compara con su historial.
+    cliente: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
     escenario_id: Mapped[uuid.UUID] = mapped_column(
         Uuid, ForeignKey("escenario.id", ondelete="RESTRICT"), index=True
     )

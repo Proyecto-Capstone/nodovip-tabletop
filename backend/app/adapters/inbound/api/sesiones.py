@@ -89,7 +89,9 @@ def listar_sesiones(servicio: Servicio, usuario: Disenador):
 @router.post("", response_model=SesionDetalle, status_code=status.HTTP_201_CREATED)
 def crear_sesion(datos: SesionNueva, servicio: Servicio, usuario: Disenador):
     sesion = _manejar_errores(
-        lambda: servicio.crear(datos.escenario_id, usuario.id, datos.nombre)
+        lambda: servicio.crear(
+            datos.escenario_id, usuario.id, datos.nombre, datos.cliente
+        )
     )
     return SesionDetalle.desde(sesion, servicio.reloj())
 

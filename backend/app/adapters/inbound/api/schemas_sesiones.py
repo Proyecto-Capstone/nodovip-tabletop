@@ -27,6 +27,8 @@ class SesionNueva(BaseModel):
 
     escenario_id: UUID
     nombre: str | None = Field(default=None, min_length=3, max_length=150)
+    # Organización para la que se hace el ejercicio (PB-14). Opcional.
+    cliente: str | None = Field(default=None, max_length=120)
 
 
 class InjectSesionEntrada(BaseModel):
@@ -81,6 +83,7 @@ class SesionDiseno(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
     nombre: str = Field(min_length=3, max_length=150)
+    cliente: str | None = Field(default=None, max_length=120)
     roles: list[str] = Field(default_factory=list, max_length=15)
     injects: list[InjectSesionEntrada] = Field(default_factory=list, max_length=30)
     tareas: list[TareaSesionEntrada] = Field(default_factory=list, max_length=100)
@@ -98,6 +101,7 @@ class SesionDiseno(BaseModel):
             escenario_id=actual.escenario_id,
             moderador_id=actual.moderador_id,
             nombre=self.nombre,
+            cliente=self.cliente,
             roles=self.roles,
             injects=[
                 Inject(
@@ -177,6 +181,7 @@ class PesosSalida(BaseModel):
 class SesionResumen(BaseModel):
     id: UUID
     nombre: str
+    cliente: str | None
     escenario_id: UUID
     estado: EstadoSesion
     fecha_programada: datetime | None
@@ -190,6 +195,7 @@ class SesionResumen(BaseModel):
         return cls(
             id=s.id,
             nombre=s.nombre,
+            cliente=s.cliente,
             escenario_id=s.escenario_id,
             estado=s.estado,
             fecha_programada=s.fecha_programada,

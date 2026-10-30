@@ -210,6 +210,9 @@ class DetalleMonitoreoSalida(BaseModel):
     sesion: FilaMonitoreoSalida
     participantes: list[PuntajeParticipanteSalida]
     roles: list[PuntajeRolSalida]
+    # Quién está conectado ahora (no solo el conteo de `sesion.conectados`),
+    # para marcar el mismo punto verde/gris que ve el moderador.
+    conectados_ids: list[UUID]
 
     @classmethod
     def desde(cls, d: DetalleMonitoreo) -> "DetalleMonitoreoSalida":
@@ -217,6 +220,7 @@ class DetalleMonitoreoSalida(BaseModel):
             sesion=FilaMonitoreoSalida.desde(d.sesion),
             participantes=[PuntajeParticipanteSalida.desde(p) for p in d.participantes],
             roles=[PuntajeRolSalida.desde(r) for r in d.roles],
+            conectados_ids=sorted(d.conectados_ids, key=str),
         )
 
 

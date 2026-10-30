@@ -193,14 +193,22 @@ def test_detalle_404_si_la_sesion_no_existe(entorno):
 
 
 def test_detalle_trae_avance_por_participante_y_rol_sin_texto_de_respuestas(entorno):
-    sesiones, servicio = entorno["sesiones"], entorno["servicio"]
+    sesiones, almacen, servicio = (
+        entorno["sesiones"],
+        entorno["almacen"],
+        entorno["servicio"],
+    )
     sesion = _sesion(EstadoSesion.EN_CURSO)
     sesiones.guardar(sesion)
+    almacen.conectar(sesion.id, ID_P1)
 
     detalle = servicio.detalle(sesion.id)
     assert detalle.sesion.id == sesion.id
     assert {p.usuario_id for p in detalle.participantes} == {ID_P1, ID_P2}
     assert {r.rol_codigo for r in detalle.roles} == {"ti", "legal"}
+    # Quién está conectado, no solo el conteo (para marcar el punto
+    # verde/gris por participante en el panel de lectura).
+    assert detalle.conectados_ids == frozenset({ID_P1})
 
     # Nunca texto de respuestas, opciones elegidas ni criterios de la tarea
     # (mismo principio de mínimo privilegio que el leaderboard, PB-12).

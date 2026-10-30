@@ -172,12 +172,14 @@ def test_sesion_programada_no_aparece_hasta_que_se_inicia(e):
 def test_detalle_de_una_sesion_en_curso(e):
     _iniciar(e)
     sid = e["sesion"].id
+    e["almacen"].conectar(sid, ID_PARTICIPANTE)
     r = e["client"].get(f"/api/monitoreo/sesiones/{sid}", headers=ADMINISTRADOR)
     assert r.status_code == 200
     body = r.json()
     assert body["sesion"]["id"] == str(sid)
     assert {p["usuario_id"] for p in body["participantes"]} == {str(ID_PARTICIPANTE)}
     assert {rol["rol_codigo"] for rol in body["roles"]} == {"ti"}
+    assert body["conectados_ids"] == [str(ID_PARTICIPANTE)]
     # Nunca texto de respuestas, opciones elegidas ni criterios (mismo
     # principio de mínimo privilegio que el leaderboard, PB-12).
     [p] = body["participantes"]

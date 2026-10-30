@@ -81,6 +81,10 @@ class DetalleMonitoreo:
     sesion: FilaMonitoreo
     participantes: list[PuntajeParticipante]
     roles: list[PuntajeRol]
+    # Quién está conectado ahora mismo (no solo el conteo de FilaMonitoreo):
+    # para que la vista de lectura marque el mismo punto verde/gris que ve
+    # el moderador en ProgresoParticipantes/AvancePorRol (PB-11).
+    conectados_ids: frozenset[UUID]
 
 
 class ServicioMonitoreo:
@@ -125,6 +129,7 @@ class ServicioMonitoreo:
             sesion=self._fila(sesion),
             participantes=puntajes.participantes,
             roles=puntajes.roles,
+            conectados_ids=self.en_vivo.vista(sesion).conectados,
         )
 
     # --- apoyo ----------------------------------------------------------------------

@@ -15,20 +15,28 @@ Códigos de cierre del WebSocket: 4401 sin sesión iniciada, 4403 rol sin
 permiso, 4404 sesión inexistente o sin invitación, 1000 la sesión terminó.
 """
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
 import anyio
 import anyio.abc
-from fastapi import APIRouter, Depends, HTTPException, WebSocket, status
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    WebSocket,
+    status,
+)
 from fastapi.concurrency import run_in_threadpool
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette.websockets import WebSocketDisconnect
 
 from app import config
+from app.adapters.inbound.api.reportes import get_tarea_reporte
 from app.adapters.inbound.api.seguridad import (
     UsuarioActual,
     obtener_usuario_ws,
@@ -160,11 +168,25 @@ for ruta, nombre, doc in [
     ),
     ("pausar", "pausar", "Pausa la sesión (el tiempo deja de correr)."),
     ("reanudar", "reanudar", "Reanuda una sesión en pausa."),
-    ("cerrar", "cerrar", "Cierra la sesión y la persiste en PostgreSQL."),
 ]:
     router.post(f"{BASE}/{ruta}", response_model=VistaEnVivoSalida)(
         _comando(nombre, doc)
     )
+
+
+@router.post(f"{BASE}/cerrar", response_model=VistaEnVivoSalida)
+def en_vivo_cerrar(
+    sesion_id: UUID,
+    servicio: Servicio,
+    usuario: Conductor,
+    tareas: BackgroundTasks,
+    generar_reporte: Annotated[Callable[[UUID], None], Depends(get_tarea_reporte)],
+):
+    """Cierra la sesión y la persiste en PostgreSQL. Después de responder, genera
+    el reporte PDF en segundo plano (PB-14): el moderador no espera a WeasyPrint."""
+    vista = _manejar_errores(lambda: servicio.cerrar(sesion_id, usuario.id))
+    tareas.add_task(generar_reporte, sesion_id)
+    return VistaEnVivoSalida.desde(vista, es_moderador=True)
 
 
 # --- WebSocket ------------------------------------------------------------------------

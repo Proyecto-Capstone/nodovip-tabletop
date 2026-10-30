@@ -8,6 +8,7 @@ import threading
 from datetime import UTC, datetime, timedelta
 
 from app.domain.autenticacion import RegistroAcceso, ResultadoAcceso
+from app.domain.reportes import EstadoReporte, ReporteGuardado
 from app.domain.sesiones import EstadoSesion
 from app.ports.autenticacion import FiltroAccesos
 from app.ports.correo import ErrorEnvioCorreo
@@ -221,3 +222,54 @@ class RepoRespuestasEnMemoria:
             (copy.deepcopy(a) for s, a in self.ajustes if s == sesion_id),
             key=lambda a: a.creado_en,
         )
+
+
+# --- Reportes (PB-14) -----------------------------------------------------------
+
+
+class RepoReportesEnMemoria:
+    def __init__(self):
+        self.datos = {}
+
+    def obtener(self, sesion_id):
+        r = self.datos.get(sesion_id)
+        return copy.deepcopy(r) if r else None
+
+    def estados(self, sesion_ids):
+        return {i: copy.deepcopy(self.datos[i]) for i in sesion_ids if i in self.datos}
+
+    def _fila(self, sesion_id, cuando):
+        return self.datos.setdefault(
+            sesion_id, ReporteGuardado(sesion_id, EstadoReporte.GENERANDO, cuando)
+        )
+
+    def marcar_generando(self, sesion_id, cuando):
+        r = self._fila(sesion_id, cuando)
+        r.estado, r.solicitado_en, r.error = EstadoReporte.GENERANDO, cuando, None
+
+    def guardar_pdf(self, sesion_id, pdf, cuando):
+        r = self._fila(sesion_id, cuando)
+        r.estado, r.pdf, r.generado_en, r.error = (
+            EstadoReporte.GENERADO,
+            pdf,
+            cuando,
+            None,
+        )
+
+    def marcar_fallido(self, sesion_id, error, cuando):
+        r = self._fila(sesion_id, cuando)
+        r.estado, r.error = EstadoReporte.FALLIDO, error
+
+
+class GeneradorPdfFalso:
+    """Devuelve un "PDF" con el contenido que recibió, para revisarlo en las pruebas."""
+
+    def __init__(self, fallar=False):
+        self.recibidos = []
+        self.fallar = fallar
+
+    def generar(self, reporte):
+        if self.fallar:
+            raise RuntimeError("WeasyPrint no disponible")
+        self.recibidos.append(reporte)
+        return b"%PDF-falso " + reporte.nombre.encode()

@@ -9,6 +9,7 @@ from app.adapters.inbound.api import (
     leaderboard,
     mis_sesiones,
     monitoreo,
+    reportes,
     respuestas,
     sesiones,
     usuarios,
@@ -25,6 +26,7 @@ app.include_router(sesiones.router)
 app.include_router(mis_sesiones.router)
 app.include_router(en_vivo.router)
 app.include_router(respuestas.router)
+app.include_router(reportes.router)
 app.include_router(leaderboard.router)
 app.include_router(monitoreo.router)
 app.include_router(usuarios.router)

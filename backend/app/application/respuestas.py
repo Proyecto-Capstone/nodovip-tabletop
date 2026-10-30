@@ -324,6 +324,17 @@ class ServicioRegistroRespuestas:
         sesion = self._del_moderador(sesion_id, moderador_id)
         return self.acumulado_de(sesion)
 
+    def registro_de(self, sesion: SesionTabletop) -> list[RespuestaRegistrada]:
+        """El registro, para quien ya resolvió la autorización (el reporte, PB-14)."""
+        return self._registro(sesion)
+
+    def nombres_roles(self) -> dict[str, str]:
+        """Código → nombre de los roles del catálogo (con caché por petición)."""
+        return self._roles()
+
+    def nombre_de(self, usuario_id: UUID) -> str:
+        return self._persona(usuario_id)[0]
+
     def acumulado_de(self, sesion: SesionTabletop) -> PuntajesSesion:
         """El mismo acumulado, para quien ya tiene la sesión y la autorización
         resuelta (el leaderboard, PB-12, aplica sus propias reglas de acceso)."""

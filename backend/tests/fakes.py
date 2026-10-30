@@ -4,9 +4,11 @@ Permiten probar casos de uso y API sin PostgreSQL (corren igual en el CI).
 """
 
 import copy
+import threading
 from datetime import UTC, datetime, timedelta
 
 from app.domain.autenticacion import RegistroAcceso, ResultadoAcceso
+from app.domain.sesiones import EstadoSesion
 from app.ports.autenticacion import FiltroAccesos
 from app.ports.correo import ErrorEnvioCorreo
 from app.ports.respuesta_repository import RespuestaDuplicada
@@ -117,6 +119,7 @@ class RelojFalso:
 class RepoSesionesEnMemoria:
     def __init__(self):
         self.datos = {}
+        self._lock_limite = threading.Lock()
 
     def obtener(self, sesion_id):
         s = self.datos.get(sesion_id)
@@ -142,6 +145,18 @@ class RepoSesionesEnMemoria:
     def guardar(self, sesion):
         self.datos[sesion.id] = copy.deepcopy(sesion)
         return copy.deepcopy(sesion)
+
+    def iniciar_si_hay_cupo(self, sesion, maximo_activas):
+        """Equivalente en memoria del advisory lock de PostgreSQL (PC-24):
+        un `threading.Lock` basta porque todos los dobles de prueba viven
+        en el mismo proceso."""
+        with self._lock_limite:
+            activas = sum(
+                1 for s in self.datos.values() if s.estado == EstadoSesion.EN_CURSO
+            )
+            if activas >= maximo_activas:
+                return None
+            return self.guardar(sesion)
 
     def eliminar(self, sesion_id):
         self.datos.pop(sesion_id, None)

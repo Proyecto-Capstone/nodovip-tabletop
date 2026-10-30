@@ -23,4 +23,14 @@ class SesionRepository(Protocol):
 
     def guardar(self, sesion: SesionTabletop) -> SesionTabletop: ...
 
+    def iniciar_si_hay_cupo(
+        self, sesion: SesionTabletop, maximo_activas: int
+    ) -> SesionTabletop | None:
+        """Guarda `sesion` (ya en estado EN_CURSO) solo si hay cupo (PC-24,
+        RNF). Cuenta las sesiones EN_CURSO y guarda en una única operación
+        atómica, para que dos arranques simultáneos no superen
+        `maximo_activas`. Devuelve `None` sin guardar si ya se alcanzó el
+        máximo."""
+        ...
+
     def eliminar(self, sesion_id: UUID) -> None: ...

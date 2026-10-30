@@ -94,6 +94,11 @@ export function SesionesPage() {
                           Respuestas
                         </Link>
                       )}
+                      {s.estado === 'finalizada' && puede('reportes:ver') && (
+                        <Link className="boton boton-texto" to={`/reportes/${s.id}`}>
+                          Reporte
+                        </Link>
+                      )}
                       <Link className="boton boton-texto" to={`/sesiones/${s.id}/disenar`}>
                         {s.estado === 'borrador' ? 'Continuar diseño' : 'Ver diseño'}
                       </Link>

@@ -1,9 +1,10 @@
-import { screen } from '@testing-library/react'
+import { cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import {
   ADMINISTRADOR,
+  ANALISTA,
   OBSERVADOR,
   PARTICIPANTE,
   renderConSesion,
@@ -57,6 +58,14 @@ describe('Layout', () => {
   it('un participante no ve la opción de monitoreo (sin el permiso)', () => {
     renderConSesion(rutas(), { sesion: sesionDePrueba(PARTICIPANTE) })
     expect(screen.queryByRole('link', { name: 'Monitoreo' })).toBeNull()
+  })
+
+  it('la analista ve la opción de reportes y el participante no', () => {
+    renderConSesion(rutas(), { sesion: sesionDePrueba(ANALISTA) })
+    expect(screen.getByRole('link', { name: 'Reportes' })).toBeInTheDocument()
+    cleanup()
+    renderConSesion(rutas(), { sesion: sesionDePrueba(PARTICIPANTE) })
+    expect(screen.queryByRole('link', { name: 'Reportes' })).toBeNull()
   })
 
   it('cerrar sesión llama al backend y vuelve al login', async () => {

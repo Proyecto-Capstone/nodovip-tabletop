@@ -148,6 +148,11 @@ function Panel({
               Ver leaderboard
             </Link>
           )}
+          {estado === 'finalizada' && puede('reportes:ver') && (
+            <Link className="boton boton-texto" to={`/reportes/${sesion.id}`}>
+              Ver reporte
+            </Link>
+          )}
           <EstadoVivo estado={estado} pausada={vista?.pausada ?? false} />
         </div>
       </div>

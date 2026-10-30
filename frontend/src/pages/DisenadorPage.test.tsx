@@ -21,6 +21,7 @@ function sesionBase(): SesionDetalle {
   return {
     id: 'cccccccc-0000-0000-0000-000000000001',
     nombre: 'Ransomware Sector Financiero',
+    cliente: null,
     escenario_id: 'dddddddd-0000-0000-0000-000000000001',
     estado: 'borrador',
     fecha_programada: null,

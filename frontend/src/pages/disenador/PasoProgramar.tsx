@@ -1,4 +1,5 @@
-// Paso 5: nombre, fecha, hora y duración de la sesión (CU-03.5).
+// Paso 5: nombre, cliente, fecha, hora y duración de la sesión (CU-03.5).
+// El cliente (PB-14) permite comparar el reporte con sus sesiones anteriores.
 
 import type { SesionDetalle } from '../../api/sesiones'
 import { aFechaLocal, desdeFechaLocal, formatoDuracion, type PropsPaso } from './comun'
@@ -23,6 +24,18 @@ export function PasoProgramar({
             value={d.nombre}
             onChange={(e) => cambiar((a) => ({ ...a, nombre: e.target.value }))}
           />
+        </label>
+        <label className="campo">
+          <span>Cliente / organización (opcional)</span>
+          <input
+            maxLength={120}
+            placeholder="Por ejemplo: Banco Andino"
+            value={d.cliente ?? ''}
+            onChange={(e) => cambiar((a) => ({ ...a, cliente: e.target.value || null }))}
+          />
+          <small className="texto-suave">
+            El reporte de brechas compara con las sesiones anteriores del mismo cliente.
+          </small>
         </label>
         <div className="fila-campos">
           <label className="campo">

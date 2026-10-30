@@ -147,20 +147,25 @@ el inject llegó al participante en 27–34 ms.
 
 # Panel de control del moderador (PB-11)
 
-El panel `/sesiones/:id/conducir` muestra el progreso de la sesión en tiempo
-real, sin recargar la página:
+El panel `/sesiones/:id/conducir` sigue el prototipo **P-05 (Figura 20 del
+documento)** y muestra el progreso de la sesión en tiempo real, sin recargar:
 
 - **Métricas:** tiempo transcurrido, participantes conectados, inject actual y
-  respuestas recibidas sobre las esperadas.
-- **Participantes:** conexión de cada uno, respuestas que lleva y su puntaje.
-- **Control de sesión:** inject actual y comandos de PB-07 (lanzar inject,
-  pausar, reanudar, cerrar).
-- **Avance por rol:** conectados del rol, barra de respuestas recibidas sobre las
-  esperadas, pendientes y puntaje acumulado.
-- **Injects:** cuáles ya se lanzaron, cuál está en curso y cuáles faltan, con su
-  minuto sugerido.
-- **Últimas respuestas:** las 5 más recientes con hora, participante, rol, inject
-  y puntaje, más el enlace a *Respuestas y puntajes* (PB-09/PB-10).
+  respuestas recibidas sobre las esperadas (en naranja, como el prototipo).
+- **Progreso por participante — Inject N** (columna izquierda):
+  - nombre, rol y conexión de cada participante;
+  - barra con el % de sus tareas lanzadas que ya respondió;
+  - estado: *Respondido* (verde), *En progreso* (azul), *Sin respuesta* (rojo) o
+    *Sin tareas aún* (gris).
+- **Control de sesión** (columna derecha):
+  - inject actual con "Lanzado hace mm:ss minutos";
+  - comandos de PB-07 (lanzar inject, pausar, reanudar, cerrar);
+  - **Respuestas recientes:** las 5 últimas con participante — rol, hora,
+    extracto de la respuesta (texto u opciones elegidas), inject y puntaje.
+- **Avance por rol** e **Injects**, debajo. No están en el dibujo, pero el ticket
+  pide respuestas pendientes por rol e injects lanzados:
+  - por rol: conectados, respuestas recibidas sobre esperadas y puntaje;
+  - injects: lanzados, en curso y pendientes, con su minuto sugerido.
 
 ## Actualización en tiempo real
 
@@ -184,6 +189,7 @@ ms**. El requisito es ≤ 3 s.
 
 - `tests/test_api_respuestas.py`: el moderador recibe `{"tipo": "respuesta"}` y
   el participante no (se ejecutó 15 veces seguidas sin fallos).
-- `frontend/src/pages/EnVivo.test.tsx`: el panel muestra el avance y, al llegar
-  el aviso por WebSocket, recarga y actualiza el avance por rol, las últimas
-  respuestas y el contador, sin recargar la página.
+- `frontend/src/pages/EnVivo.test.tsx`: el panel muestra el progreso (*Sin
+  respuesta*, 0 %) y, al llegar el aviso por WebSocket, recarga y pasa a
+  *Respondido* (100 %), con el extracto en *Respuestas recientes* y el contador
+  actualizado, sin recargar la página.

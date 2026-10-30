@@ -25,7 +25,13 @@ import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { nombreRol } from '../lib/etiquetas'
 import { formatoReloj, useCronometro, useEnVivo } from '../lib/useEnVivo'
 import { useGet, useGetVigente } from '../lib/useGet'
-import { AvancePorRol, InjectsLanzados, UltimasRespuestas } from './PanelAvance'
+import {
+  AvancePorRol,
+  InjectsLanzados,
+  LanzadoHace,
+  ProgresoParticipantes,
+  RespuestasRecientes,
+} from './PanelAvance'
 
 export function ConducirSesionPage() {
   const { id = '' } = useParams()
@@ -155,48 +161,39 @@ function Panel({
           nombre="Inject actual"
           color="azul"
         />
-        <Metrica valor={`${recibidas}/${esperadas}`} nombre="Respuestas recibidas" />
+        <Metrica
+          valor={`${recibidas}/${esperadas}`}
+          nombre="Respuestas recibidas"
+          color="naranja"
+        />
       </div>
 
       <div className="disenador-columnas">
-        <section className="tarjeta">
-          <h2>Participantes</h2>
-          <ul className="lista-conectados">
-            {sesion.participantes.map((p) => {
-              const conectado = conectados.has(p.usuario_id)
-              const suyo = avance.get(p.usuario_id)
-              return (
-                <li key={p.usuario_id}>
-                  <span className={conectado ? 'punto conectado' : 'punto'} aria-hidden="true" />
-                  <span>
-                    <strong>{persona(p.usuario_id)?.nombre ?? 'Participante'}</strong>
-                    <span className="texto-suave"> · {nombreRol(roles, p.rol_codigo)}</span>
-                  </span>
-                  <span className="texto-suave">
-                    {conectado ? 'Conectado' : 'Sin conexión'}
-                    {suyo && suyo.respondidas + suyo.sin_responder > 0 && (
-                      <>
-                        {' '}
-                        · {suyo.respondidas}/{suyo.respondidas + suyo.sin_responder} resp. ·{' '}
-                        {suyo.puntaje.toLocaleString('es-EC', { maximumFractionDigits: 2 })} pts
-                      </>
-                    )}
-                  </span>
-                </li>
-              )
-            })}
-          </ul>
-        </section>
+        <ProgresoParticipantes
+          injectActual={vista?.inject_actual ?? 0}
+          filas={sesion.participantes.map((p) => {
+            const suyo = avance.get(p.usuario_id)
+            return {
+              usuarioId: p.usuario_id,
+              nombre: persona(p.usuario_id)?.nombre ?? suyo?.nombre ?? 'Participante',
+              rolNombre: nombreRol(roles, p.rol_codigo),
+              conectado: conectados.has(p.usuario_id),
+              respondidas: suyo?.respondidas ?? 0,
+              esperadas: suyo ? suyo.respondidas + suyo.sin_responder : 0,
+            }
+          })}
+        />
 
         <section className="tarjeta">
           <h2>Control de sesión</h2>
           <InjectActual vista={vista} />
-          <Controles
-            estado={estado}
-            vista={vista}
-            enviando={enviando}
-            ejecutar={ejecutar}
-          />
+          {estado === 'en_curso' && vista?.inject_lanzado_en && (
+            <LanzadoHace desde={vista.inject_lanzado_en} />
+          )}
+          <Controles estado={estado} vista={vista} enviando={enviando} ejecutar={ejecutar} />
+          {conDatos && (
+            <RespuestasRecientes sesionId={sesion.id} respuestas={respuestas.datos ?? []} />
+          )}
         </section>
       </div>
 
@@ -210,7 +207,6 @@ function Panel({
           <InjectsLanzados injects={sesion.injects} actual={vista?.inject_actual ?? 0} />
         </div>
       )}
-      {conDatos && <UltimasRespuestas sesionId={sesion.id} respuestas={respuestas.datos ?? []} />}
     </div>
   )
 }
@@ -327,7 +323,7 @@ function Metrica({
 }: {
   valor: string
   nombre: string
-  color?: 'verde' | 'azul'
+  color?: 'verde' | 'azul' | 'naranja'
 }) {
   return (
     <div className="tarjeta metrica">

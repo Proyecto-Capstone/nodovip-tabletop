@@ -1572,3 +1572,139 @@ button.paso:hover {
     grid-column: 1 / -1;
   }
 }
+
+/* PB-11: ajustes según el prototipo P-05 (Figura 20) */
+.metrica-naranja {
+  color: var(--naranja);
+}
+
+.progreso-participantes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.progreso-participantes li {
+  display: grid;
+  grid-template-columns: minmax(8rem, 1.2fr) 2fr 2.5rem 7.5rem;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.55rem 0.4rem;
+  border-top: 1px solid var(--borde);
+}
+
+.progreso-participantes li:nth-child(even) {
+  background: var(--fondo);
+}
+
+.progreso-persona {
+  display: grid;
+  font-size: 0.9rem;
+}
+
+.progreso-persona .texto-suave {
+  font-size: 0.78rem;
+}
+
+.progreso-nombre {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.progreso-porcentaje {
+  font-size: 0.8rem;
+  text-align: right;
+}
+
+.progreso-participantes .badge {
+  justify-self: start;
+}
+
+.progreso-respondido {
+  background: var(--verde-fondo);
+  color: var(--verde);
+}
+
+.progreso-curso {
+  background: var(--azul-fondo);
+  color: var(--acento);
+}
+
+.progreso-sin {
+  background: var(--rojo-fondo);
+  color: var(--rojo);
+}
+
+.progreso-espera {
+  background: var(--gris-fondo);
+  color: var(--texto-suave);
+}
+
+.barra-progreso-respondido span {
+  background: var(--verde);
+}
+
+.barra-progreso-curso span {
+  background: var(--acento);
+}
+
+.lanzado-hace {
+  margin: 0.4rem 0 0.75rem;
+  font-size: 0.8rem;
+}
+
+.respuestas-recientes {
+  margin-top: 1.25rem;
+}
+
+.respuestas-recientes h3 {
+  margin: 0 0 0.5rem;
+  font-size: 0.95rem;
+}
+
+.respuestas-recientes ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.respuestas-recientes li {
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radio);
+  background: var(--fondo);
+  font-size: 0.85rem;
+}
+
+.respuestas-recientes li p {
+  margin: 0.2rem 0;
+}
+
+.respuesta-reciente-cabecera {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+@media (max-width: 560px) {
+  .progreso-participantes li {
+    grid-template-columns: 1fr auto;
+  }
+
+  .progreso-participantes .barra-avance {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .progreso-participantes .progreso-porcentaje {
+    grid-row: 1;
+    grid-column: 2;
+  }
+
+  .progreso-participantes .badge {
+    grid-row: 3;
+    grid-column: 1;
+  }
+}

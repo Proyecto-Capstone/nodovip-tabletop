@@ -222,6 +222,8 @@ describe('Panel del moderador', () => {
     inject_orden: 1,
     puntaje: 8,
     puntaje_maximo: 10,
+    texto: 'Aíslo los servidores y activo el plan de respuesta',
+    opciones_elegidas_texto: [],
   }
 
   function abrirModerador() {
@@ -269,7 +271,7 @@ describe('Panel del moderador', () => {
     ultimo().abrir()
     ultimo().recibir({ conectados: [ANA], total_conectados: 1 })
 
-    expect(screen.getByText('Conectado')).toBeInTheDocument()
+    expect(screen.getByText('CISO · Conectado')).toBeInTheDocument()
     expect(screen.getByText('1/1')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: '▶ Iniciar sesión' }))
@@ -294,7 +296,7 @@ describe('Panel del moderador', () => {
     expect(screen.getByRole('button', { name: '▶ Lanzar inject 1' })).toBeDisabled()
     expect(screen.getByRole('button', { name: '▶ Reanudar' })).toBeEnabled()
     expect(screen.getByText('⏸ En pausa')).toBeInTheDocument()
-    expect(screen.getByText('Sin conexión')).toBeInTheDocument()
+    expect(screen.getByText('CISO · Sin conexión')).toBeInTheDocument()
   })
 
   it('muestra el avance y lo actualiza cuando llega una respuesta, sin recargar', async () => {
@@ -305,6 +307,9 @@ describe('Panel del moderador', () => {
     const avance = await screen.findByRole('region', { name: 'Avance por rol' })
     expect(await within(avance).findByText('0 de 1 respuestas · 1 pendientes')).toBeInTheDocument()
     expect(screen.getByText('Todavía no llegan respuestas.')).toBeInTheDocument()
+    const progreso = screen.getByRole('region', { name: 'Progreso por participante — Inject 1' })
+    expect(within(progreso).getByText('Sin respuesta')).toBeInTheDocument()
+    expect(within(progreso).getByText('0%')).toBeInTheDocument()
     const injects = screen.getByRole('region', { name: 'Injects' })
     expect(within(injects).getByText('En curso')).toBeInTheDocument()
     expect(within(injects).getAllByText('Pendiente')).toHaveLength(2)
@@ -316,9 +321,14 @@ describe('Panel del moderador', () => {
 
     expect(await within(avance).findByText('1 de 1 respuestas · 0 pendientes')).toBeInTheDocument()
     expect(fetchFalso.mock.calls.length).toBeGreaterThan(antes)
-    const ultimas = screen.getByRole('region', { name: 'Últimas respuestas' })
-    expect(within(ultimas).getByText('Ana López')).toBeInTheDocument()
-    expect(within(ultimas).getByText('8 / 10')).toBeInTheDocument()
+    expect(within(progreso).getByText('Respondido')).toBeInTheDocument()
+    expect(within(progreso).getByText('100%')).toBeInTheDocument()
+    const recientes = screen.getByRole('region', { name: 'Respuestas recientes' })
+    expect(within(recientes).getByText('Ana López — CISO')).toBeInTheDocument()
+    expect(
+      within(recientes).getByText('Aíslo los servidores y activo el plan de respuesta'),
+    ).toBeInTheDocument()
+    expect(within(recientes).getByText('Inject 1 · 8 / 10 pts')).toBeInTheDocument()
     expect(screen.getByText('1/1', { selector: '.metrica strong:not(.metrica-verde)' })).toBeInTheDocument()
   })
 })

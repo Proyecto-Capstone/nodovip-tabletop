@@ -302,6 +302,11 @@ class ServicioRegistroRespuestas:
     def puntajes(self, sesion_id: UUID, moderador_id: UUID) -> PuntajesSesion:
         """Puntaje acumulado por participante (de mayor a menor) y por rol."""
         sesion = self._del_moderador(sesion_id, moderador_id)
+        return self.acumulado_de(sesion)
+
+    def acumulado_de(self, sesion: SesionTabletop) -> PuntajesSesion:
+        """El mismo acumulado, para quien ya tiene la sesión y la autorización
+        resuelta (el leaderboard, PB-12, aplica sus propias reglas de acceso)."""
         vigentes = {
             (r.respuesta.tarea_id, r.respuesta.usuario_id): r.puntaje
             for r in self._registro(sesion)

@@ -82,6 +82,7 @@ function Panel({
   disponibles: ParticipanteDisponible[]
 } & ReturnType<typeof useEnVivo>) {
   const segundos = useCronometro(vista, recibidaEn)
+  const { puede } = useSesion()
   const [enviando, setEnviando] = useState(false)
   const [errores, setErrores] = useState<string[]>()
 
@@ -139,6 +140,11 @@ function Panel({
           {(estado === 'en_curso' || estado === 'finalizada') && (
             <Link className="boton boton-texto" to={`/sesiones/${sesion.id}/respuestas`}>
               Ver respuestas
+            </Link>
+          )}
+          {(estado === 'en_curso' || estado === 'finalizada') && puede('leaderboard:ver') && (
+            <Link className="boton boton-texto" to={`/leaderboard/${sesion.id}`}>
+              Ver leaderboard
             </Link>
           )}
           <EstadoVivo estado={estado} pausada={vista?.pausada ?? false} />

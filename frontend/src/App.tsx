@@ -10,6 +10,8 @@ import { DisenadorPage } from './pages/DisenadorPage'
 import { EscenarioDetallePage } from './pages/EscenarioDetallePage'
 import { EscenarioFormPage } from './pages/EscenarioFormPage'
 import { InicioPage } from './pages/InicioPage'
+import { LeaderboardPage } from './pages/LeaderboardPage'
+import { LeaderboardSesionPage } from './pages/LeaderboardSesionPage'
 import { LoginPage } from './pages/LoginPage'
 import { NuevaSesionPage } from './pages/NuevaSesionPage'
 import { RespuestasSesionPage } from './pages/RespuestasSesionPage'
@@ -45,6 +47,10 @@ export default function App() {
               <Route element={<RutaProtegida permiso="sesiones:conducir" />}>
                 <Route path="sesiones/:id/conducir" element={<ConducirSesionPage />} />
                 <Route path="sesiones/:id/respuestas" element={<RespuestasSesionPage />} />
+              </Route>
+              <Route element={<RutaProtegida permiso="leaderboard:ver" />}>
+                <Route path="leaderboard" element={<LeaderboardPage />} />
+                <Route path="leaderboard/:id" element={<LeaderboardSesionPage />} />
               </Route>
               <Route element={<RutaProtegida permiso="sesiones:participar" />}>
                 <Route path="mis-sesiones" element={<MisSesionesPage />} />

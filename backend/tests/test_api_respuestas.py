@@ -1,4 +1,4 @@
-"""API de tareas y respuestas del participante (PB-08) con dobles en memoria."""
+"""API de tareas y respuestas (PB-08) y registro por sesión (PB-09) con dobles."""
 
 from uuid import NAMESPACE_URL, uuid4, uuid5
 
@@ -6,10 +6,11 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.adapters.inbound.api import en_vivo, mis_sesiones
+from app.adapters.inbound.api import respuestas as api_respuestas
 from app.adapters.outbound.en_vivo.memoria import EnVivoEnMemoria
 from app.application.en_vivo import ServicioEnVivo
-from app.application.respuestas import ServicioRespuestas
-from app.domain.escenarios import Inject, Nivel
+from app.application.respuestas import ServicioRegistroRespuestas, ServicioRespuestas
+from app.domain.escenarios import Inject, Nivel, RolEjercicio
 from app.domain.sesiones import (
     EstadoSesion,
     OpcionRespuesta,
@@ -18,13 +19,23 @@ from app.domain.sesiones import (
     TareaSesion,
     TipoTarea,
 )
+from app.domain.usuarios import RolNombre, Usuario
 from app.main import app
-from tests.fakes import RepoRespuestasEnMemoria, RepoSesionesEnMemoria
+from tests.fakes import (
+    RepoRespuestasEnMemoria,
+    RepoSesionesEnMemoria,
+    RepoUsuariosEnMemoria,
+)
 
 MODERADOR = {"X-Rol-Prueba": "moderador"}
 PARTICIPANTE = {"X-Rol-Prueba": "participante"}
 ID_MODERADOR = uuid5(NAMESPACE_URL, "prueba:moderador")
 ID_PARTICIPANTE = uuid5(NAMESPACE_URL, "prueba:participante")
+
+
+class CatalogoFalso:
+    def roles_ejercicio(self):
+        return [RolEjercicio("ti", "Responsable de TI"), RolEjercicio("legal", "Legal")]
 
 
 @pytest.fixture
@@ -66,12 +77,26 @@ def e(sesion_por_cabecera):
     app.dependency_overrides[en_vivo.get_servicio_en_vivo] = lambda: ServicioEnVivo(
         repo, almacen
     )
-    servicio = ServicioRespuestas(repo, almacen, RepoRespuestasEnMemoria())
+    respuestas = RepoRespuestasEnMemoria()
+    servicio = ServicioRespuestas(repo, almacen, respuestas)
     app.dependency_overrides[mis_sesiones.get_servicio_respuestas] = lambda: servicio
+    usuarios = RepoUsuariosEnMemoria()
+    usuarios.guardar(
+        Usuario(
+            "ana@demo.nodovip.test",
+            "Ana López",
+            "hash",
+            RolNombre.PARTICIPANTE,
+            id=ID_PARTICIPANTE,
+        )
+    )
+    registro = ServicioRegistroRespuestas(repo, respuestas, CatalogoFalso(), usuarios)
+    app.dependency_overrides[api_respuestas.get_servicio_registro] = lambda: registro
     with TestClient(app) as client:
         yield {"client": client, "sesion": sesion}
     app.dependency_overrides.pop(en_vivo.get_servicio_en_vivo, None)
     app.dependency_overrides.pop(mis_sesiones.get_servicio_respuestas, None)
+    app.dependency_overrides.pop(api_respuestas.get_servicio_registro, None)
 
 
 def _iniciar_y_lanzar(e):
@@ -136,3 +161,55 @@ def test_tareas_de_otro_rol_responden_404(e):
 def test_solo_participantes(e):
     assert e["client"].get(_url(e)).status_code == 401
     assert e["client"].get(_url(e), headers=MODERADOR).status_code == 403
+
+
+# --- Registro por sesión (PB-09) ------------------------------------------------------
+
+
+def _registro(e, headers=MODERADOR):
+    return e["client"].get(
+        f"/api/sesiones/{e['sesion'].id}/respuestas", headers=headers
+    )
+
+
+def test_el_moderador_consulta_las_respuestas_con_toda_su_trazabilidad(e):
+    assert _registro(e).json() == []
+    _iniciar_y_lanzar(e)
+    tarea = e["sesion"].tareas[0]
+    e["client"].post(_url(e, tarea), json={"opciones": [1]}, headers=PARTICIPANTE)
+
+    r = _registro(e)
+    assert r.status_code == 200
+    [fila] = r.json()
+    assert fila["participante_id"] == str(ID_PARTICIPANTE)
+    assert fila["participante_nombre"] == "Ana López"
+    assert fila["rol_codigo"] == "ti" and fila["rol_nombre"] == "Responsable de TI"
+    assert fila["inject_orden"] == 1 and fila["inject_titulo"] == "Detección"
+    assert fila["tarea_id"] == str(tarea.id)
+    assert fila["tarea_enunciado"] == "¿Paga el rescate?"
+    assert fila["opciones_elegidas"] == [1]
+    assert fila["opciones_elegidas_texto"] == ["Sí"]
+    assert fila["recibida_en"] and fila["segundos_usados"] >= 0
+
+
+def test_registro_solo_para_el_moderador_duenio(e):
+    assert _registro(e, headers={}).status_code == 401
+    assert _registro(e, headers=PARTICIPANTE).status_code == 403
+    r = e["client"].get(f"/api/sesiones/{uuid4()}/respuestas", headers=MODERADOR)
+    assert r.status_code == 404
+
+
+def test_la_api_no_permite_modificar_ni_borrar_respuestas(e):
+    _iniciar_y_lanzar(e)
+    tarea = e["sesion"].tareas[0]
+    url = _url(e, tarea)
+    e["client"].post(url, json={"opciones": [0]}, headers=PARTICIPANTE)
+    for metodo in ("put", "patch", "delete"):
+        r = e["client"].request(
+            metodo, url, json={"opciones": [1]}, headers=PARTICIPANTE
+        )
+        assert r.status_code == 405, metodo
+    registro = f"/api/sesiones/{e['sesion'].id}/respuestas"
+    assert e["client"].delete(registro, headers=MODERADOR).status_code == 405
+    [fila] = _registro(e).json()
+    assert fila["opciones_elegidas"] == [0]

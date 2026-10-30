@@ -63,3 +63,11 @@ class SqlRespuestaRepository:
             .order_by(RespuestaModel.recibida_en)
         )
         return [_a_dominio(m) for m in filas]
+
+    def de_sesion(self, sesion_id: UUID) -> list[Respuesta]:
+        filas = self.session.scalars(
+            select(RespuestaModel)
+            .where(RespuestaModel.sesion_id == sesion_id)
+            .order_by(RespuestaModel.recibida_en, RespuestaModel.id)
+        )
+        return [_a_dominio(m) for m in filas]

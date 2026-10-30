@@ -89,6 +89,11 @@ export function SesionesPage() {
                           {s.estado === 'en_curso' ? 'Volver a la sesión' : 'Conducir'}
                         </Link>
                       )}
+                      {(s.estado === 'en_curso' || s.estado === 'finalizada') && (
+                        <Link className="boton boton-texto" to={`/sesiones/${s.id}/respuestas`}>
+                          Respuestas
+                        </Link>
+                      )}
                       <Link className="boton boton-texto" to={`/sesiones/${s.id}/disenar`}>
                         {s.estado === 'borrador' ? 'Continuar diseño' : 'Ver diseño'}
                       </Link>

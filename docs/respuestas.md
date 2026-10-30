@@ -95,3 +95,56 @@ participante:
   respuesta.
 - `frontend/src/pages/TareasDelRol.test.tsx`: envío de texto y de opciones,
   vencida, pausa, conflicto 409 y sala sin tareas.
+
+# Registro trazable de respuestas (PB-09)
+
+Cada respuesta queda con **participante, rol, sesión, inject, tarea, contenido y
+hora del servidor** (`recibida_en`), además de los segundos efectivos que usó.
+Todo eso ya lo guarda la tabla `respuesta` de la migración 0007.
+
+## Inmutabilidad (migración 0008)
+
+- **API:** no existen rutas para modificar ni borrar respuestas (PUT, PATCH y
+  DELETE responden 405). El repositorio solo inserta y consulta.
+- **Base de datos:** el trigger `tr_respuesta_inmutable` (BEFORE UPDATE OR DELETE,
+  por fila) y `tr_respuesta_sin_truncate` (BEFORE TRUNCATE) ejecutan
+  `respuesta_inmutable()`, que lanza
+  *"Las respuestas registradas no se pueden modificar ni borrar"*. Así se protege
+  la evidencia aunque alguien acceda a la base sin pasar por la API.
+- **RESTRICT:** una sesión, tarea, inject o usuario con respuestas no se puede
+  borrar.
+- **Purga controlada:** solo DELETE o TRUNCATE (nunca UPDATE), y solo si la
+  transacción activa `SET LOCAL nodovip.purgar_respuestas = 'si'`. La usan las
+  pruebas de integración (`tests/pg.py`) para limpiar `nodovip_test`. En un
+  servidor real solo la usaría a propósito un administrador de la base.
+- Índice `ix_respuesta_sesion_recibida (sesion_id, recibida_en)` para consultar
+  por sesión en orden de llegada.
+
+## Consulta por sesión
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| GET | `/api/sesiones/{id}/respuestas` | Todas las respuestas de la sesión en orden de llegada, con nombre y correo del participante, rol, inject, enunciado, contenido (texto u opciones elegidas con su texto) y tiempo usado / límite |
+
+Permiso `sesiones:conducir` y **solo el moderador dueño** de la sesión (404 si
+no lo es, 403 para otros roles). La usarán el panel del moderador (PB-11) y el
+reporte PDF (PB-14). El acceso del analista se agregará con PB-14.
+
+Frontend: `/sesiones/:id/respuestas` (*Registro de respuestas*), de solo lectura,
+con filtros por rol e inject y botón *Actualizar*. Se abre con *Respuestas* en
+Mis tabletops (sesiones en curso o finalizadas) y con *Ver respuestas* en el
+panel del moderador.
+
+## Pruebas de PB-09
+
+- `tests/test_respuestas_pg.py` (PostgreSQL real):
+  - **Concurrencia:** 20 participantes envían a la vez, cada uno con su propia
+    conexión y sincronizados con una barrera. Se guardan las 20, sin pérdidas.
+  - **Doble envío simultáneo:** 10 envíos a la vez del mismo participante dejan
+    una sola respuesta (1 éxito y 9 `RespuestaDuplicada`).
+  - **Inmutabilidad:** UPDATE, DELETE y TRUNCATE por SQL directo fallan, e incluso
+    con la marca de purga el UPDATE sigue prohibido.
+  - El registro devuelve nombres y roles reales del catálogo.
+- `tests/test_api_respuestas.py`: trazabilidad completa de cada fila, permisos
+  (401/403/404) y 405 para PUT, PATCH y DELETE.
+- `frontend/src/pages/RespuestasSesionPage.test.tsx`: tabla, filtros, vacío y 404.

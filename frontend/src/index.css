@@ -1396,3 +1396,19 @@ button.paso:hover {
     justify-content: space-between;
   }
 }
+
+/* PB-09: registro de respuestas (solo lectura) */
+.nota-solo-lectura {
+  margin: 0 0 1rem;
+}
+
+.tabla-respuestas .respuesta-registrada {
+  min-width: 14rem;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.tabla-respuestas .respuesta-registrada ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}

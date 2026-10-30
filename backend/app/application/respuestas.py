@@ -2,6 +2,9 @@
 
 Enrutamiento por rol: cada participante ve solo las tareas de su rol cuyo
 inject ya se lanzó. Responde una vez cada una, dentro del tiempo límite.
+
+PB-09: registro trazable. El moderador consulta, en solo lectura, todas las
+respuestas de su sesión con participante, rol, inject, tarea y hora.
 """
 
 from collections.abc import Callable
@@ -27,8 +30,10 @@ from app.domain.sesiones import (
     TareaSesion,
 )
 from app.ports.en_vivo import AlmacenEnVivo
+from app.ports.escenario_repository import CatalogoRepository
 from app.ports.respuesta_repository import RespuestaRepository
 from app.ports.sesion_repository import SesionRepository
+from app.ports.usuario_repository import UsuarioRepository
 
 
 class TareaNoEncontrada(LookupError):
@@ -158,3 +163,75 @@ class ServicioRespuestas:
             and t.inject_id in orden_de
             and orden_de[t.inject_id] <= estado.inject_actual
         ]
+
+
+# --- Registro de respuestas de la sesión (PB-09) -------------------------------------
+
+
+@dataclass
+class RespuestaRegistrada:
+    """Una respuesta con todo lo necesario para auditarla."""
+
+    respuesta: Respuesta
+    participante_nombre: str
+    participante_correo: str
+    rol_nombre: str
+    inject_orden: int
+    inject_titulo: str
+    tarea: TareaSesion
+
+    @property
+    def opciones_elegidas_texto(self) -> list[str]:
+        opciones = self.tarea.opciones
+        return [
+            opciones[i].texto
+            for i in self.respuesta.opciones_elegidas
+            if 0 <= i < len(opciones)
+        ]
+
+
+class ServicioRegistroRespuestas:
+    """Consulta de solo lectura: no hay forma de modificar ni borrar respuestas."""
+
+    def __init__(
+        self,
+        sesiones: SesionRepository,
+        respuestas: RespuestaRepository,
+        catalogo: CatalogoRepository,
+        usuarios: UsuarioRepository,
+    ):
+        self.sesiones = sesiones
+        self.respuestas = respuestas
+        self.catalogo = catalogo
+        self.usuarios = usuarios
+
+    def de_sesion(
+        self, sesion_id: UUID, moderador_id: UUID
+    ) -> list[RespuestaRegistrada]:
+        """Respuestas de la sesión en orden de llegada. Solo para su moderador."""
+        sesion = self.sesiones.obtener(sesion_id)
+        if sesion is None or sesion.moderador_id != moderador_id:
+            raise SesionNoEncontrada(str(sesion_id))
+        roles = {r.codigo: r.nombre for r in self.catalogo.roles_ejercicio()}
+        injects = {i.id: i for i in sesion.injects}
+        tareas = {t.id: t for t in sesion.tareas}
+        personas: dict[UUID, tuple[str, str]] = {}
+        resultado = []
+        for r in self.respuestas.de_sesion(sesion.id):
+            if r.usuario_id not in personas:
+                u = self.usuarios.obtener_por_id(r.usuario_id)
+                personas[r.usuario_id] = (u.nombre, u.correo) if u else ("—", "—")
+            nombre, correo = personas[r.usuario_id]
+            inject = injects[r.inject_id]
+            resultado.append(
+                RespuestaRegistrada(
+                    respuesta=r,
+                    participante_nombre=nombre,
+                    participante_correo=correo,
+                    rol_nombre=roles.get(r.rol_codigo, r.rol_codigo),
+                    inject_orden=inject.orden,
+                    inject_titulo=inject.titulo,
+                    tarea=tareas[r.tarea_id],
+                )
+            )
+        return resultado

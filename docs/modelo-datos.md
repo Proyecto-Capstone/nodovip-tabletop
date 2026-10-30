@@ -88,3 +88,11 @@ La matriz vive en dos lugares que deben coincidir: `backend/app/domain/usuarios.
   eliminar, solo desactivar (la API responde 409, igual que con los accesos).
 - Solo se asignan como participantes usuarios activos con rol `participante`.
 - Detalle del modelo en `docs/sesiones.md`.
+
+## Respuestas (PB-08 y PB-09, migraciones 0007 y 0008)
+
+- Tabla `respuesta`: una por participante y tarea (`UNIQUE (tarea_id, usuario_id)`),
+  con sesión, inject, rol, contenido, `recibida_en` (hora del servidor) y
+  `segundos_usados`. Todas sus FK son **RESTRICT**.
+- **Solo inserción:** un trigger rechaza UPDATE, DELETE y TRUNCATE (migración
+  0008). Detalle en `docs/respuestas.md`.

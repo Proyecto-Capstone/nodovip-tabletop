@@ -103,7 +103,14 @@ function Panel({
             {conexion === 'reconectando' ? 'Reconectando…' : 'Conectado en tiempo real'}
           </p>
         </div>
-        <EstadoVivo estado={estado} pausada={vista?.pausada ?? false} />
+        <div className="acciones-fila">
+          {(estado === 'en_curso' || estado === 'finalizada') && (
+            <Link className="boton boton-texto" to={`/sesiones/${sesion.id}/respuestas`}>
+              Ver respuestas
+            </Link>
+          )}
+          <EstadoVivo estado={estado} pausada={vista?.pausada ?? false} />
+        </div>
       </div>
 
       <Errores errores={errores ?? (error ? [error] : undefined)} />

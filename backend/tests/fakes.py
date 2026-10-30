@@ -181,3 +181,9 @@ class RepoRespuestasEnMemoria:
             for r in self.datos
             if r.sesion_id == sesion_id and r.usuario_id == usuario_id
         ]
+
+    def de_sesion(self, sesion_id):
+        return sorted(
+            (copy.deepcopy(r) for r in self.datos if r.sesion_id == sesion_id),
+            key=lambda r: r.recibida_en,
+        )

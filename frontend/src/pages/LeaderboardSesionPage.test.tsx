@@ -123,14 +123,23 @@ describe('LeaderboardSesionPage', () => {
     ultimo().recibir(BASE)
 
     expect(await screen.findByText('Simulacro Q4')).toBeInTheDocument()
-    const ranking = screen.getByRole('region', { name: 'Ranking por participante' })
-    expect(within(ranking).getByText('Ana López')).toBeInTheDocument()
-    expect(within(ranking).getByText('🥇')).toBeInTheDocument()
-    expect(within(ranking).getByText('10 / 10 pts')).toBeInTheDocument()
+
+    const podio = screen.getByRole('group', { name: 'Podio' })
+    expect(within(podio).getByText('Ana López')).toBeInTheDocument()
+    expect(within(podio).getByText('🥇')).toBeInTheDocument()
+    expect(within(podio).getByText('10 pts')).toBeInTheDocument()
+
+    const roles = screen.getByRole('region', { name: 'Ranking por rol organizacional' })
+    expect(within(roles).getByText('TI')).toBeInTheDocument()
+    expect(within(roles).getByText('10 / 10 pts')).toBeInTheDocument()
+
+    const completo = screen.getByRole('region', { name: 'Ranking completo' })
+    expect(within(completo).getByText('Carlos Ramírez')).toBeInTheDocument()
+
     expect(screen.getByText('● EN VIVO')).toBeInTheDocument()
   })
 
-  it('sin participantes muestra un aviso', async () => {
+  it('sin participantes muestra un aviso y sin podio', async () => {
     renderConSesion(rutas(), {
       sesion: sesionDePrueba(OBSERVADOR),
       ruta: `/leaderboard/${ID}`,
@@ -141,6 +150,7 @@ describe('LeaderboardSesionPage', () => {
     expect(
       await screen.findByText('Todavía no hay participantes en esta sesión.'),
     ).toBeInTheDocument()
+    expect(screen.queryByRole('group', { name: 'Podio' })).not.toBeInTheDocument()
   })
 
   it('un cierre definitivo muestra el error', async () => {
@@ -163,7 +173,7 @@ describe('LeaderboardSesionPage', () => {
     })
     ultimo().abrir()
     ultimo().recibir(BASE)
-    await screen.findByText('Ana López')
+    await screen.findByText('Simulacro Q4')
 
     const actualizado: Leaderboard = {
       ...BASE,
@@ -174,10 +184,26 @@ describe('LeaderboardSesionPage', () => {
     }
     ultimo().recibir(actualizado)
 
-    const ranking = await screen.findByRole('region', { name: 'Ranking por participante' })
-    const filas = within(ranking).getAllByRole('listitem')
+    const podio = await screen.findByRole('group', { name: 'Podio' })
+    expect(within(podio).getByText('Carlos Ramírez')).toBeInTheDocument()
+    expect(within(podio).queryByText('Ana López')).not.toBeInTheDocument()
+
+    const completo = screen.getByRole('region', { name: 'Ranking completo' })
+    const filas = within(completo).getAllByRole('listitem')
     expect(within(filas[0]).getByText('Carlos Ramírez')).toBeInTheDocument()
     expect(within(filas[1]).getByText('Ana López')).toBeInTheDocument()
+  })
+
+  it('muestra "Resultado final" cuando la sesión termina', async () => {
+    renderConSesion(rutas(), {
+      sesion: sesionDePrueba(OBSERVADOR),
+      ruta: `/leaderboard/${ID}`,
+    })
+    ultimo().abrir()
+    ultimo().recibir({ ...BASE, sesion: { ...BASE.sesion, estado: 'finalizada' } })
+
+    expect(await screen.findByText('Resultado final')).toBeInTheDocument()
+    expect(screen.queryByText('● EN VIVO')).not.toBeInTheDocument()
   })
 
   it('un empate en 0 puntos no muestra medalla ni fondo de podio', async () => {
@@ -196,25 +222,20 @@ describe('LeaderboardSesionPage', () => {
       ],
     })
 
-    const ranking = await screen.findByRole('region', { name: 'Ranking por participante' })
-    const filas = within(ranking).getAllByRole('listitem')
+    // El podio solo tiene a la ganadora: ningún empatado en 0 entra, aunque
+    // su posición (por el empate) sea 2 y por lo tanto <= 3.
+    const podio = await screen.findByRole('group', { name: 'Podio' })
+    expect(within(podio).getByText('Diana Flores')).toBeInTheDocument()
     for (const nombre of ['Ana López', 'Pedro Morales', 'Pedro Suárez']) {
-      const fila = filas.find((f) => within(f).queryByText(nombre)) as HTMLElement
-      expect(within(fila).getByText('#2')).toBeInTheDocument()
-      expect(within(fila).queryByText('🥈')).not.toBeInTheDocument()
+      expect(within(podio).queryByText(nombre)).not.toBeInTheDocument()
+    }
+
+    const completo = screen.getByRole('region', { name: 'Ranking completo' })
+    for (const nombre of ['Ana López', 'Pedro Morales', 'Pedro Suárez']) {
+      const fila = within(completo)
+        .getAllByRole('listitem')
+        .find((f) => within(f).queryByText(nombre)) as HTMLElement
       expect(fila.className).not.toContain('leaderboard-podio')
     }
-  })
-
-  it('muestra "Resultado final" cuando la sesión termina', async () => {
-    renderConSesion(rutas(), {
-      sesion: sesionDePrueba(OBSERVADOR),
-      ruta: `/leaderboard/${ID}`,
-    })
-    ultimo().abrir()
-    ultimo().recibir({ ...BASE, sesion: { ...BASE.sesion, estado: 'finalizada' } })
-
-    expect(await screen.findByText('Resultado final')).toBeInTheDocument()
-    expect(screen.queryByText('● EN VIVO')).not.toBeInTheDocument()
   })
 })

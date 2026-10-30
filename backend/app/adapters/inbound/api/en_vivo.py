@@ -28,6 +28,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from starlette.websockets import WebSocketDisconnect
 
+from app import config
 from app.adapters.inbound.api.seguridad import (
     UsuarioActual,
     obtener_usuario_ws,
@@ -48,7 +49,11 @@ router = APIRouter(tags=["en vivo"])
 def get_servicio_en_vivo(
     session: Annotated[Session, Depends(get_session)],
 ) -> Iterator[ServicioEnVivo]:
-    yield ServicioEnVivo(SqlSesionRepository(session), adaptador_en_vivo())
+    yield ServicioEnVivo(
+        SqlSesionRepository(session),
+        adaptador_en_vivo(),
+        maximo_activas=config.max_sesiones_activas(),
+    )
 
 
 def get_suscriptor() -> SuscriptorEnVivo:

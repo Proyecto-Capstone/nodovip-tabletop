@@ -4,6 +4,7 @@ import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 import {
   ADMINISTRADOR,
+  OBSERVADOR,
   PARTICIPANTE,
   renderConSesion,
   sesionDePrueba,
@@ -36,6 +37,16 @@ describe('Layout', () => {
     renderConSesion(rutas(), { sesion: sesionDePrueba(PARTICIPANTE) })
     expect(screen.queryByRole('link', { name: 'Biblioteca de escenarios' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Gestión de usuarios' })).toBeNull()
+  })
+
+  it('el observador ve la opción de leaderboard', () => {
+    renderConSesion(rutas(), { sesion: sesionDePrueba(OBSERVADOR) })
+    expect(screen.getByRole('link', { name: 'Leaderboard' })).toBeInTheDocument()
+  })
+
+  it('un participante no ve la opción de leaderboard (sin el permiso)', () => {
+    renderConSesion(rutas(), { sesion: sesionDePrueba(PARTICIPANTE) })
+    expect(screen.queryByRole('link', { name: 'Leaderboard' })).toBeNull()
   })
 
   it('cerrar sesión llama al backend y vuelve al login', async () => {

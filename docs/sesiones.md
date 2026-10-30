@@ -139,8 +139,9 @@ deben llevar zona horaria (ISO 8601); sin ella la API responde 422.
 
 ## Datos de prueba
 
-`app.seed_usuarios_demo` crea una moderadora y cinco participantes ficticios
-(`@demo.nodovip.test`) con la contraseña de la variable `DEMO_CONTRASENA`:
+`app.seed_usuarios_demo` crea una moderadora, una observadora (PB-12) y cinco
+participantes ficticios (`@demo.nodovip.test`) con la contraseña de la
+variable `DEMO_CONTRASENA`:
 
 ```powershell
 docker compose exec -e DEMO_CONTRASENA=<contraseña> backend python -m app.seed_usuarios_demo

@@ -77,6 +77,9 @@ erDiagram
   múltiple* con las opciones marcadas como correctas (PB-10).
 - **Pesos (RF-03):** completitud, precisión y tiempo, a nivel de sesión. Suman
   100 (CHECK en la base). Por defecto 40 / 40 / 20.
+- **Cliente (PB-14):** organización opcional (máx. 120 caracteres, se normalizan
+  los espacios). Se edita en el paso "Programar"; el reporte de brechas compara con
+  las sesiones anteriores del mismo cliente (`docs/reportes.md`).
 - **Puntaje máximo total:** no se guarda; se calcula como la suma de los
   puntajes de las tareas (RF-01: "debe calcularse automáticamente").
 - **FK RESTRICT** a `escenario` y `usuario`: un escenario o una cuenta usados en

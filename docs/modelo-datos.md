@@ -99,3 +99,10 @@ La matriz vive en dos lugares que deben coincidir: `backend/app/domain/usuarios.
 - **Evaluación (PB-10, migración 0009):** la respuesta guarda su puntaje
   automático y el detalle al insertarse. Los ajustes del moderador van en
   `ajuste_puntaje`, también de solo inserción. Detalle en `docs/evaluacion.md`.
+
+## Cliente y reportes (PB-14, migración 0010)
+
+- `sesion.cliente`: organización para la que se hace el ejercicio (opcional, con
+  índice). El reporte compara con las sesiones finalizadas anteriores del mismo cliente.
+- `reporte`: el último PDF generado de cada sesión (`sesion_id` PK y FK RESTRICT,
+  estado, fechas, `pdf` y `error`). Detalle en `docs/reportes.md`.

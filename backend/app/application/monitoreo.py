@@ -57,6 +57,7 @@ class FilaMonitoreo:
     escenario_nombre: str
     pausada: bool
     invitados: int
+    # Participantes invitados conectados ahora (sin contar al moderador).
     conectados: int
     inject_actual: int
     total_injects: int
@@ -149,14 +150,17 @@ class ServicioMonitoreo:
         esperadas = recibidas + sum(
             p.acumulado.sin_responder for p in puntajes.participantes
         )
+        # Solo los invitados: la conexión del moderador también está en
+        # `vista.conectados` y no debe contar como participante (no "6/5").
+        invitados = {p.usuario_id for p in sesion.participantes}
         return FilaMonitoreo(
             id=sesion.id,
             nombre=sesion.nombre,
             moderador_nombre=moderador.nombre if moderador else "—",
             escenario_nombre=escenario.nombre if escenario else "—",
             pausada=vista.pausada,
-            invitados=len(sesion.participantes),
-            conectados=len(vista.conectados),
+            invitados=len(invitados),
+            conectados=len(vista.conectados & invitados),
             inject_actual=vista.inject_actual,
             total_injects=vista.total_injects,
             respuestas_recibidas=recibidas,

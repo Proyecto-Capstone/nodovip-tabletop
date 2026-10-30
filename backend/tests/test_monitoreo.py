@@ -175,6 +175,27 @@ def test_fila_trae_moderador_escenario_invitados_conectados_y_avance(entorno):
     assert fila.excede_duracion is False
 
 
+def test_conectados_cuenta_solo_participantes_no_al_moderador(entorno):
+    sesiones, almacen, servicio = (
+        entorno["sesiones"],
+        entorno["almacen"],
+        entorno["servicio"],
+    )
+    sesion = _sesion(EstadoSesion.EN_CURSO)
+    sesiones.guardar(sesion)
+
+    # Solo el moderador en la sala: ningún participante conectado.
+    almacen.conectar(sesion.id, ID_MODERADOR)
+    [fila] = servicio.resumen().sesiones
+    assert (fila.conectados, fila.invitados) == (0, 2)
+
+    # Con los dos participantes no pasa de 2/2 (no "3/2").
+    almacen.conectar(sesion.id, ID_P1)
+    almacen.conectar(sesion.id, ID_P2)
+    [fila] = servicio.resumen().sesiones
+    assert (fila.conectados, fila.invitados) == (2, 2)
+
+
 @pytest.mark.parametrize(
     "estado",
     [EstadoSesion.BORRADOR, EstadoSesion.PROGRAMADA, EstadoSesion.FINALIZADA],

@@ -44,6 +44,14 @@ export const OBSERVADOR: Sesion = {
   permisos: ['leaderboard:ver'],
 }
 
+export const ANALISTA: Sesion = {
+  id: '55555555-5555-5555-5555-555555555555',
+  nombre: 'Andrea Analista',
+  correo: 'andrea@example.com',
+  rol: 'analista',
+  permisos: ['reportes:generar', 'reportes:ver'],
+}
+
 export const PARTICIPANTE: Sesion = {
   id: '22222222-2222-2222-2222-222222222222',
   nombre: 'Pedro Participante',

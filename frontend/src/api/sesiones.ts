@@ -48,6 +48,8 @@ export interface Pesos {
 export interface SesionResumen {
   id: string
   nombre: string
+  /** Organización para la que se hace el ejercicio (PB-14). */
+  cliente: string | null
   escenario_id: string
   estado: EstadoSesion
   fecha_programada: string | null
@@ -68,6 +70,7 @@ export interface SesionDetalle extends SesionResumen {
 /** Lo que guarda el asistente (PUT). Los injects llevan su id, también los nuevos. */
 export interface SesionDiseno {
   nombre: string
+  cliente: string | null
   roles: string[]
   injects: Omit<Inject, 'orden'>[]
   tareas: TareaSesion[]
@@ -107,6 +110,7 @@ export const eliminarSesion = (id: string) =>
 export function aDiseno(s: SesionDetalle): SesionDiseno {
   return {
     nombre: s.nombre,
+    cliente: s.cliente,
     roles: s.roles,
     injects: s.injects.map((i) => ({
       id: i.id,

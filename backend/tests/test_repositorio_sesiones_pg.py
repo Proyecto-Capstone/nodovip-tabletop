@@ -268,3 +268,34 @@ def test_en_curso_guardar_no_recrea_tareas_y_la_respuesta_es_unica(entorno):
         respuestas.guardar(Respuesta(**{**vars(nueva), "id": uuid4(), "texto": "Otra"}))
     [guardada] = respuestas.de_participante(sesion.id, participante.usuario_id)
     assert guardada.texto == "Aíslo el file server" and guardada.segundos_usados == 12
+
+
+def test_cliente_y_reporte_pdf_en_postgresql(entorno):
+    """PB-14: la sesión guarda su cliente y el reporte guarda el último PDF."""
+    from app.adapters.outbound.persistence.repositorio_reportes import (
+        SqlReporteRepository,
+    )
+    from app.domain.reportes import EstadoReporte
+
+    servicio = entorno["servicio"]
+    sesion = servicio.crear(
+        entorno["escenario"].id,
+        entorno["moderadora"].id,
+        "Con cliente",
+        "  Banco   Andino ",
+    )
+    assert servicio.repo.obtener(sesion.id).cliente == "Banco Andino"
+
+    reportes = SqlReporteRepository(entorno["session"])
+    ahora = datetime.now(UTC)
+    reportes.marcar_generando(sesion.id, ahora)
+    assert reportes.obtener(sesion.id).estado == EstadoReporte.GENERANDO
+    reportes.marcar_fallido(sesion.id, "Pango no disponible", ahora)
+    assert reportes.obtener(sesion.id).error == "Pango no disponible"
+    reportes.guardar_pdf(sesion.id, b"%PDF-1.7 prueba", ahora)
+    guardado = reportes.obtener(sesion.id)
+    assert guardado.estado == EstadoReporte.GENERADO and guardado.error is None
+    assert guardado.pdf == b"%PDF-1.7 prueba"
+    # La lista de estados no carga el PDF.
+    [sin_pdf] = reportes.estados([sesion.id]).values()
+    assert sin_pdf.pdf is None and sin_pdf.estado == EstadoReporte.GENERADO

@@ -15,6 +15,8 @@ import { LeaderboardSesionPage } from './pages/LeaderboardSesionPage'
 import { LoginPage } from './pages/LoginPage'
 import { NuevaSesionPage } from './pages/NuevaSesionPage'
 import { RespuestasSesionPage } from './pages/RespuestasSesionPage'
+import { ReportePage } from './pages/ReportePage'
+import { ReportesPage } from './pages/ReportesPage'
 import { MiSesionPage } from './pages/MiSesionPage'
 import { MisSesionesPage } from './pages/MisSesionesPage'
 import { MonitoreoPage } from './pages/MonitoreoPage'
@@ -49,6 +51,10 @@ export default function App() {
               <Route element={<RutaProtegida permiso="sesiones:conducir" />}>
                 <Route path="sesiones/:id/conducir" element={<ConducirSesionPage />} />
                 <Route path="sesiones/:id/respuestas" element={<RespuestasSesionPage />} />
+              </Route>
+              <Route element={<RutaProtegida permiso="reportes:ver" />}>
+                <Route path="reportes" element={<ReportesPage />} />
+                <Route path="reportes/:id" element={<ReportePage />} />
               </Route>
               <Route element={<RutaProtegida permiso="leaderboard:ver" />}>
                 <Route path="leaderboard" element={<LeaderboardPage />} />

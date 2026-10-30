@@ -2,10 +2,10 @@
 
 Uso: docker compose exec -e DEMO_CONTRASENA=... backend python -m app.seed_usuarios_demo
 
-Un moderador, una observadora (PB-12: leaderboard) y cinco participantes con
-correos @demo.nodovip.test. Todos usan la contraseña de DEMO_CONTRASENA (debe
-cumplir la política de PB-02). Si un correo ya existe, se omite. No corre en
-producción.
+Un moderador, una observadora (PB-12: leaderboard), una analista (PB-14:
+reportes) y cinco participantes con correos @demo.nodovip.test. Todos usan la
+contraseña de DEMO_CONTRASENA (debe cumplir la política de PB-02). Si un correo
+ya existe, se omite. No corre en producción.
 """
 
 import os
@@ -26,6 +26,7 @@ from app.domain.usuarios import ReglaUsuarioError, RolNombre
 USUARIOS = [
     ("Mónica Moderadora", "moderadora", RolNombre.MODERADOR),
     ("Olga Observadora", "observadora", RolNombre.OBSERVADOR),
+    ("Andrea Analista", "analista", RolNombre.ANALISTA),
     ("Pedro Morales", "pedro.morales", RolNombre.PARTICIPANTE),
     ("Carlos Ramírez", "carlos.ramirez", RolNombre.PARTICIPANTE),
     ("Pedro Suárez", "pedro.suarez", RolNombre.PARTICIPANTE),

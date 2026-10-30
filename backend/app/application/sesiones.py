@@ -42,13 +42,19 @@ class ServicioSesiones:
         self.invitar = invitar
 
     def crear(
-        self, escenario_id: UUID, moderador_id: UUID, nombre: str | None = None
+        self,
+        escenario_id: UUID,
+        moderador_id: UUID,
+        nombre: str | None = None,
+        cliente: str | None = None,
     ) -> SesionTabletop:
         """Paso 1 del diseñador: el borrador nace de un escenario publicado."""
         escenario = self.escenarios.obtener(escenario_id)
         if escenario is None or escenario.estado != EstadoEscenario.PUBLICADO:
             raise ReglaSesionError(["El escenario no existe o no está publicado"])
-        sesion = SesionTabletop.desde_escenario(escenario, moderador_id, nombre)
+        sesion = SesionTabletop.desde_escenario(
+            escenario, moderador_id, nombre, cliente
+        )
         return self.repo.guardar(sesion)
 
     def listar(self, moderador_id: UUID) -> list[SesionTabletop]:

@@ -148,6 +148,12 @@ class ParticipanteSesion:
         return self.usuario_id == otro.usuario_id and self.rol_codigo == otro.rol_codigo
 
 
+def normalizar_cliente(cliente: str | None) -> str | None:
+    """Sin espacios sobrantes; vacío es "sin cliente"."""
+    cliente = " ".join((cliente or "").split())
+    return cliente or None
+
+
 @dataclass
 class SesionTabletop:
     nombre: str
@@ -160,6 +166,9 @@ class SesionTabletop:
     pesos: PesosPuntuacion = field(default_factory=PesosPuntuacion)
     fecha_programada: datetime | None = None
     duracion_minutos: int | None = None
+    # Organización para la que se hace el ejercicio (PB-14): el reporte compara
+    # con las sesiones anteriores del mismo cliente. Opcional.
+    cliente: str | None = None
     estado: EstadoSesion = EstadoSesion.BORRADOR
     # Ejecución en vivo (PB-07). Se guardan para reconstruir el estado si
     # Redis se pierde y como registro de la sesión ya realizada.
@@ -170,7 +179,11 @@ class SesionTabletop:
 
     @classmethod
     def desde_escenario(
-        cls, escenario: Escenario, moderador_id: UUID, nombre: str | None = None
+        cls,
+        escenario: Escenario,
+        moderador_id: UUID,
+        nombre: str | None = None,
+        cliente: str | None = None,
     ) -> "SesionTabletop":
         """Crea un borrador copiando el contenido del escenario publicado.
 
@@ -204,6 +217,7 @@ class SesionTabletop:
             )
         return cls(
             nombre=nombre or escenario.nombre,
+            cliente=normalizar_cliente(cliente),
             escenario_id=escenario.id,
             moderador_id=moderador_id,
             roles=list(escenario.roles),
@@ -315,6 +329,7 @@ class SesionTabletop:
             )
             p.invitacion_error = anterior.invitacion_error if anterior else None
         self.nombre = nuevo.nombre
+        self.cliente = normalizar_cliente(nuevo.cliente)
         self.roles = nuevo.roles
         self.injects = nuevo.injects
         self.tareas = nuevo.tareas

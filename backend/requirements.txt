@@ -25,3 +25,4 @@ bcrypt>=4.2
 PyJWT>=2.10
 email-validator>=2.2
 redis>=5.2
+weasyprint>=62

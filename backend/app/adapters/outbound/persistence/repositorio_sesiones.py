@@ -35,6 +35,7 @@ def _a_dominio(m: SesionModel) -> SesionTabletop:
     return SesionTabletop(
         id=m.id,
         nombre=m.nombre,
+        cliente=m.cliente,
         escenario_id=m.escenario_id,
         moderador_id=m.moderador_id,
         estado=EstadoSesion(m.estado),
@@ -142,6 +143,7 @@ class SqlSesionRepository:
             modelo = SesionModel(id=sesion.id)
             self.session.add(modelo)
         modelo.nombre = sesion.nombre
+        modelo.cliente = sesion.cliente
         modelo.escenario_id = sesion.escenario_id
         modelo.moderador_id = sesion.moderador_id
         modelo.estado = sesion.estado.value

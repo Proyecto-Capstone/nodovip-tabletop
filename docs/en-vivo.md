@@ -193,6 +193,18 @@ No hay endpoints nuevos: el panel reutiliza los de PB-09 y PB-10. El leaderboard
 del Observador y el Administrador (PB-12, `docs/leaderboard.md`) reutiliza este
 mismo evento `ajuste` y el `respuesta`.
 
+## Monitoreo de varias sesiones a la vez (PC-24)
+
+El Administrador puede mirar cualquier sesión `EN_CURSO` en un **modo de
+solo lectura**, sin aparecer como un participante más: su conexión por
+WebSocket (`/api/ws/monitoreo/{id}`) nunca llama a
+`AlmacenEnVivo.conectar`, así que no entra en la lista de `conectados` ni en
+el contador que ven el moderador y los demás participantes — solo mira.
+También hay un límite configurable (`MAX_SESIONES_ACTIVAS`, 10 por defecto)
+de cuántas sesiones pueden estar `EN_CURSO` a la vez, que `iniciar()` hace
+cumplir con un advisory lock de PostgreSQL. Detalle completo en
+`docs/monitoreo.md`.
+
 **Latencia medida** (app real: NGINX, Redis, PostgreSQL): desde que el
 participante envía la respuesta hasta que el aviso llega al moderador, **22 a 27
 ms**. El requisito es ≤ 3 s.

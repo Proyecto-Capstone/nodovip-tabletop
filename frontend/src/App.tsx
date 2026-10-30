@@ -12,6 +12,7 @@ import { EscenarioFormPage } from './pages/EscenarioFormPage'
 import { InicioPage } from './pages/InicioPage'
 import { LoginPage } from './pages/LoginPage'
 import { NuevaSesionPage } from './pages/NuevaSesionPage'
+import { RespuestasSesionPage } from './pages/RespuestasSesionPage'
 import { MiSesionPage } from './pages/MiSesionPage'
 import { MisSesionesPage } from './pages/MisSesionesPage'
 import { SesionEnVivoPage } from './pages/SesionEnVivoPage'
@@ -43,6 +44,7 @@ export default function App() {
               </Route>
               <Route element={<RutaProtegida permiso="sesiones:conducir" />}>
                 <Route path="sesiones/:id/conducir" element={<ConducirSesionPage />} />
+                <Route path="sesiones/:id/respuestas" element={<RespuestasSesionPage />} />
               </Route>
               <Route element={<RutaProtegida permiso="sesiones:participar" />}>
                 <Route path="mis-sesiones" element={<MisSesionesPage />} />

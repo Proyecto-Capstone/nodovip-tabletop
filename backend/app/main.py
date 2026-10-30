@@ -7,6 +7,7 @@ from app.adapters.inbound.api import (
     en_vivo,
     escenarios,
     mis_sesiones,
+    respuestas,
     sesiones,
     usuarios,
 )
@@ -21,6 +22,7 @@ app.include_router(escenarios.router)
 app.include_router(sesiones.router)
 app.include_router(mis_sesiones.router)
 app.include_router(en_vivo.router)
+app.include_router(respuestas.router)
 app.include_router(usuarios.router)
 
 

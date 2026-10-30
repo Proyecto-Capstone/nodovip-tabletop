@@ -1234,6 +1234,11 @@ button.paso:hover {
   transition: width 0.4s;
 }
 
+/* Cupo de sesiones activas al máximo (PC-24, monitoreo). */
+.cupo-lleno span {
+  background: var(--rojo);
+}
+
 .sala-datos {
   display: flex;
   justify-content: space-between;

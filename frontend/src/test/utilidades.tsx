@@ -36,6 +36,14 @@ export const MODERADOR: Sesion = {
   ],
 }
 
+export const OBSERVADOR: Sesion = {
+  id: '44444444-4444-4444-4444-444444444444',
+  nombre: 'Olga Observadora',
+  correo: 'olga@example.com',
+  rol: 'observador',
+  permisos: ['leaderboard:ver'],
+}
+
 export const PARTICIPANTE: Sesion = {
   id: '22222222-2222-2222-2222-222222222222',
   nombre: 'Pedro Participante',

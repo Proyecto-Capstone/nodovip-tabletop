@@ -61,6 +61,7 @@ export function Layout() {
         {puede('sesiones:participar') && (
           <NavLink to="/mis-sesiones">Mis sesiones</NavLink>
         )}
+        {puede('leaderboard:ver') && <NavLink to="/leaderboard">Leaderboard</NavLink>}
         {puedeGestionarUsuarios && (
           <>
             <NavLink to="/usuarios">Gestión de usuarios</NavLink>

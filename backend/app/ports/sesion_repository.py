@@ -3,7 +3,7 @@
 from typing import Protocol
 from uuid import UUID
 
-from app.domain.sesiones import SesionTabletop
+from app.domain.sesiones import EstadoSesion, SesionTabletop
 
 
 class SesionRepository(Protocol):
@@ -13,6 +13,12 @@ class SesionRepository(Protocol):
 
     def listar_por_participante(self, usuario_id: UUID) -> list[SesionTabletop]:
         """Sesiones en las que el usuario está invitado, de cualquier estado."""
+        ...
+
+    def listar_por_estados(
+        self, estados: tuple[EstadoSesion, ...]
+    ) -> list[SesionTabletop]:
+        """Todas las sesiones en alguno de esos estados (PB-12: leaderboard)."""
         ...
 
     def guardar(self, sesion: SesionTabletop) -> SesionTabletop: ...

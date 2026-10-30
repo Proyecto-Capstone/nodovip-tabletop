@@ -11,6 +11,7 @@ queda guardado con ella. El moderador puede ajustarlo dejando un motivo; el
 puntaje vigente es el del último ajuste. Se acumula por participante y por rol.
 """
 
+import logging
 from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -48,6 +49,8 @@ from app.ports.respuesta_repository import RespuestaRepository
 from app.ports.sesion_repository import SesionRepository
 from app.ports.usuario_repository import UsuarioRepository
 
+log = logging.getLogger(__name__)
+
 
 class TareaNoEncontrada(LookupError):
     pass
@@ -55,6 +58,19 @@ class TareaNoEncontrada(LookupError):
 
 def _ahora() -> datetime:
     return datetime.now(UTC)
+
+
+def _avisar(almacen: AlmacenEnVivo, evento: EventoEnVivo) -> None:
+    """El aviso en vivo es una mejora, no una garantía: si Redis falla, la
+    respuesta o el ajuste ya guardados no deben devolver error al usuario."""
+    try:
+        almacen.publicar(evento)
+    except Exception:
+        log.exception(
+            "No se pudo publicar el evento %s de la sesión %s",
+            evento.tipo,
+            evento.sesion_id,
+        )
 
 
 @dataclass
@@ -153,7 +169,7 @@ class ServicioRespuestas:
             )
         )
         # Aviso para el panel del moderador (PB-11): se actualiza sin recargar.
-        self.en_vivo.almacen.publicar(EventoEnVivo(sesion.id, "respuesta"))
+        _avisar(self.en_vivo.almacen, EventoEnVivo(sesion.id, "respuesta"))
         return guardada
 
     # --- apoyo ----------------------------------------------------------------------
@@ -252,12 +268,14 @@ class ServicioRegistroRespuestas:
         respuestas: RespuestaRepository,
         catalogo: CatalogoRepository,
         usuarios: UsuarioRepository,
+        almacen: AlmacenEnVivo,
         reloj: Callable[[], datetime] = _ahora,
     ):
         self.sesiones = sesiones
         self.respuestas = respuestas
         self.catalogo = catalogo
         self.usuarios = usuarios
+        self.almacen = almacen
         self.reloj = reloj
         # Cachés de una petición: nombres de roles y de participantes.
         self._nombres_roles: dict[str, str] | None = None
@@ -297,11 +315,18 @@ class ServicioRegistroRespuestas:
             ),
             sesion.id,
         )
+        # Aviso para el leaderboard (PB-12) y para el panel del moderador (PB-11).
+        _avisar(self.almacen, EventoEnVivo(sesion.id, "ajuste"))
         return next(r for r in self._registro(sesion) if r.respuesta.id == respuesta_id)
 
     def puntajes(self, sesion_id: UUID, moderador_id: UUID) -> PuntajesSesion:
         """Puntaje acumulado por participante (de mayor a menor) y por rol."""
         sesion = self._del_moderador(sesion_id, moderador_id)
+        return self.acumulado_de(sesion)
+
+    def acumulado_de(self, sesion: SesionTabletop) -> PuntajesSesion:
+        """El mismo acumulado, para quien ya tiene la sesión y la autorización
+        resuelta (el leaderboard, PB-12, aplica sus propias reglas de acceso)."""
         vigentes = {
             (r.respuesta.tarea_id, r.respuesta.usuario_id): r.puntaje
             for r in self._registro(sesion)

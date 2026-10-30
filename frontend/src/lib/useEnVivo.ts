@@ -2,7 +2,8 @@
 // Al (re)conectarse, el servidor envía primero el estado completo: así quien
 // pierde la conexión recupera la sesión donde va.
 // PB-11: al moderador también le llega {tipo: 'respuesta'} cada vez que un
-// participante responde; `avisosRespuesta` cuenta esos avisos para recargar el panel.
+// participante responde, o {tipo: 'ajuste'} cuando se corrige un puntaje;
+// `avisosRespuesta` cuenta esos avisos para recargar el panel.
 
 import { useEffect, useRef, useState } from 'react'
 import { CIERRE_DEFINITIVO, urlWebSocket, type VistaEnVivo } from '../api/enVivo'
@@ -45,7 +46,7 @@ export function useEnVivo(sesionId: string | undefined) {
       }
       socket.onmessage = (mensaje) => {
         const datos = JSON.parse(String(mensaje.data)) as { tipo: string; vista: VistaEnVivo }
-        if (datos.tipo === 'respuesta') {
+        if (datos.tipo === 'respuesta' || datos.tipo === 'ajuste') {
           setAvisosRespuesta((n) => n + 1)
           return
         }

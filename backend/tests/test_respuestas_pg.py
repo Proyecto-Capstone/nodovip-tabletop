@@ -234,6 +234,7 @@ def test_registro_de_la_sesion_con_nombres_y_roles(entorno):
         SqlRespuestaRepository(session),
         SqlCatalogoRepository(session),
         SqlUsuarioRepository(session),
+        EnVivoEnMemoria(),
     ).de_sesion(e["sesion"].id, e["moderadora"].id)
 
     assert [r.participante_nombre for r in registro] == [
@@ -259,6 +260,7 @@ def _registro(e) -> ServicioRegistroRespuestas:
         SqlRespuestaRepository(session),
         SqlCatalogoRepository(session),
         SqlUsuarioRepository(session),
+        EnVivoEnMemoria(),
     )
 
 

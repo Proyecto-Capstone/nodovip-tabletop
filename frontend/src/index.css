@@ -1708,3 +1708,216 @@ button.paso:hover {
     grid-column: 1;
   }
 }
+
+/* --- Leaderboard en vivo (PB-12, prototipo P-06, Figura 21) ----------------- */
+
+.leaderboard-resultado-final {
+  font-weight: 600;
+}
+
+.tablero-leaderboard {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  background: var(--navy);
+  color: #fff;
+  border-radius: var(--radio);
+  padding: 1.25rem;
+}
+
+.tablero-leaderboard h2 {
+  margin: 0 0 0.9rem;
+  font-size: 1rem;
+  color: #fff;
+}
+
+.tablero-leaderboard-principal {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.tablero-texto-suave {
+  color: rgb(255 255 255 / 0.65);
+  font-size: 0.8rem;
+}
+
+/* Ranking por rol: el orden (de mayor a menor) ya viene del backend; sin
+   números ni medallas, como en el prototipo. */
+.ranking-roles-tablero {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+
+.ranking-roles-tablero li {
+  display: grid;
+  grid-template-columns: minmax(7rem, 1fr) minmax(6rem, 2fr) 6rem;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.ranking-roles-nombre {
+  display: grid;
+  font-size: 0.85rem;
+}
+
+.barra-avance-tablero {
+  height: 8px;
+  border-radius: 999px;
+  background: rgb(255 255 255 / 0.12);
+  overflow: hidden;
+}
+
+.barra-avance-tablero span {
+  display: block;
+  height: 100%;
+}
+
+.tier-verde span {
+  background: var(--verde);
+}
+
+.tier-naranja span {
+  background: var(--naranja);
+}
+
+.tier-rojo span {
+  background: var(--rojo);
+}
+
+.ranking-roles-puntaje {
+  text-align: right;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Podio: 2º-1º-3º, el 1º más alto y destacado, como en el prototipo. */
+.podio {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.podio-bloque {
+  display: grid;
+  justify-items: center;
+  gap: 0.2rem;
+  padding: 0.9rem 0.6rem;
+  border-radius: var(--radio);
+  background: var(--navy-claro);
+  text-align: center;
+}
+
+.podio-puesto {
+  font-size: 1.5rem;
+}
+
+.podio-nombre {
+  font-size: 0.9rem;
+}
+
+.podio-rol {
+  font-size: 0.75rem;
+  color: rgb(255 255 255 / 0.65);
+}
+
+.podio-puntos {
+  margin-top: 0.3rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.podio-1 {
+  order: 2;
+  padding-top: 1.4rem;
+  background: #d9a441;
+  color: var(--navy);
+}
+
+.podio-1 .podio-rol {
+  color: rgb(28 29 51 / 0.7);
+}
+
+.podio-2 {
+  order: 1;
+}
+
+.podio-3 {
+  order: 3;
+}
+
+/* Ranking completo: todos los puestos, columna angosta con scroll propio. */
+.ranking-completo {
+  background: rgb(255 255 255 / 0.06);
+  border-radius: var(--radio);
+  padding: 0.9rem;
+  max-height: 24rem;
+  overflow-y: auto;
+}
+
+.ranking-completo ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.ranking-completo li {
+  display: grid;
+  grid-template-columns: 1.4rem 1fr auto;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.35rem 0.4rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.ranking-completo li.leaderboard-podio {
+  background: rgb(217 164 65 / 0.22);
+}
+
+.ranking-completo-puesto {
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranking-completo-nombre {
+  display: grid;
+}
+
+.ranking-completo-puntos {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 760px) {
+  .tablero-leaderboard {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .podio {
+    grid-template-columns: 1fr;
+  }
+
+  .podio-1,
+  .podio-2,
+  .podio-3 {
+    order: initial;
+  }
+
+  .ranking-roles-tablero li {
+    grid-template-columns: 1fr auto;
+  }
+
+  .ranking-roles-tablero .barra-avance-tablero {
+    grid-column: 1 / -1;
+  }
+}

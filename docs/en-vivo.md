@@ -170,16 +170,28 @@ documento)** y muestra el progreso de la sesión en tiempo real, sin recargar:
 ## Actualización en tiempo real
 
 1. Al guardar una respuesta, `ServicioRespuestas.responder` publica un evento
-   `respuesta` en el canal de la sesión (Redis pub/sub).
-2. El WebSocket lo reenvía **solo al moderador** como `{"tipo": "respuesta"}`, sin
-   datos. Los participantes no lo reciben: no saben cuándo responden los demás.
+   `respuesta` en el canal de la sesión (Redis pub/sub). Al ajustar un puntaje
+   (PB-10), `ServicioRegistroRespuestas.ajustar` publica un evento `ajuste`.
+2. El WebSocket reenvía ambos **solo al moderador**, como `{"tipo": "respuesta"}`
+   o `{"tipo": "ajuste"}`, sin datos. Los participantes no los reciben: no saben
+   cuándo responden los demás ni cuándo se ajusta un puntaje. Ninguno de los dos
+   altera la vista en curso ni la lista de conectados (antes de PC-23, un evento
+   que no fuera "suscrito"/"respuesta"/"estado" caía por error en la rama de
+   presencia y vaciaba esa lista; ahora esa rama solo se activa con
+   `evento.tipo == "presencia"` y cualquier otro tipo se ignora).
 3. El panel cuenta esos avisos (`useEnVivo().avisosRespuesta`) y vuelve a pedir
    `GET /api/sesiones/{id}/puntajes` y `GET /api/sesiones/{id}/respuestas`.
    También recarga al cambiar el inject o el estado.
 4. `useGetVigente` mantiene los datos anteriores hasta que llegan los nuevos, para
    que el panel no parpadee.
+5. **Robustez:** si Redis falla al publicar, la respuesta o el ajuste ya
+   guardados en PostgreSQL de todas formas devuelven éxito a quien los hizo; el
+   aviso en vivo es una mejora, no una garantía (`app/application/respuestas.py`,
+   función `_avisar`).
 
-No hay endpoints nuevos: el panel reutiliza los de PB-09 y PB-10.
+No hay endpoints nuevos: el panel reutiliza los de PB-09 y PB-10. El leaderboard
+del Observador y el Administrador (PB-12, `docs/leaderboard.md`) reutiliza este
+mismo evento `ajuste` y el `respuesta`.
 
 **Latencia medida** (app real: NGINX, Redis, PostgreSQL): desde que el
 participante envía la respuesta hasta que el aviso llega al moderador, **22 a 27
@@ -188,8 +200,11 @@ ms**. El requisito es ≤ 3 s.
 ## Pruebas de PB-11
 
 - `tests/test_api_respuestas.py`: el moderador recibe `{"tipo": "respuesta"}` y
-  el participante no (se ejecutó 15 veces seguidas sin fallos).
+  el participante no (se ejecutó 15 veces seguidas sin fallos); el moderador
+  recibe `{"tipo": "ajuste"}` sin que se vacíe su lista de conectados, y el
+  participante tampoco lo recibe; `responder` y `ajustar` devuelven éxito
+  aunque `publicar` falle.
 - `frontend/src/pages/EnVivo.test.tsx`: el panel muestra el progreso (*Sin
   respuesta*, 0 %) y, al llegar el aviso por WebSocket, recarga y pasa a
   *Respondido* (100 %), con el extracto en *Respuestas recientes* y el contador
-  actualizado, sin recargar la página.
+  actualizado, sin recargar la página; un aviso de ajuste recarga igual.

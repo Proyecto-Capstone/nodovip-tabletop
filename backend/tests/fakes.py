@@ -136,6 +136,9 @@ class RepoSesionesEnMemoria:
             if any(p.usuario_id == usuario_id for p in s.participantes)
         ]
 
+    def listar_por_estados(self, estados):
+        return [copy.deepcopy(s) for s in self.datos.values() if s.estado in estados]
+
     def guardar(self, sesion):
         self.datos[sesion.id] = copy.deepcopy(sesion)
         return copy.deepcopy(sesion)

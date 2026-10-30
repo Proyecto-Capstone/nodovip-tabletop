@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.adapters.inbound.api.seguridad import UsuarioActual, requiere_permiso
+from app.adapters.outbound.en_vivo import adaptador_en_vivo
 from app.adapters.outbound.persistence.database import get_session
 from app.adapters.outbound.persistence.repositorio_escenarios import (
     SqlCatalogoRepository,
@@ -54,6 +55,7 @@ def get_servicio_registro(
         SqlRespuestaRepository(session),
         SqlCatalogoRepository(session),
         SqlUsuarioRepository(session),
+        adaptador_en_vivo(),
     )
 
 

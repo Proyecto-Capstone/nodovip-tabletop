@@ -36,7 +36,7 @@ const COLUMNAS = 5
 
 export function RespuestasSesionPage() {
   const { id = '' } = useParams()
-  const { rol } = useSesion()
+  const { rol, puede } = useSesion()
   const sesion = useGet<SesionDetalle>(rutasSesiones.sesion(id), rol)
   const respuestas = useGet<RespuestaRegistrada[]>(rutaRespuestas(id), rol)
   const puntajes = useGet<PuntajesSesion>(rutaPuntajes(id), rol)
@@ -87,6 +87,12 @@ export function RespuestasSesionPage() {
               Volver al panel
             </Link>
           )}
+          {puede('leaderboard:ver') &&
+            (sesion.datos?.estado === 'en_curso' || sesion.datos?.estado === 'finalizada') && (
+              <Link className="boton boton-texto" to={`/leaderboard/${id}`}>
+                Ver leaderboard
+              </Link>
+            )}
           <button type="button" className="boton boton-texto" onClick={actualizar}>
             Actualizar
           </button>

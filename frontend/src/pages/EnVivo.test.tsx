@@ -43,6 +43,10 @@ class SocketFalso {
   avisarRespuesta() {
     act(() => this.onmessage?.({ data: JSON.stringify({ tipo: 'respuesta' }) }))
   }
+  /** Aviso de ajuste de puntaje (PB-10): recarga el panel igual que una respuesta. */
+  avisarAjuste() {
+    act(() => this.onmessage?.({ data: JSON.stringify({ tipo: 'ajuste' }) }))
+  }
   caer(code = 1006) {
     act(() => this.onclose?.({ code }))
   }
@@ -330,5 +334,20 @@ describe('Panel del moderador', () => {
     ).toBeInTheDocument()
     expect(within(recientes).getByText('Inject 1 · 8 / 10 pts')).toBeInTheDocument()
     expect(screen.getByText('1/1', { selector: '.metrica strong:not(.metrica-verde)' })).toBeInTheDocument()
+  })
+
+  it('también recarga el panel cuando llega un aviso de ajuste', async () => {
+    const { fetchFalso, servidor } = abrirModerador()
+    await screen.findByText('Panel del moderador: Simulacro Q4')
+    ultimo().recibir({ estado: 'en_curso', inject_actual: 1, version: 3, conectados: [ANA] })
+    const avance = await screen.findByRole('region', { name: 'Avance por rol' })
+    await within(avance).findByText('0 de 1 respuestas · 1 pendientes')
+
+    servidor.respondidas = 1
+    const antes = fetchFalso.mock.calls.length
+    ultimo().avisarAjuste()
+
+    expect(await within(avance).findByText('1 de 1 respuestas · 0 pendientes')).toBeInTheDocument()
+    expect(fetchFalso.mock.calls.length).toBeGreaterThan(antes)
   })
 })

@@ -1,8 +1,8 @@
-import { screen, within } from '@testing-library/react'
+import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
-import type { RespuestaRegistrada } from '../api/respuestas'
+import type { PuntajesSesion, RespuestaRegistrada } from '../api/respuestas'
 import { MODERADOR, renderConSesion, respuesta, sesionDePrueba } from '../test/utilidades'
 import { RespuestasSesionPage } from './RespuestasSesionPage'
 
@@ -26,6 +26,16 @@ const BASE: RespuestaRegistrada = {
   texto: 'Aíslo el file server',
   opciones_elegidas: [],
   opciones_elegidas_texto: [],
+  puntaje: 8.5,
+  puntaje_automatico: 8.5,
+  puntaje_maximo: 10,
+  completitud: 1,
+  precision: 0.75,
+  tiempo: 0.9,
+  aciertos: ['Aislar el servidor'],
+  faltantes: [],
+  errores: [],
+  ajustes: [],
 }
 
 const OPCIONES: RespuestaRegistrada = {
@@ -43,8 +53,41 @@ const OPCIONES: RespuestaRegistrada = {
   opciones_elegidas_texto: ['Regulador', 'Clientes'],
 }
 
-function abrir(respuestas: RespuestaRegistrada[] | number) {
-  const fetchFalso = vi.fn(async (url: string) => {
+const PUNTAJES: PuntajesSesion = {
+  participantes: [
+    {
+      usuario_id: 'u1',
+      nombre: 'Ana López',
+      rol_codigo: 'ciso',
+      rol_nombre: 'CISO',
+      puntaje: 8.5,
+      maximo: 20,
+      porcentaje: 42.5,
+      respondidas: 1,
+      sin_responder: 1,
+    },
+  ],
+  roles: [
+    {
+      rol_codigo: 'ciso',
+      rol_nombre: 'CISO',
+      participantes: 1,
+      puntaje: 8.5,
+      maximo: 20,
+      porcentaje: 42.5,
+      respondidas: 1,
+      sin_responder: 1,
+    },
+  ],
+}
+
+function abrir(
+  respuestas: RespuestaRegistrada[] | number,
+  alAjustar?: (cuerpo: { puntaje: number; motivo: string }) => Response,
+) {
+  const fetchFalso = vi.fn(async (url: string, init?: RequestInit) => {
+    if (url.endsWith('/ajustes') && alAjustar) return alAjustar(JSON.parse(String(init?.body)))
+    if (url.endsWith('/puntajes')) return respuesta(200, PUNTAJES)
     if (url.endsWith('/respuestas')) {
       return typeof respuestas === 'number'
         ? respuesta(respuestas, { detail: 'Sesión no encontrada' })
@@ -73,7 +116,7 @@ describe('Registro de respuestas de la sesión', () => {
     expect(await screen.findByText('Aíslo el file server')).toBeInTheDocument()
     expect(screen.getByText(/Simulacro Q4 · 2 respuestas/)).toBeInTheDocument()
     expect(screen.getByText(/Solo lectura/)).toBeInTheDocument()
-    const fila = screen.getByText('Ana López').closest('tr') as HTMLElement
+    const fila = screen.getByText('¿Aísla los servidores?').closest('tr') as HTMLElement
     expect(within(fila).getByText('CISO')).toBeInTheDocument()
     expect(within(fila).getByText('1. Detección')).toBeInTheDocument()
     expect(within(fila).getByText('1:05 / 5:00')).toBeInTheDocument()
@@ -102,5 +145,73 @@ describe('Registro de respuestas de la sesión', () => {
   it('sesión ajena o inexistente', async () => {
     abrir(404)
     expect(await screen.findByText(/Sesión no encontrada/)).toBeInTheDocument()
+  })
+
+  it('muestra el puntaje de cada respuesta y el acumulado', async () => {
+    abrir([BASE])
+    const fila = (await screen.findByText('Aíslo el file server')).closest('tr') as HTMLElement
+    expect(within(fila).getByText('8,5 / 10')).toBeInTheDocument()
+    expect(within(fila).getByText('✓ Aislar el servidor')).toBeInTheDocument()
+    expect(within(fila).getByText('Precisión: 75 %')).toBeInTheDocument()
+
+    const acumulado = screen.getByRole('region', { name: 'Puntaje acumulado' })
+    expect(within(acumulado).getAllByText('8,5')).toHaveLength(2)
+    expect(within(acumulado).getByText('1 de 2')).toBeInTheDocument()
+  })
+
+  it('ajusta el puntaje con motivo y recarga', async () => {
+    let enviado: unknown
+    const fetchFalso = abrir([BASE], (cuerpo) => {
+      enviado = cuerpo
+      return respuesta(201, { ...BASE, puntaje: 6 })
+    })
+    await screen.findByText('Aíslo el file server')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustar' }))
+    const puntaje = screen.getByLabelText('Nuevo puntaje')
+    await userEvent.clear(puntaje)
+    await userEvent.type(puntaje, '6')
+    await userEvent.type(screen.getByLabelText('Motivo del ajuste'), 'Faltó justificar')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar ajuste' }))
+
+    await waitFor(() => expect(screen.queryByLabelText('Nuevo puntaje')).toBeNull())
+    expect(enviado).toEqual({ puntaje: 6, motivo: 'Faltó justificar' })
+    // Recarga el registro y el acumulado.
+    const pedidas = fetchFalso.mock.calls.map(([url]) => String(url))
+    expect(pedidas.filter((u) => u.endsWith('/respuestas')).length).toBeGreaterThan(1)
+    expect(pedidas.filter((u) => u.endsWith('/puntajes')).length).toBeGreaterThan(1)
+  })
+
+  it('muestra los errores del ajuste', async () => {
+    abrir([BASE], () =>
+      respuesta(422, { detail: { errores: ['El puntaje debe estar entre 0 y 10'] } }),
+    )
+    await screen.findByText('Aíslo el file server')
+    await userEvent.click(screen.getByRole('button', { name: 'Ajustar' }))
+    await userEvent.type(screen.getByLabelText('Motivo del ajuste'), 'Motivo largo')
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar ajuste' }))
+    expect(await screen.findByText('El puntaje debe estar entre 0 y 10')).toBeInTheDocument()
+  })
+
+  it('una respuesta ajustada muestra el automático y el historial', async () => {
+    abrir([
+      {
+        ...BASE,
+        puntaje: 6,
+        ajustes: [
+          {
+            id: 'a1',
+            puntaje_anterior: 8.5,
+            puntaje_nuevo: 6,
+            motivo: 'Faltó justificar',
+            creado_en: '2026-11-02T14:10:00Z',
+          },
+        ],
+      },
+    ])
+    const fila = (await screen.findByText('Aíslo el file server')).closest('tr') as HTMLElement
+    expect(within(fila).getByText('6 / 10')).toBeInTheDocument()
+    expect(within(fila).getByText('Ajustado')).toBeInTheDocument()
+    expect(within(fila).getByText(/8,5 → 6\. «Faltó justificar»/)).toBeInTheDocument()
   })
 })

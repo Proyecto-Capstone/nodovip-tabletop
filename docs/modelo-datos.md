@@ -96,3 +96,6 @@ La matriz vive en dos lugares que deben coincidir: `backend/app/domain/usuarios.
   `segundos_usados`. Todas sus FK son **RESTRICT**.
 - **Solo inserción:** un trigger rechaza UPDATE, DELETE y TRUNCATE (migración
   0008). Detalle en `docs/respuestas.md`.
+- **Evaluación (PB-10, migración 0009):** la respuesta guarda su puntaje
+  automático y el detalle al insertarse. Los ajustes del moderador van en
+  `ajuste_puntaje`, también de solo inserción. Detalle en `docs/evaluacion.md`.

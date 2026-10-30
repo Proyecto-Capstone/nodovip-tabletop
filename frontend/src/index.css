@@ -1412,3 +1412,81 @@ button.paso:hover {
   margin: 0;
   padding-left: 1.1rem;
 }
+
+/* PB-10: puntaje, ajustes y acumulado */
+.celda-puntaje {
+  min-width: 9rem;
+}
+
+.texto-exito {
+  color: var(--verde);
+}
+
+.badge-ajustado {
+  background: var(--naranja-fondo);
+  color: var(--naranja);
+}
+
+.detalle-evaluacion {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+}
+
+.detalle-evaluacion summary {
+  cursor: pointer;
+  color: var(--acento);
+}
+
+.detalle-evaluacion ul,
+.detalle-evaluacion ol {
+  margin: 0.35rem 0;
+  padding-left: 1.1rem;
+}
+
+.fila-ajuste td {
+  background: var(--fondo);
+}
+
+.formulario-ajuste {
+  display: grid;
+  gap: 0.75rem;
+  max-width: 40rem;
+}
+
+.campos-ajuste {
+  display: grid;
+  grid-template-columns: 9rem 1fr;
+  gap: 0.75rem;
+}
+
+.puntajes-acumulados h2 {
+  margin-top: 0;
+}
+
+.tablas-acumulado {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+.tablas-acumulado caption {
+  text-align: left;
+  font-weight: 600;
+  padding: 0 0 0.4rem;
+}
+
+@media (max-width: 720px) {
+  .tablas-acumulado,
+  .campos-ajuste {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tabla-respuestas .celda-tarea {
+  min-width: 12rem;
+}
+
+.tabla-respuestas .chip-rol {
+  margin-top: 0.3rem;
+}

@@ -7,6 +7,7 @@ base de datos lo impide con un trigger (migración 0008).
 from typing import Protocol
 from uuid import UUID
 
+from app.domain.evaluacion import AjustePuntaje
 from app.domain.respuestas import Respuesta
 
 
@@ -23,4 +24,16 @@ class RespuestaRepository(Protocol):
 
     def de_sesion(self, sesion_id: UUID) -> list[Respuesta]:
         """Todas las respuestas de la sesión en orden de llegada (PB-09)."""
+        ...
+
+    def obtener(self, respuesta_id: UUID) -> Respuesta | None: ...
+
+    # --- Ajustes manuales de puntaje (PB-10): también solo inserción -------------
+
+    def agregar_ajuste(
+        self, ajuste: AjustePuntaje, sesion_id: UUID
+    ) -> AjustePuntaje: ...
+
+    def ajustes_de_sesion(self, sesion_id: UUID) -> list[AjustePuntaje]:
+        """Del más antiguo al más reciente."""
         ...

@@ -130,7 +130,7 @@ Permiso `sesiones:conducir` y **solo el moderador dueño** de la sesión (404 si
 no lo es, 403 para otros roles). La usarán el panel del moderador (PB-11) y el
 reporte PDF (PB-14). El acceso del analista se agregará con PB-14.
 
-Frontend: `/sesiones/:id/respuestas` (*Registro de respuestas*), de solo lectura,
+Frontend: `/sesiones/:id/respuestas` (*Respuestas y puntajes* desde PB-10), de solo lectura,
 con filtros por rol e inject y botón *Actualizar*. Se abre con *Respuestas* en
 Mis tabletops (sesiones en curso o finalizadas) y con *Ver respuestas* en el
 panel del moderador.
@@ -148,3 +148,5 @@ panel del moderador.
 - `tests/test_api_respuestas.py`: trazabilidad completa de cada fila, permisos
   (401/403/404) y 405 para PUT, PATCH y DELETE.
 - `frontend/src/pages/RespuestasSesionPage.test.tsx`: tabla, filtros, vacío y 404.
+
+El puntaje de cada respuesta y sus ajustes se explican en `docs/evaluacion.md` (PB-10).

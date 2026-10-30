@@ -213,3 +213,85 @@ def test_la_api_no_permite_modificar_ni_borrar_respuestas(e):
     assert e["client"].delete(registro, headers=MODERADOR).status_code == 405
     [fila] = _registro(e).json()
     assert fila["opciones_elegidas"] == [0]
+
+
+# --- Puntaje y ajustes (PB-10) --------------------------------------------------------
+
+
+def _responder_bien(e):
+    _iniciar_y_lanzar(e)
+    tarea = e["sesion"].tareas[0]
+    r = e["client"].post(_url(e, tarea), json={"opciones": [0]}, headers=PARTICIPANTE)
+    assert r.status_code == 201
+    [fila] = _registro(e).json()
+    return fila
+
+
+def test_la_respuesta_se_evalua_al_recibirla(e):
+    fila = _responder_bien(e)
+    assert fila["puntaje_maximo"] == 10
+    assert fila["puntaje_automatico"] == fila["puntaje"] == 10
+    assert (fila["completitud"], fila["precision"]) == (1, 1)
+    assert fila["aciertos"] == ["No"] and fila["errores"] == []
+    assert fila["ajustes"] == []
+
+
+def test_el_participante_no_ve_su_puntaje(e):
+    _responder_bien(e)
+    [t] = e["client"].get(_url(e), headers=PARTICIPANTE).json()
+    assert "puntaje" not in str(t)
+
+
+def test_ajuste_manual_con_registro_del_cambio(e):
+    fila = _responder_bien(e)
+    url = f"/api/sesiones/{e['sesion'].id}/respuestas/{fila['id']}/ajustes"
+
+    r = e["client"].post(
+        url, json={"puntaje": 7.5, "motivo": "Faltó justificar"}, headers=MODERADOR
+    )
+    assert r.status_code == 201, r.text
+    ajustada = r.json()
+    assert ajustada["puntaje"] == 7.5 and ajustada["puntaje_automatico"] == 10
+    [a] = ajustada["ajustes"]
+    assert (a["puntaje_anterior"], a["puntaje_nuevo"]) == (10, 7.5)
+    assert a["motivo"] == "Faltó justificar" and a["creado_en"]
+
+    # Un segundo ajuste parte del vigente y no borra el primero.
+    r = e["client"].post(
+        url, json={"puntaje": 9, "motivo": "Revisado con el equipo"}, headers=MODERADOR
+    )
+    assert [x["puntaje_anterior"] for x in r.json()["ajustes"]] == [10, 7.5]
+    assert _registro(e).json()[0]["puntaje"] == 9
+
+
+def test_ajuste_invalido(e):
+    fila = _responder_bien(e)
+    url = f"/api/sesiones/{e['sesion'].id}/respuestas/{fila['id']}/ajustes"
+    r = e["client"].post(url, json={"puntaje": 11, "motivo": "x"}, headers=MODERADOR)
+    assert r.status_code == 422
+    assert r.json()["detail"]["errores"] == [
+        "El puntaje debe estar entre 0 y 10",
+        "Explica el motivo del ajuste (al menos 5 caracteres)",
+    ]
+    otra = f"/api/sesiones/{e['sesion'].id}/respuestas/{uuid4()}/ajustes"
+    cuerpo = {"puntaje": 5, "motivo": "Motivo válido"}
+    assert e["client"].post(otra, json=cuerpo, headers=MODERADOR).status_code == 404
+    assert e["client"].post(url, json=cuerpo, headers=PARTICIPANTE).status_code == 403
+
+
+def test_puntajes_acumulados_por_participante_y_rol(e):
+    _responder_bien(e)
+    r = e["client"].get(f"/api/sesiones/{e['sesion'].id}/puntajes", headers=MODERADOR)
+    assert r.status_code == 200
+    datos = r.json()
+    ana, otro = datos["participantes"]
+    assert ana["nombre"] == "Ana López" and ana["rol_nombre"] == "Responsable de TI"
+    assert (ana["puntaje"], ana["maximo"], ana["porcentaje"]) == (10, 10, 100)
+    assert (ana["respondidas"], ana["sin_responder"]) == (1, 0)
+    # El participante de Legal no respondió: 0 sobre el máximo de su tarea.
+    assert (otro["puntaje"], otro["maximo"], otro["sin_responder"]) == (0, 10, 1)
+    roles = {x["rol_codigo"]: x for x in datos["roles"]}
+    assert roles["ti"]["puntaje"] == 10 and roles["ti"]["participantes"] == 1
+    assert roles["legal"]["porcentaje"] == 0
+    otra = f"/api/sesiones/{uuid4()}/puntajes"
+    assert e["client"].get(otra, headers=MODERADOR).status_code == 404

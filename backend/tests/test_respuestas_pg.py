@@ -207,7 +207,7 @@ def test_la_base_impide_modificar_o_borrar_respuestas(entorno):
         "UPDATE respuesta SET texto = 'Pago el rescate'",
         "UPDATE respuesta SET recibida_en = now() - interval '1 hour'",
         "DELETE FROM respuesta",
-        "TRUNCATE respuesta",
+        "TRUNCATE respuesta CASCADE",
     ):
         with pytest.raises(DBAPIError, match="no se pueden modificar ni borrar"):
             session.execute(text(sql))
@@ -247,3 +247,60 @@ def test_registro_de_la_sesion_con_nombres_y_roles(entorno):
     for r in registro:
         assert r.rol_nombre == roles[r.respuesta.rol_codigo]
         assert r.inject_titulo and r.tarea.id == r.respuesta.tarea_id
+
+
+# --- Evaluación y ajustes (PB-10) -----------------------------------------------------
+
+
+def _registro(e) -> ServicioRegistroRespuestas:
+    session = e["session"]
+    return ServicioRegistroRespuestas(
+        SqlSesionRepository(session),
+        SqlRespuestaRepository(session),
+        SqlCatalogoRepository(session),
+        SqlUsuarioRepository(session),
+    )
+
+
+def test_el_puntaje_automatico_se_guarda_con_la_respuesta(entorno):
+    e = entorno
+    ana = e["participantes"][0]
+    tarea = _tarea_de(e["sesion"], ana.id)
+    guardada = _responder(e, ana.id, "Respuesta con " + " ".join(tarea.criterios))
+
+    [leida] = SqlRespuestaRepository(e["session"]).de_sesion(e["sesion"].id)
+    assert leida.evaluacion is not None
+    assert leida.evaluacion == guardada.evaluacion
+    assert 0 < leida.evaluacion.puntaje <= tarea.puntaje_maximo
+    assert leida.evaluacion.puntaje_maximo == tarea.puntaje_maximo
+
+
+def test_ajustes_con_historial_e_inmutables(entorno):
+    e = entorno
+    ana = e["participantes"][0]
+    respuesta = _responder(e, ana.id, "Algo")
+    registro = _registro(e)
+    sid, mod = e["sesion"].id, e["moderadora"].id
+
+    registro.ajustar(sid, mod, respuesta.id, 4, "Respuesta incompleta")
+    ajustada = registro.ajustar(sid, mod, respuesta.id, 6.5, "Revisado de nuevo")
+    assert ajustada.puntaje == 6.5
+    assert [(a.puntaje_anterior, a.puntaje_nuevo) for a in ajustada.ajustes] == [
+        (respuesta.evaluacion.puntaje, 4),
+        (4, 6.5),
+    ]
+
+    puntajes = registro.puntajes(sid, mod)
+    de_ana = next(p for p in puntajes.participantes if p.usuario_id == ana.id)
+    assert de_ana.acumulado.puntaje == 6.5 and de_ana.acumulado.respondidas == 1
+
+    session = e["session"]
+    for sql in (
+        "UPDATE ajuste_puntaje SET puntaje_nuevo = 10",
+        "DELETE FROM ajuste_puntaje",
+        "TRUNCATE ajuste_puntaje",
+    ):
+        with pytest.raises(DBAPIError, match="ajustes de puntaje no se pueden"):
+            session.execute(text(sql))
+        session.rollback()
+    assert len(SqlRespuestaRepository(session).ajustes_de_sesion(sid)) == 2

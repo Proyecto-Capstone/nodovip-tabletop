@@ -77,6 +77,7 @@ def e(sesion_por_cabecera):
     app.dependency_overrides[en_vivo.get_servicio_en_vivo] = lambda: ServicioEnVivo(
         repo, almacen
     )
+    app.dependency_overrides[en_vivo.get_suscriptor] = lambda: almacen
     respuestas = RepoRespuestasEnMemoria()
     servicio = ServicioRespuestas(repo, almacen, respuestas)
     app.dependency_overrides[mis_sesiones.get_servicio_respuestas] = lambda: servicio
@@ -95,6 +96,7 @@ def e(sesion_por_cabecera):
     with TestClient(app) as client:
         yield {"client": client, "sesion": sesion}
     app.dependency_overrides.pop(en_vivo.get_servicio_en_vivo, None)
+    app.dependency_overrides.pop(en_vivo.get_suscriptor, None)
     app.dependency_overrides.pop(mis_sesiones.get_servicio_respuestas, None)
     app.dependency_overrides.pop(api_respuestas.get_servicio_registro, None)
 
@@ -295,3 +297,39 @@ def test_puntajes_acumulados_por_participante_y_rol(e):
     assert roles["legal"]["porcentaje"] == 0
     otra = f"/api/sesiones/{uuid4()}/puntajes"
     assert e["client"].get(otra, headers=MODERADOR).status_code == 404
+
+
+# --- Aviso en tiempo real al panel del moderador (PB-11) -------------------------------
+
+
+def _siguiente(ws, maximo=6):
+    """Mensajes hasta el primero que no sea de estado (o None)."""
+    for _ in range(maximo):
+        mensaje = ws.receive_json()
+        if mensaje["tipo"] != "estado":
+            return mensaje
+    return None
+
+
+def test_el_moderador_recibe_el_aviso_de_respuesta_y_el_participante_no(e):
+    _iniciar_y_lanzar(e)
+    client, sid = e["client"], e["sesion"].id
+    url = f"/api/ws/sesiones/{sid}"
+    with (
+        client.websocket_connect(url, headers=MODERADOR) as mod,
+        client.websocket_connect(url, headers=PARTICIPANTE) as par,
+    ):
+        mod.receive_json()
+        par.receive_json()
+        tarea = e["sesion"].tareas[0]
+        r = client.post(_url(e, tarea), json={"opciones": [0]}, headers=PARTICIPANTE)
+        assert r.status_code == 201
+
+        assert _siguiente(mod) == {"tipo": "respuesta"}
+        # Al participante solo le llega el siguiente cambio de estado (la pausa).
+        client.post(f"/api/sesiones/{sid}/en-vivo/pausar", headers=MODERADOR)
+        mensaje = par.receive_json()
+        while not mensaje["vista"]["pausada"]:
+            assert mensaje["tipo"] == "estado"
+            mensaje = par.receive_json()
+        assert mensaje["tipo"] == "estado"

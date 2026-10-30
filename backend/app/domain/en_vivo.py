@@ -104,7 +104,9 @@ class EventoEnVivo:
     sesion_id: UUID
     # "estado": cambió el estado en vivo; "presencia": alguien se (des)conectó;
     # "suscrito": la conexión ya escucha (recién ahí se envía la foto inicial,
-    # para no perder eventos entre la foto y la suscripción).
+    # para no perder eventos entre la foto y la suscripción); "respuesta": llegó
+    # una respuesta (PB-11). Es solo un aviso para el panel del moderador: no
+    # lleva datos y no se reenvía a los participantes.
     tipo: str
     estado: EstadoEnVivo | None = None
     conectados: frozenset[UUID] = frozenset()

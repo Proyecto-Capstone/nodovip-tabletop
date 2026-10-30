@@ -180,6 +180,32 @@ describe('LeaderboardSesionPage', () => {
     expect(within(filas[1]).getByText('Ana López')).toBeInTheDocument()
   })
 
+  it('un empate en 0 puntos no muestra medalla ni fondo de podio', async () => {
+    renderConSesion(rutas(), {
+      sesion: sesionDePrueba(OBSERVADOR),
+      ruta: `/leaderboard/${ID}`,
+    })
+    ultimo().abrir()
+    ultimo().recibir({
+      ...BASE,
+      participantes: [
+        { ...BASE.participantes[0], nombre: 'Diana Flores', posicion: 1, puntaje: 10, porcentaje: 100 },
+        { ...BASE.participantes[1], usuario_id: 'p2', nombre: 'Ana López', posicion: 2, puntaje: 0, porcentaje: 0 },
+        { ...BASE.participantes[1], usuario_id: 'p3', nombre: 'Pedro Morales', posicion: 2, puntaje: 0, porcentaje: 0 },
+        { ...BASE.participantes[1], usuario_id: 'p4', nombre: 'Pedro Suárez', posicion: 2, puntaje: 0, porcentaje: 0 },
+      ],
+    })
+
+    const ranking = await screen.findByRole('region', { name: 'Ranking por participante' })
+    const filas = within(ranking).getAllByRole('listitem')
+    for (const nombre of ['Ana López', 'Pedro Morales', 'Pedro Suárez']) {
+      const fila = filas.find((f) => within(f).queryByText(nombre)) as HTMLElement
+      expect(within(fila).getByText('#2')).toBeInTheDocument()
+      expect(within(fila).queryByText('🥈')).not.toBeInTheDocument()
+      expect(fila.className).not.toContain('leaderboard-podio')
+    }
+  })
+
   it('muestra "Resultado final" cuando la sesión termina', async () => {
     renderConSesion(rutas(), {
       sesion: sesionDePrueba(OBSERVADOR),

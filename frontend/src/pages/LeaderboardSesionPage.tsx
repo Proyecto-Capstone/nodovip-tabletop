@@ -12,6 +12,13 @@ const formatoPuntaje = (n: number) => n.toLocaleString('es-EC', { maximumFractio
 
 const MEDALLA: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
+// Con 0 puntos no hay mérito que premiar: ni medalla ni fondo de podio,
+// aunque la posición (por el empate) sea 1, 2 o 3.
+const esPodio = (posicion: number, puntaje: number) => posicion <= 3 && puntaje > 0
+
+const textoPosicion = (posicion: number, puntaje: number) =>
+  esPodio(posicion, puntaje) ? MEDALLA[posicion] : `#${posicion}`
+
 export function LeaderboardSesionPage() {
   const { id = '' } = useParams()
   const { puede } = useSesion()
@@ -111,10 +118,12 @@ function RankingParticipantes({ participantes }: { participantes: PosicionPartic
           {participantes.map((p) => (
             <li
               key={p.usuario_id}
-              className={p.posicion <= 3 ? 'leaderboard-fila leaderboard-podio' : 'leaderboard-fila'}
+              className={
+                esPodio(p.posicion, p.puntaje) ? 'leaderboard-fila leaderboard-podio' : 'leaderboard-fila'
+              }
             >
               <span className="leaderboard-posicion" aria-label={`Posición ${p.posicion}`}>
-                {MEDALLA[p.posicion] ?? `#${p.posicion}`}
+                {textoPosicion(p.posicion, p.puntaje)}
               </span>
               <span className="progreso-persona">
                 <strong>{p.nombre}</strong>
@@ -155,14 +164,18 @@ function RankingRoles({ roles }: { roles: PosicionRol[] }) {
           {roles.map((r) => (
             <li
               key={r.rol_codigo}
-              className={r.posicion <= 3 ? 'leaderboard-fila leaderboard-podio' : 'leaderboard-fila'}
+              className={
+                esPodio(r.posicion, r.puntaje) ? 'leaderboard-fila leaderboard-podio' : 'leaderboard-fila'
+              }
             >
               <span className="leaderboard-posicion" aria-label={`Posición ${r.posicion}`}>
-                {MEDALLA[r.posicion] ?? `#${r.posicion}`}
+                {textoPosicion(r.posicion, r.puntaje)}
               </span>
               <span className="progreso-persona">
                 <strong>{r.rol_nombre}</strong>
-                <span className="texto-suave">{r.participantes} participantes</span>
+                <span className="texto-suave">
+                  {r.participantes} {r.participantes === 1 ? 'participante' : 'participantes'}
+                </span>
               </span>
               <div
                 className="barra-avance"

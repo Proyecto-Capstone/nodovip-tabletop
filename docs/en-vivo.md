@@ -144,3 +144,46 @@ Columnas nuevas en `sesion`: `iniciada_en` y `finalizada_en` (`timestamptz`) e
 
 Prueba de punta a punta contra la aplicación real (NGINX + Redis + PostgreSQL):
 el inject llegó al participante en 27–34 ms.
+
+# Panel de control del moderador (PB-11)
+
+El panel `/sesiones/:id/conducir` muestra el progreso de la sesión en tiempo
+real, sin recargar la página:
+
+- **Métricas:** tiempo transcurrido, participantes conectados, inject actual y
+  respuestas recibidas sobre las esperadas.
+- **Participantes:** conexión de cada uno, respuestas que lleva y su puntaje.
+- **Control de sesión:** inject actual y comandos de PB-07 (lanzar inject,
+  pausar, reanudar, cerrar).
+- **Avance por rol:** conectados del rol, barra de respuestas recibidas sobre las
+  esperadas, pendientes y puntaje acumulado.
+- **Injects:** cuáles ya se lanzaron, cuál está en curso y cuáles faltan, con su
+  minuto sugerido.
+- **Últimas respuestas:** las 5 más recientes con hora, participante, rol, inject
+  y puntaje, más el enlace a *Respuestas y puntajes* (PB-09/PB-10).
+
+## Actualización en tiempo real
+
+1. Al guardar una respuesta, `ServicioRespuestas.responder` publica un evento
+   `respuesta` en el canal de la sesión (Redis pub/sub).
+2. El WebSocket lo reenvía **solo al moderador** como `{"tipo": "respuesta"}`, sin
+   datos. Los participantes no lo reciben: no saben cuándo responden los demás.
+3. El panel cuenta esos avisos (`useEnVivo().avisosRespuesta`) y vuelve a pedir
+   `GET /api/sesiones/{id}/puntajes` y `GET /api/sesiones/{id}/respuestas`.
+   También recarga al cambiar el inject o el estado.
+4. `useGetVigente` mantiene los datos anteriores hasta que llegan los nuevos, para
+   que el panel no parpadee.
+
+No hay endpoints nuevos: el panel reutiliza los de PB-09 y PB-10.
+
+**Latencia medida** (app real: NGINX, Redis, PostgreSQL): desde que el
+participante envía la respuesta hasta que el aviso llega al moderador, **22 a 27
+ms**. El requisito es ≤ 3 s.
+
+## Pruebas de PB-11
+
+- `tests/test_api_respuestas.py`: el moderador recibe `{"tipo": "respuesta"}` y
+  el participante no (se ejecutó 15 veces seguidas sin fallos).
+- `frontend/src/pages/EnVivo.test.tsx`: el panel muestra el avance y, al llegar
+  el aviso por WebSocket, recarga y actualiza el avance por rol, las últimas
+  respuestas y el contador, sin recargar la página.

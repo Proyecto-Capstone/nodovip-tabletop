@@ -40,11 +40,21 @@ dueño, en `/sesiones/{id}/respuestas`, PB-09).
 
 ## Ranking y empates
 
-Por participante, de mayor a menor puntaje; por rol, igual. Los empates
-comparten posición y la siguiente salta (ranking de competencia estándar:
-1, 1, 3, no 1, 2, 2). Un ajuste de puntaje (PB-10) recalcula el ranking al
-momento, porque usa el puntaje vigente (el del último ajuste, o el automático
-si no hay ninguno).
+Por participante, de mayor a menor **porcentaje** (no puntos absolutos); por
+rol, igual. Las tareas tienen distinto puntaje máximo (10, 15...), así que
+ordenar por puntos haría que un 15/15 ganara a un 10/10 aunque ambos
+respondieran perfecto; con el porcentaje como criterio principal eso ya no
+pasa. Los puntos absolutos solo desempatan cuando el porcentaje coincide
+exactamente (`_clave_ranking` en `app/application/leaderboard.py`). Los
+empates comparten posición y la siguiente salta (ranking de competencia
+estándar: 1, 1, 3, no 1, 2, 2). Un ajuste de puntaje (PB-10) recalcula el
+ranking al momento, porque usa el puntaje vigente (el del último ajuste, o el
+automático si no hay ninguno).
+
+Con 0 puntos no hay mérito que premiar: el podio y la medalla (ver
+"Frontend") solo aplican con posición ≤ 3 **y** puntaje > 0. Un empate en 0
+en el puesto 2 o 3, por ejemplo, queda solo en el ranking completo, con su
+número de posición y sin fondo destacado.
 
 ## Endpoints
 
@@ -89,13 +99,21 @@ Ninguno nuevo: PB-12 es de solo lectura sobre lo que ya existe (`sesion`,
 ## Frontend
 
 - `/leaderboard`: sesiones en curso o finalizadas visibles para el usuario.
-- `/leaderboard/:id`: ranking por participante (los 3 primeros destacados con
-  🥇🥈🥉) y por rol, con barra de porcentaje y el conteo de respondidas/sin
-  responder. Indicador "● EN VIVO" y "Actualizado hace X s" mientras está
-  conectado; al finalizar la sesión muestra "Resultado final" y deja de
-  reconectar. `useLeaderboard` sigue la misma estrategia de reconexión que
-  `useEnVivo` (espera creciente, cierre en `pagehide`, reconexión en
-  `pageshow`, sin reintentos ante 4401/4403/4404/1000).
+- `/leaderboard/:id`: tablero oscuro según el prototipo P-06 (Figura 21),
+  dentro de la cabecera habitual (nombre, inject actual, estado):
+  - **Ranking por rol organizacional**: una fila por rol con una barra de
+    color según su porcentaje (verde ≥ 70 %, naranja ≥ 40 %, rojo por debajo);
+    sin números ni medallas, en el orden ya calculado por el backend.
+  - **Podio**: hasta 3 bloques (2º-1º-3º, el 1º más alto y destacado) con
+    quienes tienen posición ≤ 3 y puntaje > 0. Con menos de 3 participantes
+    así, se muestran menos bloques; con ninguno, no se muestra el podio.
+  - **Ranking completo**: columna con todos los participantes numerados por
+    posición, con scroll propio; las filas del podio llevan un fondo sutil.
+  Indicador "● EN VIVO" y "Actualizado hace X s" mientras está conectado; al
+  finalizar la sesión muestra "Resultado final" y deja de reconectar.
+  `useLeaderboard` sigue la misma estrategia de reconexión que `useEnVivo`
+  (espera creciente, cierre en `pagehide`, reconexión en `pageshow`, sin
+  reintentos ante 4401/4403/4404/1000).
 - Opción **Leaderboard** en el menú solo con el permiso `leaderboard:ver`, y un
   enlace **Ver leaderboard** desde el panel del moderador y desde el registro
   de respuestas, mientras la sesión está en curso o finalizada.
@@ -105,7 +123,9 @@ Ninguno nuevo: PB-12 es de solo lectura sobre lo que ya existe (`sesion`,
 - `tests/test_leaderboard.py`: `ServicioLeaderboard` con dobles — Observador y
   Administrador ven cualquier sesión en curso o finalizada; el Moderador solo
   las suyas (otra → 404); borrador o programada → 404 para cualquiera; sin
-  sesión → 404; empates comparten posición; un ajuste cambia el ranking.
+  sesión → 404; empates comparten posición; un ajuste cambia el ranking; el
+  ranking ordena por porcentaje y no por puntos absolutos (un 8/10 le gana a
+  un 9/20).
 - `tests/test_api_leaderboard.py`: matriz de permisos (401/403/404) por los dos
   endpoints REST; el JSON no contiene texto de tareas, opciones ni criterios;
   WebSocket — ranking al conectar, de nuevo tras una respuesta y tras un
@@ -114,7 +134,8 @@ Ninguno nuevo: PB-12 es de solo lectura sobre lo que ya existe (`sesion`,
 - `frontend/src/pages/LeaderboardPage.test.tsx` y
   `LeaderboardSesionPage.test.tsx`: lista con datos/vacía/con error, ranking
   con datos, sin participantes, cierre definitivo del WebSocket, actualización
-  al llegar un mensaje nuevo sin recargar, y "Resultado final".
+  al llegar un mensaje nuevo sin recargar, "Resultado final", y que un empate
+  en 0 puntos no entra al podio ni se destaca en el ranking completo.
 - `frontend/src/components/Layout.test.tsx`: la opción del menú solo aparece
   con `leaderboard:ver`.
 

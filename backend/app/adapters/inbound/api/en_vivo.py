@@ -37,6 +37,7 @@ from starlette.websockets import WebSocketDisconnect
 
 from app import config
 from app.adapters.inbound.api.reportes import get_tarea_reporte
+from app.adapters.inbound.api.schemas_escenarios import EvidenciaEsquema
 from app.adapters.inbound.api.seguridad import (
     UsuarioActual,
     obtener_usuario_ws,
@@ -47,6 +48,7 @@ from app.adapters.outbound.persistence.database import get_session
 from app.adapters.outbound.persistence.repositorio_sesiones import SqlSesionRepository
 from app.application.en_vivo import ServicioEnVivo, VistaEnVivo, componer_vista
 from app.application.sesiones import SesionNoEncontrada
+from app.domain.escenarios import Inject
 from app.domain.sesiones import EstadoSesion, ReglaSesionError
 from app.domain.usuarios import PermisoCodigo
 from app.ports.en_vivo import SuscriptorEnVivo
@@ -78,6 +80,19 @@ class InjectEnVivo(BaseModel):
     orden: int
     titulo: str
     descripcion: str
+    evidencia: EvidenciaEsquema | None = None
+    # Segundo efectivo de la sesión en que se lanzó (línea de tiempo, PC-44).
+    lanzado_segundo: int | None = None
+
+    @classmethod
+    def desde(cls, i: Inject, segundo: int | None = None) -> "InjectEnVivo":
+        return cls(
+            orden=i.orden,
+            titulo=i.titulo,
+            descripcion=i.descripcion,
+            evidencia=EvidenciaEsquema.desde(i.evidencia),
+            lanzado_segundo=segundo,
+        )
 
 
 class VistaEnVivoSalida(BaseModel):
@@ -87,6 +102,8 @@ class VistaEnVivoSalida(BaseModel):
     total_injects: int
     inject_actual: int
     inject: InjectEnVivo | None
+    # Injects lanzados hasta ahora, en orden (línea de tiempo de la sala).
+    lanzados: list[InjectEnVivo] = []
     pausada: bool
     iniciada_en: datetime | None
     inject_lanzado_en: datetime | None
@@ -105,13 +122,8 @@ class VistaEnVivoSalida(BaseModel):
             estado=v.estado,
             total_injects=v.total_injects,
             inject_actual=v.inject_actual,
-            inject=InjectEnVivo(
-                orden=v.inject.orden,
-                titulo=v.inject.titulo,
-                descripcion=v.inject.descripcion,
-            )
-            if v.inject
-            else None,
+            inject=InjectEnVivo.desde(v.inject) if v.inject else None,
+            lanzados=[InjectEnVivo.desde(x.inject, x.segundo) for x in v.lanzados],
             pausada=v.pausada,
             iniciada_en=v.iniciada_en,
             inject_lanzado_en=v.inject_lanzado_en,

@@ -12,7 +12,7 @@ from app.adapters.outbound.persistence.models_sesiones import (
     SesionParticipanteModel,
     SesionTareaModel,
 )
-from app.domain.escenarios import Inject, Nivel
+from app.domain.escenarios import Evidencia, Inject, Nivel
 from app.domain.sesiones import (
     ESTADOS_EDITABLES,
     EstadoInvitacion,
@@ -47,6 +47,7 @@ def _a_dominio(m: SesionModel) -> SesionTabletop:
                 titulo=i.titulo,
                 descripcion=i.descripcion,
                 minuto_sugerido=i.minuto_sugerido,
+                evidencia=Evidencia.desde_dict(i.evidencia),
             )
             for i in m.injects
         ],
@@ -235,6 +236,7 @@ class SqlSesionRepository:
                 titulo=i.titulo,
                 descripcion=i.descripcion,
                 minuto_sugerido=i.minuto_sugerido,
+                evidencia=i.evidencia.a_dict() if i.evidencia else None,
             )
             for i in sesion.injects
         ]

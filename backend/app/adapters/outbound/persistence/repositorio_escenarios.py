@@ -15,6 +15,7 @@ from app.adapters.outbound.persistence.models_escenarios import (
 from app.domain.escenarios import (
     Escenario,
     EstadoEscenario,
+    Evidencia,
     Inject,
     Nivel,
     RolEjercicio,
@@ -45,6 +46,7 @@ def _a_dominio(m: EscenarioModel) -> Escenario:
                 titulo=i.titulo,
                 descripcion=i.descripcion,
                 minuto_sugerido=i.minuto_sugerido,
+                evidencia=Evidencia.desde_dict(i.evidencia),
             )
             for i in m.injects
         ],
@@ -130,6 +132,7 @@ class SqlEscenarioRepository:
                 titulo=i.titulo,
                 descripcion=i.descripcion,
                 minuto_sugerido=i.minuto_sugerido,
+                evidencia=i.evidencia.a_dict() if i.evidencia else None,
             )
             for i in escenario.injects
         ]

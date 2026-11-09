@@ -6,7 +6,7 @@ PostgreSQL cuando corresponde y publica un evento para los WebSocket.
 """
 
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
@@ -41,6 +41,16 @@ def excede_duracion(sesion: SesionTabletop, ahora: datetime) -> bool:
     return ahora - sesion.iniciada_en > timedelta(minutes=sesion.duracion_minutos)
 
 
+@dataclass(frozen=True)
+class InjectLanzado:
+    """Un inject ya lanzado, para la línea de tiempo de la sala (PC-44).
+    `segundo` es el tiempo efectivo de la sesión (sin pausas) en que se lanzó;
+    None si se perdió el estado en vivo y la sesión se reconstruyó."""
+
+    inject: Inject
+    segundo: int | None
+
+
 @dataclass
 class VistaEnVivo:
     """Lo que ve cada conexión. El participante recibe la misma vista, salvo
@@ -59,6 +69,7 @@ class VistaEnVivo:
     duracion_minutos: int | None
     version: int
     conectados: frozenset[UUID]
+    lanzados: list[InjectLanzado] = field(default_factory=list)
 
 
 def componer_vista(
@@ -76,6 +87,12 @@ def componer_vista(
         estado_sesion = EstadoSesion.EN_CURSO
     inject_actual = estado.inject_actual if estado else sesion.inject_actual
     inject = next((i for i in sesion.injects if i.orden == inject_actual), None)
+    lanzamientos = estado.lanzamientos if estado else {}
+    lanzados = [
+        InjectLanzado(i, lanzamientos.get(i.orden))
+        for i in sorted(sesion.injects, key=lambda i: i.orden)
+        if i.orden <= inject_actual
+    ]
     return VistaEnVivo(
         sesion_id=sesion.id,
         nombre=sesion.nombre,
@@ -90,6 +107,7 @@ def componer_vista(
         duracion_minutos=sesion.duracion_minutos,
         version=estado.version if estado else 0,
         conectados=conectados,
+        lanzados=lanzados,
     )
 
 

@@ -5,7 +5,7 @@ from uuid import UUID, uuid4
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
-from app.adapters.inbound.api.schemas_escenarios import InjectSalida
+from app.adapters.inbound.api.schemas_escenarios import EvidenciaEsquema, InjectSalida
 from app.domain.escenarios import Inject, Nivel
 from app.domain.sesiones import (
     EstadoInvitacion,
@@ -41,6 +41,7 @@ class InjectSesionEntrada(BaseModel):
     titulo: str = Field(min_length=3, max_length=150)
     descripcion: str = Field(min_length=10, max_length=5000)
     minuto_sugerido: int | None = Field(default=None, ge=0, le=600)
+    evidencia: EvidenciaEsquema | None = None
 
 
 class OpcionEntrada(BaseModel):
@@ -110,6 +111,7 @@ class SesionDiseno(BaseModel):
                     titulo=i.titulo,
                     descripcion=i.descripcion,
                     minuto_sugerido=i.minuto_sugerido,
+                    evidencia=i.evidencia.a_dominio() if i.evidencia else None,
                 )
                 for pos, i in enumerate(self.injects, start=1)
             ],
@@ -217,7 +219,7 @@ class SesionDetalle(SesionResumen):
     def desde(cls, s: SesionTabletop, ahora: datetime) -> "SesionDetalle":
         return cls(
             **SesionResumen.desde(s).model_dump(),
-            injects=[InjectSalida(**vars(i)) for i in s.injects],
+            injects=[InjectSalida.desde(i) for i in s.injects],
             tareas=[TareaSesionSalida.desde(t) for t in s.tareas],
             participantes=[ParticipanteSalida(**vars(p)) for p in s.participantes],
             pesos=PesosSalida(**vars(s.pesos)),

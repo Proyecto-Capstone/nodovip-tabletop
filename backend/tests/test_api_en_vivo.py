@@ -11,7 +11,16 @@ from starlette.websockets import WebSocketDisconnect
 from app.adapters.inbound.api import en_vivo
 from app.adapters.outbound.en_vivo.memoria import EnVivoEnMemoria
 from app.application.en_vivo import ServicioEnVivo
-from app.domain.escenarios import Escenario, EstadoEscenario, Inject, Nivel, Tarea
+from app.domain.escenarios import (
+    Escenario,
+    EstadoEscenario,
+    Evidencia,
+    Inject,
+    Nivel,
+    NivelAlerta,
+    Tarea,
+    TipoEvidencia,
+)
 from app.domain.sesiones import EstadoSesion, ParticipanteSesion, SesionTabletop
 from app.main import app
 from tests.fakes import RepoSesionesEnMemoria
@@ -31,7 +40,18 @@ def _sesion(moderador=ID_MODERADOR, participante=ID_PARTICIPANTE) -> SesionTable
         Nivel.ALTO,
         ["ti"],
         injects=[
-            Inject("Detección inicial", "TI detecta archivos cifrados", orden=1),
+            Inject(
+                "Detección inicial",
+                "TI detecta archivos cifrados",
+                orden=1,
+                evidencia=Evidencia(
+                    TipoEvidencia.ALERTA,
+                    "EDR corporativo",
+                    "Cifrado masivo de archivos en FS-01",
+                    "1.240 archivos renombrados a .lock en 3 minutos",
+                    NivelAlerta.CRITICA,
+                ),
+            ),
             Inject("Nota de rescate", "Piden 40 BTC en 72 horas", orden=2),
         ],
         tareas=[Tarea("¿Qué aísla primero?", "ti", Nivel.MEDIO, ["Segmenta"])],
@@ -86,6 +106,28 @@ def _recibir_hasta(ws, condicion, maximo=5):
 
 
 # --- Comandos REST --------------------------------------------------------------------
+
+
+def test_la_vista_trae_la_evidencia_y_la_linea_de_tiempo(entorno):
+    """PC-44: el inject llega con su evidencia simulada y la sala recibe todos
+    los injects lanzados, con el segundo efectivo en que se lanzó cada uno."""
+    v = _comando(entorno, "iniciar")
+    assert v["lanzados"] == []
+
+    v = _comando(entorno, "lanzar-inject")
+    assert v["inject"]["evidencia"] == {
+        "tipo": "alerta",
+        "origen": "EDR corporativo",
+        "asunto": "Cifrado masivo de archivos en FS-01",
+        "contenido": "1.240 archivos renombrados a .lock en 3 minutos",
+        "nivel": "critica",
+    }
+
+    v = _comando(entorno, "lanzar-inject")
+    assert [i["orden"] for i in v["lanzados"]] == [1, 2]
+    assert v["lanzados"][0]["evidencia"]["tipo"] == "alerta"
+    assert v["lanzados"][1]["evidencia"] is None
+    assert all(isinstance(i["lanzado_segundo"], int) for i in v["lanzados"])
 
 
 def test_ciclo_completo_del_moderador(entorno):

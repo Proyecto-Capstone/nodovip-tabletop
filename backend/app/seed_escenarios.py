@@ -14,7 +14,15 @@ from app.adapters.outbound.persistence.repositorio_escenarios import (
     SqlEscenarioRepository,
 )
 from app.application.escenarios import ServicioEscenarios
-from app.domain.escenarios import Escenario, Inject, Nivel, Tarea
+from app.domain.escenarios import (
+    Escenario,
+    Evidencia,
+    Inject,
+    Nivel,
+    NivelAlerta,
+    Tarea,
+    TipoEvidencia,
+)
 from app.ports.escenario_repository import FiltroEscenarios
 
 NOMBRE = "Ransomware en servidores de archivos"
@@ -40,6 +48,17 @@ def escenario_ransomware() -> Escenario:
                     "compartidos y aparece una nota de rescate en cada carpeta."
                 ),
                 minuto_sugerido=0,
+                evidencia=Evidencia(
+                    tipo=TipoEvidencia.ALERTA,
+                    origen="EDR corporativo · FS-01",
+                    asunto="Cifrado masivo de archivos detectado",
+                    contenido=(
+                        "Proceso svc_update.exe renombró 18.412 archivos a .lock en "
+                        "6 minutos en la carpeta compartida de FS-01. Se creó LEEME.txt en "
+                        "cada carpeta. Host origen: PC-CONT-07 (usuario mlopez)."
+                    ),
+                    nivel=NivelAlerta.CRITICA,
+                ),
             ),
             Inject(
                 orden=2,
@@ -50,6 +69,16 @@ def escenario_ransomware() -> Escenario:
                     "hace 9 días."
                 ),
                 minuto_sugerido=15,
+                evidencia=Evidencia(
+                    tipo=TipoEvidencia.MENSAJE,
+                    origen="Jefe de infraestructura (chat interno)",
+                    asunto="Respaldos comprometidos",
+                    contenido=(
+                        "Malas noticias: BKP-02 también está cifrado, el catálogo de "
+                        "Veeam no abre. Lo único limpio es la cinta fuera de sitio "
+                        "del día 31. ¿Restauramos desde ahí o esperamos a forense?"
+                    ),
+                ),
             ),
             Inject(
                 orden=3,
@@ -59,6 +88,17 @@ def escenario_ransomware() -> Escenario:
                     "amenazan con publicar toda la base si no se paga en 24 horas."
                 ),
                 minuto_sugerido=30,
+                evidencia=Evidencia(
+                    tipo=TipoEvidencia.CORREO,
+                    origen="lockbit-support@onionmail.example",
+                    asunto="Prueba de los datos de sus clientes — 24 horas",
+                    contenido=(
+                        "Adjuntamos 200 registros de su base de clientes (nombre, "
+                        "cédula, correo, saldo). Tenemos 1,8 millones más. Si no "
+                        "recibimos el pago en 24 horas publicaremos todo en nuestro "
+                        "blog y avisaremos a la prensa."
+                    ),
+                ),
             ),
             Inject(
                 orden=4,
@@ -68,6 +108,17 @@ def escenario_ransomware() -> Escenario:
                     "ataque informático que afecta a los clientes."
                 ),
                 minuto_sugerido=45,
+                evidencia=Evidencia(
+                    tipo=TipoEvidencia.LLAMADA,
+                    origen="Periodista de Diario El Observador (ficticio)",
+                    asunto="Consulta sobre un ataque informático",
+                    contenido=(
+                        "Buenos días, le llamo de Diario El Observador. Varios "
+                        "clientes nos escriben que no pueden usar sus servicios y en "
+                        "un foro dicen que Comercial Andina fue hackeada. ¿Pueden "
+                        "confirmarlo? Publicamos a las 18:00."
+                    ),
+                ),
             ),
         ],
         tareas=[

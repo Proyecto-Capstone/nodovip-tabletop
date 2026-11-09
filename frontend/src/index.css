@@ -76,7 +76,6 @@ h2,
 h3 {
   margin: 0 0 0.5rem;
   line-height: 1.25;
-  color: var(--texto);
 }
 h1 {
   font-size: var(--fs-2xl);
@@ -1505,10 +1504,10 @@ button.paso:hover {
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  margin: -1.1rem -1.25rem 0.9rem;
-  padding: 0.8rem 1.25rem;
+  margin: -1.25rem -1.5rem 0.9rem;
+  padding: 0.8rem 1.5rem;
   background: var(--navy);
-  border-radius: var(--radio) var(--radio) 0 0;
+  border-radius: var(--radio-lg) var(--radio-lg) 0 0;
   color: #fff;
 }
 

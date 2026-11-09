@@ -114,7 +114,7 @@ export function BibliotecaPage() {
           <label className="campo">
             <span>Estado</span>
             <select value={estado} onChange={(e) => setEstado(e.target.value)}>
-              <option value="">Borradores y publicados</option>
+              <option value="">Todos</option>
               <option value="borrador">Borrador</option>
               <option value="publicado">Publicado</option>
               <option value="archivado">Archivado</option>

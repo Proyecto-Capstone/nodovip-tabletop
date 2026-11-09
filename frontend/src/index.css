@@ -597,6 +597,14 @@ a:hover {
   align-items: flex-end;
 }
 
+/* Los filtros reparten el ancho y no cortan el texto de las opciones. */
+.filtros .campo {
+  flex: 1 1 170px;
+}
+.filtros .campo-busqueda {
+  flex: 2 1 240px;
+}
+
 .filtros .boton-texto {
   margin-bottom: 0.85rem;
 }
@@ -705,7 +713,7 @@ a:hover {
 }
 
 .tarjeta-escenario:hover {
-  border-color: #b9bfd1;
+  border-color: var(--borde-fuerte);
 }
 
 .tarjeta-escenario h2 {
@@ -871,7 +879,7 @@ a:hover {
 }
 
 .panel-formulario {
-  border-color: #b9bfd1;
+  border-color: var(--borde-fuerte);
 }
 
 .requisitos-compactos {
@@ -1286,7 +1294,7 @@ button.paso:hover {
 }
 
 .tarjeta-sesion:hover {
-  border-color: #b9bfd1;
+  border-color: var(--borde-fuerte);
 }
 
 .tarjeta-sesion h2 {
@@ -2340,4 +2348,33 @@ button.paso:hover {
 
 .tabla .boton-texto {
   padding: 0.3rem 0.5rem;
+}
+
+/* Monitoreo: las métricas de cada tarjeta van en una fila compacta, sin
+   tarjetas anidadas. */
+.tarjeta-sesion .metricas {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.tarjeta-sesion .metrica {
+  padding: 0.6rem 0.7rem;
+  background: var(--fondo-sutil);
+  border: none;
+  box-shadow: none;
+  border-radius: var(--radio-sm);
+}
+
+.tarjeta-sesion .metrica strong {
+  font-size: var(--fs-lg);
+}
+
+.tarjeta-sesion .metrica span {
+  font-size: var(--fs-xs);
+}
+
+.tarjeta-sesion > .boton {
+  align-self: flex-start;
+  margin-top: 0.5rem;
 }

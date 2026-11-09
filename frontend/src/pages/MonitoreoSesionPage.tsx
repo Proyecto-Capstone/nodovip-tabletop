@@ -61,7 +61,7 @@ function Panel({
         </div>
         <div className="acciones-fila">
           {conexion === 'reconectando' && <span className="texto-suave">Reconectando…</span>}
-          <Link className="boton boton-texto" to={`/leaderboard/${fila.id}`}>
+          <Link className="boton boton-secundario" to={`/leaderboard/${fila.id}`}>
             Ver leaderboard
           </Link>
           <EstadoVivo estado="en_curso" pausada={fila.pausada} />

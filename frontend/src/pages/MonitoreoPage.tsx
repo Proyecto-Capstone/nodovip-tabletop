@@ -115,7 +115,7 @@ function TarjetaSesion({ fila }: { fila: FilaMonitoreo }) {
         {fila.respuestas_recibidas}/{fila.respuestas_esperadas} respuestas
       </p>
 
-      <Link className="boton boton-texto" to={`/monitoreo/${fila.id}`}>
+      <Link className="boton boton-secundario" to={`/monitoreo/${fila.id}`}>
         Ver en modo lectura
       </Link>
     </div>

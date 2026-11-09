@@ -112,13 +112,13 @@ function Contenido({ r, recargar }: { r: Reporte; recargar: () => void }) {
         <div className="acciones-fila">
           <button
             type="button"
-            className="boton boton-texto"
+            className="boton boton-secundario"
             disabled={regenerando}
             onClick={regenerar}
           >
             {regenerando ? 'Generando…' : 'Regenerar PDF'}
           </button>
-          <a className="boton boton-peligro" href={rutasReportes.pdf(r.sesion_id)} download>
+          <a className="boton boton-primario" href={rutasReportes.pdf(r.sesion_id)} download>
             ⬇ Exportar PDF
           </a>
         </div>

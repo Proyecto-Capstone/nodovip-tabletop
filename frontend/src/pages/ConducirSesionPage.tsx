@@ -139,17 +139,17 @@ function Panel({
         </div>
         <div className="acciones-fila">
           {(estado === 'en_curso' || estado === 'finalizada') && (
-            <Link className="boton boton-texto" to={`/sesiones/${sesion.id}/respuestas`}>
+            <Link className="boton boton-secundario" to={`/sesiones/${sesion.id}/respuestas`}>
               Ver respuestas
             </Link>
           )}
           {(estado === 'en_curso' || estado === 'finalizada') && puede('leaderboard:ver') && (
-            <Link className="boton boton-texto" to={`/leaderboard/${sesion.id}`}>
+            <Link className="boton boton-secundario" to={`/leaderboard/${sesion.id}`}>
               Ver leaderboard
             </Link>
           )}
           {estado === 'finalizada' && puede('reportes:ver') && (
-            <Link className="boton boton-texto" to={`/reportes/${sesion.id}`}>
+            <Link className="boton boton-secundario" to={`/reportes/${sesion.id}`}>
               Ver reporte
             </Link>
           )}

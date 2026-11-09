@@ -21,6 +21,7 @@ import {
   NivelBadge,
   SinPermiso,
 } from '../components/Etiquetas'
+import { EvidenciaSimulada } from '../components/Evidencia'
 import { formatoTiempo, nombreRol, nombreTipo } from '../lib/etiquetas'
 import { useGet } from '../lib/useGet'
 
@@ -180,6 +181,7 @@ export function EscenarioDetallePage() {
               </div>
               <strong>{i.titulo}</strong>
               <p className="parrafo">{i.descripcion}</p>
+              {i.evidencia && <EvidenciaSimulada evidencia={i.evidencia} />}
             </li>
           ))}
         </ol>

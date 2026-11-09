@@ -18,12 +18,27 @@ export interface RolEjercicio {
   nombre: string
 }
 
+/** Forma en que llega el inject, como en un incidente real (PC-44). */
+export type TipoEvidencia = 'correo' | 'alerta' | 'noticia' | 'llamada' | 'mensaje' | 'documento'
+export type NivelAlerta = 'baja' | 'media' | 'alta' | 'critica'
+
+/** Artefacto simulado (siempre ficticio) que acompaña a un inject. */
+export interface Evidencia {
+  tipo: TipoEvidencia
+  origen: string
+  asunto: string
+  contenido: string
+  /** Solo en alertas. */
+  nivel: NivelAlerta | null
+}
+
 export interface Inject {
   id: string
   orden: number
   titulo: string
   descripcion: string
   minuto_sugerido: number | null
+  evidencia: Evidencia | null
 }
 
 export interface Tarea {
@@ -67,6 +82,7 @@ export interface InjectEntrada {
   titulo: string
   descripcion: string
   minuto_sugerido: number | null
+  evidencia: Evidencia | null
 }
 
 export interface TareaEntrada {

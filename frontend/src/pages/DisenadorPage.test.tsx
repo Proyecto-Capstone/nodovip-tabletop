@@ -30,8 +30,8 @@ function sesionBase(): SesionDetalle {
     total_participantes: 0,
     puntaje_maximo_total: 20,
     injects: [
-      { id: INJECT_1, orden: 1, titulo: 'Cifrado masivo', descripcion: 'Archivos cifrados', minuto_sugerido: 0 },
-      { id: INJECT_2, orden: 2, titulo: 'Nota de rescate', descripcion: 'Piden 500 000 USD', minuto_sugerido: 15 },
+      { id: INJECT_1, orden: 1, titulo: 'Cifrado masivo', descripcion: 'Archivos cifrados', minuto_sugerido: 0, evidencia: null },
+      { id: INJECT_2, orden: 2, titulo: 'Nota de rescate', descripcion: 'Piden 500 000 USD', minuto_sugerido: 15, evidencia: null },
     ],
     tareas: [
       {

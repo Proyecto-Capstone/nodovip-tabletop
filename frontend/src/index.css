@@ -2377,3 +2377,419 @@ button.paso:hover {
   align-self: flex-start;
   margin-top: 0.5rem;
 }
+
+/* ---------------------------------------------------------------------------
+   Evidencia simulada de los injects (PC-44). Cada tipo imita su origen real:
+   bandeja de correo, consola de alertas, recorte de prensa, llamada, chat y
+   documento.
+   --------------------------------------------------------------------------- */
+
+.texto-chico {
+  font-size: var(--fs-xs);
+  margin: 0.25rem 0 0;
+}
+
+.boton-agregar-evidencia {
+  margin-bottom: 0.5rem;
+  padding-left: 0;
+}
+
+.editor-evidencia {
+  margin: 0.25rem 0 0.75rem;
+  padding: 0.85rem 1rem 0.75rem;
+  border: 1px dashed var(--borde-fuerte);
+  border-radius: var(--radio);
+  background: var(--fondo-sutil);
+}
+
+.editor-evidencia-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  font-size: var(--fs-md);
+}
+
+.evidencia {
+  margin: 0.75rem 0 0;
+  border-radius: var(--radio);
+  overflow: hidden;
+  font-size: var(--fs-md);
+  line-height: 1.55;
+}
+
+.evidencia-cuerpo {
+  margin: 0;
+  white-space: pre-line;
+}
+
+/* Correo: ventana de cliente de correo. */
+.evidencia-correo {
+  border: 1px solid var(--borde-fuerte);
+  background: var(--superficie);
+  box-shadow: var(--sombra-sm);
+}
+.evidencia-barra {
+  padding: 0.4rem 0.85rem;
+  background: var(--gris-fondo);
+  border-bottom: 1px solid var(--borde);
+  color: var(--texto-suave);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.evidencia-correo-datos {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.15rem 0.75rem;
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--borde);
+}
+.evidencia-correo-datos dt {
+  color: var(--texto-suave);
+  font-size: var(--fs-sm);
+}
+.evidencia-correo-datos dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.evidencia-correo .evidencia-cuerpo {
+  padding: 0.75rem 0.85rem 0.9rem;
+}
+
+/* Alerta: consola oscura de SIEM/EDR con severidad. */
+.evidencia-alerta {
+  background: #0f1424;
+  color: #d7dbea;
+  border: 1px solid #1f2740;
+  border-left: 4px solid var(--rojo);
+}
+.evidencia-alerta-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.55rem 0.85rem 0;
+  font-size: var(--fs-xs);
+}
+.evidencia-alerta-origen {
+  color: #8c93ad;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+}
+.evidencia-severidad {
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.severidad-critica {
+  background: var(--rojo);
+  color: #fff;
+}
+.severidad-alta {
+  background: #e0752d;
+  color: #fff;
+}
+.severidad-media {
+  background: #d9a521;
+  color: #1c1d33;
+}
+.severidad-baja {
+  background: #3d7be0;
+  color: #fff;
+}
+.evidencia-alerta-titulo {
+  margin: 0.35rem 0 0;
+  padding: 0 0.85rem;
+  color: #fff;
+  font-weight: 600;
+}
+.evidencia-alerta-detalle {
+  margin: 0.5rem 0 0;
+  padding: 0.65rem 0.85rem 0.8rem;
+  background: #0a0e1a;
+  color: #9fe0b5;
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: var(--fs-sm);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* Noticia: recorte de prensa. */
+.evidencia-noticia {
+  padding: 0.9rem 1rem 1rem;
+  background: #fbfaf6;
+  border: 1px solid #e4dfd2;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+.evidencia-noticia-medio {
+  margin: 0 0 0.35rem;
+  padding-bottom: 0.35rem;
+  border-bottom: 2px solid var(--texto);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.evidencia-noticia-titular {
+  margin: 0 0 0.4rem;
+  font-size: var(--fs-xl);
+  line-height: 1.25;
+}
+
+/* Llamada: tarjeta de llamada entrante con transcripción. */
+.evidencia-llamada {
+  padding: 0.85rem 1rem 0.9rem;
+  background: var(--verde-fondo);
+  border: 1px solid #bfe3cd;
+}
+.evidencia-llamada-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+}
+.evidencia-llamada-icono {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  background: var(--verde);
+  color: #fff;
+}
+.evidencia-llamada-origen {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--fs-sm);
+}
+.evidencia-llamada-motivo {
+  margin: 0.55rem 0 0.35rem;
+  font-weight: 600;
+}
+.evidencia-llamada blockquote {
+  margin: 0;
+  padding-left: 0.75rem;
+  border-left: 3px solid var(--verde);
+  font-style: italic;
+}
+
+/* Mensaje: burbuja de chat. */
+.evidencia-mensaje {
+  padding: 0.25rem 0 0;
+}
+.evidencia-mensaje-origen {
+  margin: 0 0 0.3rem;
+  color: var(--texto-suave);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+}
+.evidencia-mensaje-burbuja {
+  display: inline-block;
+  max-width: 90%;
+  margin: 0;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radio-lg) var(--radio-lg) var(--radio-lg) var(--radio-xs);
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  box-shadow: var(--sombra-sm);
+  white-space: pre-line;
+}
+
+/* Documento: hoja de papel. */
+.evidencia-documento {
+  padding: 0.9rem 1rem 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde-fuerte);
+  box-shadow: var(--sombra);
+}
+.evidencia-documento-cabecera {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 0.55rem;
+  padding-bottom: 0.55rem;
+  border-bottom: 1px solid var(--borde);
+}
+.evidencia-documento-origen {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--fs-sm);
+}
+
+/* Sala del participante: sonido, aviso de inject nuevo y línea de tiempo (PC-44). */
+.sala-cabecera-acciones {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.boton-sonido {
+  font-size: var(--fs-sm);
+}
+
+.aviso-inject-region {
+  position: sticky;
+  top: 4.25rem;
+  z-index: 20;
+}
+
+.aviso-inject {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  margin-bottom: 0.75rem;
+  padding: 0.8rem 1rem;
+  border-radius: var(--radio-lg);
+  background: var(--navy);
+  color: #fff;
+  box-shadow: var(--sombra-lg);
+  animation: aviso-entra 320ms cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.aviso-inject-pulso {
+  flex: none;
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+  background: #ff6b5f;
+  box-shadow: 0 0 0 0 rgb(255 107 95 / 0.7);
+  animation: aviso-pulso 1.4s infinite;
+}
+
+.aviso-inject-texto {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+}
+
+.aviso-inject-texto strong {
+  font-size: var(--fs-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #ffb4ad;
+}
+
+.aviso-inject-cerrar {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border: none;
+  border-radius: 50%;
+  background: var(--navy-claro);
+  color: #fff;
+  font-size: 1.2rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.aviso-inject-cerrar:hover {
+  background: var(--navy-borde-fuerte);
+}
+
+@keyframes aviso-entra {
+  from {
+    opacity: 0;
+    transform: translateY(-12px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes aviso-pulso {
+  70% {
+    box-shadow: 0 0 0 10px rgb(255 107 95 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 107 95 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .aviso-inject,
+  .aviso-inject-pulso {
+    animation: none;
+  }
+}
+
+.linea-incidente {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.linea-incidente-item {
+  position: relative;
+  padding: 0 0 0.85rem 1.4rem;
+}
+
+.linea-incidente-item::before {
+  content: '';
+  position: absolute;
+  left: 0.3rem;
+  top: 0.9rem;
+  bottom: 0;
+  width: 2px;
+  background: var(--borde);
+}
+
+.linea-incidente-item:last-child::before {
+  display: none;
+}
+
+.linea-incidente-punto {
+  position: absolute;
+  left: 0;
+  top: 0.45rem;
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  background: var(--superficie);
+  border: 2px solid var(--acento);
+}
+
+.linea-incidente details summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  cursor: pointer;
+  list-style: none;
+}
+
+.linea-incidente details summary::-webkit-details-marker {
+  display: none;
+}
+
+.linea-incidente details summary::after {
+  content: 'Ver';
+  margin-left: auto;
+  color: var(--acento);
+  font-size: var(--fs-sm);
+}
+
+.linea-incidente details[open] summary::after {
+  content: 'Ocultar';
+}
+
+.linea-incidente-hora {
+  color: var(--texto-suave);
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.linea-incidente-titulo {
+  font-weight: 600;
+}
+
+.linea-incidente-tipo {
+  font-size: var(--fs-sm);
+}
+
+.linea-incidente details .parrafo {
+  margin: 0.5rem 0 0;
+}

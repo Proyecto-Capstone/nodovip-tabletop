@@ -131,9 +131,11 @@ export interface FilaProgreso {
 export function ProgresoParticipantes({
   filas,
   injectActual,
+  cargando = false,
 }: {
   filas: FilaProgreso[]
   injectActual: number
+  cargando?: boolean
 }) {
   return (
     <section className="tarjeta" aria-labelledby="titulo-progreso">
@@ -143,7 +145,9 @@ export function ProgresoParticipantes({
       <ul className="progreso-participantes">
         {filas.map((f) => {
           const avance = f.esperadas ? Math.round((100 * f.respondidas) / f.esperadas) : 0
-          const estado = estadoProgreso(f.respondidas, f.esperadas)
+          const estado = cargando
+            ? { clase: 'progreso-espera', texto: 'Cargando…' }
+            : estadoProgreso(f.respondidas, f.esperadas)
           return (
             <li key={f.usuarioId}>
               <span className="progreso-persona">

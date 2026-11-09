@@ -83,17 +83,17 @@ export function RespuestasSesionPage() {
         </div>
         <div className="acciones-fila">
           {sesion.datos?.estado === 'en_curso' && (
-            <Link className="boton boton-texto" to={`/sesiones/${id}/conducir`}>
+            <Link className="boton boton-secundario" to={`/sesiones/${id}/conducir`}>
               Volver al panel
             </Link>
           )}
           {puede('leaderboard:ver') &&
             (sesion.datos?.estado === 'en_curso' || sesion.datos?.estado === 'finalizada') && (
-              <Link className="boton boton-texto" to={`/leaderboard/${id}`}>
+              <Link className="boton boton-secundario" to={`/leaderboard/${id}`}>
                 Ver leaderboard
               </Link>
             )}
-          <button type="button" className="boton boton-texto" onClick={actualizar}>
+          <button type="button" className="boton boton-secundario" onClick={actualizar}>
             Actualizar
           </button>
         </div>

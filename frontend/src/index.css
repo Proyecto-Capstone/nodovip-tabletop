@@ -1,25 +1,56 @@
-/* Estilos globales. Colores y espaciados siguen el prototipo de alta fidelidad. */
+/* Estilos globales. Colores y espaciados siguen el prototipo de alta fidelidad.
+   Sistema de diseño: todas las pantallas usan estas variables (colores, escala
+   de letra, radios, sombras). No escribir colores ni tamaños sueltos. */
 
 :root {
+  /* Marca y superficies */
   --navy: #1c1d33;
   --navy-claro: #2a2c4a;
+  --navy-borde: #2c2e4d;
+  --navy-borde-fuerte: #44476b;
+  --texto-sobre-oscuro: #c9cbe0;
   --fondo: #eef0f4;
+  --fondo-sutil: #f8f9fb;
   --superficie: #ffffff;
   --borde: #e1e4ec;
+  --borde-fuerte: #c5c9d6;
   --texto: #1c1e2e;
   --texto-suave: #6b7085;
   --primario: #1c1d33;
   --acento: #2f6fed;
+  --acento-oscuro: #2459c8;
+
+  /* Estados */
   --verde: #22874f;
   --verde-fondo: #e3f4ea;
   --naranja: #c46a0c;
   --naranja-fondo: #fdf0e1;
+  --naranja-texto: #7a4306;
   --rojo: #c63d3d;
   --rojo-fondo: #fbe7e7;
   --azul-fondo: #e6eefd;
   --gris-fondo: #eceef3;
+
+  /* Escala de letra: usar solo estos tamaños */
+  --fs-xs: 0.75rem;
+  --fs-sm: 0.8125rem;
+  --fs-md: 0.875rem;
+  --fs-base: 0.9375rem;
+  --fs-lg: 1.0625rem;
+  --fs-xl: 1.25rem;
+  --fs-2xl: 1.625rem;
+
+  /* Radios, sombras y movimiento */
+  --radio-xs: 6px;
+  --radio-sm: 8px;
   --radio: 10px;
-  --sombra: 0 1px 2px rgb(28 29 51 / 0.06);
+  --radio-lg: 14px;
+  --sombra-sm: 0 1px 2px rgb(28 29 51 / 0.06);
+  --sombra: 0 1px 3px rgb(28 29 51 / 0.08), 0 1px 2px rgb(28 29 51 / 0.04);
+  --sombra-lg: 0 10px 30px rgb(28 29 51 / 0.12);
+  --foco: 0 0 0 3px rgb(47 111 237 / 0.3);
+  --transicion: 150ms ease;
+
   font-family:
     Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
     sans-serif;
@@ -47,24 +78,43 @@ h3 {
   line-height: 1.25;
 }
 h1 {
-  font-size: 1.5rem;
+  font-size: var(--fs-2xl);
+  font-weight: 700;
+  letter-spacing: -0.015em;
 }
 h2 {
-  font-size: 1.05rem;
+  font-size: var(--fs-lg);
+  font-weight: 650;
 }
 h3 {
-  font-size: 0.95rem;
+  font-size: var(--fs-base);
+  font-weight: 650;
 }
 
 a {
   color: var(--acento);
+  transition: color var(--transicion);
+}
+
+a:hover {
+  color: var(--acento-oscuro);
+}
+
+/* Foco visible solo con teclado (accesibilidad). */
+:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--azul-fondo);
 }
 
 /* --- Estructura ------------------------------------------------------------ */
 
 .app {
   display: grid;
-  grid-template-columns: 230px minmax(0, 1fr);
+  grid-template-columns: 236px minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   min-height: 100vh;
 }
@@ -75,14 +125,34 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.7rem 1.5rem;
   background: var(--navy);
+  border-bottom: 1px solid var(--navy-borde);
   color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
 .marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: var(--fs-base);
+  letter-spacing: -0.005em;
+}
+
+/* Isotipo simple de la marca, sin imágenes. */
+.marca::before {
+  content: '';
+  width: 1.5rem;
+  height: 1.5rem;
+  flex: none;
+  border-radius: var(--radio-xs);
+  background:
+    linear-gradient(135deg, transparent 45%, rgb(255 255 255 / 0.9) 45% 55%, transparent 55%),
+    linear-gradient(135deg, var(--acento), #6b4fd8);
 }
 
 .usuario-barra {
@@ -96,8 +166,8 @@ a {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  line-height: 1.2;
-  font-size: 0.85rem;
+  line-height: 1.25;
+  font-size: var(--fs-md);
   min-width: 0;
 }
 
@@ -109,35 +179,41 @@ a {
 }
 
 .usuario-rol {
-  font-size: 0.75rem;
-  color: #c9cbe0;
+  font-size: var(--fs-xs);
+  color: var(--texto-sobre-oscuro);
+  text-transform: capitalize;
 }
 
 .boton-salir {
   background: var(--navy-claro);
-  border-color: #44476b;
+  border-color: var(--navy-borde-fuerte);
   color: #fff;
 }
 
 .boton-salir:hover:not(:disabled) {
-  border-color: #c9cbe0;
+  background: var(--navy-borde-fuerte);
+  border-color: var(--texto-sobre-oscuro);
 }
 
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: 1rem 0.75rem;
+  gap: 0.2rem;
+  padding: 1.25rem 0.85rem;
   background: var(--navy);
-  border-top: 1px solid #2c2e4d;
 }
 
 .sidebar a {
-  color: #c9cbe0;
+  position: relative;
+  color: var(--texto-sobre-oscuro);
   text-decoration: none;
-  padding: 0.55rem 0.75rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radio-sm);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  transition:
+    background var(--transicion),
+    color var(--transicion);
 }
 
 .sidebar a:hover {
@@ -145,16 +221,28 @@ a {
   color: #fff;
 }
 
+/* Página actual: fondo más claro y una barra de acento a la izquierda. */
 .sidebar a.active {
   background: var(--navy-claro);
   color: #fff;
   font-weight: 600;
 }
 
+.sidebar a.active::before {
+  content: '';
+  position: absolute;
+  left: -0.85rem;
+  top: 0.45rem;
+  bottom: 0.45rem;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--acento);
+}
+
 .contenido {
   min-width: 0;
-  padding: 1.5rem;
-  max-width: 1200px;
+  padding: 1.75rem 2rem 3rem;
+  max-width: 1280px;
   width: 100%;
 }
 
@@ -166,7 +254,11 @@ a {
   align-items: flex-start;
   gap: 1rem;
   flex-wrap: wrap;
-  margin-bottom: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.encabezado h1 {
+  margin-bottom: 0.25rem;
 }
 
 .acciones {
@@ -176,30 +268,49 @@ a {
 }
 
 .volver {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
   margin-bottom: 0.75rem;
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
+  font-weight: 500;
   text-decoration: none;
+  color: var(--texto-suave);
+}
+
+.volver:hover {
+  color: var(--acento);
 }
 
 .tarjeta {
   background: var(--superficie);
   border: 1px solid var(--borde);
-  border-radius: var(--radio);
+  border-radius: var(--radio-lg);
   box-shadow: var(--sombra);
-  padding: 1.1rem 1.25rem;
+  padding: 1.25rem 1.5rem;
   margin-bottom: 1rem;
+}
+
+.tarjeta > h2:first-child {
+  margin-bottom: 0.85rem;
 }
 
 .vacio {
   text-align: center;
   color: var(--texto-suave);
-  padding: 2rem;
+  padding: 2.5rem 1.5rem;
+  font-size: var(--fs-base);
+}
+
+.tarjeta.vacio {
+  border-style: dashed;
+  box-shadow: none;
+  background: var(--fondo-sutil);
 }
 
 .texto-suave {
   color: var(--texto-suave);
-  font-size: 0.85rem;
+  font-size: var(--fs-md);
   margin: 0;
 }
 
@@ -212,25 +323,41 @@ a {
   white-space: pre-line;
 }
 
+/* Botones: primario (acción principal), secundario (con borde), texto (discreto)
+   y peligro. Todos comparten alto, radio y transición. */
 .boton {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 0.35rem;
-  padding: 0.5rem 0.9rem;
-  border-radius: 8px;
+  gap: 0.4rem;
+  min-height: 2.25rem;
+  padding: 0.45rem 0.95rem;
+  border-radius: var(--radio-sm);
   border: 1px solid var(--borde);
   background: var(--superficie);
   color: var(--texto);
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--fs-md);
   font-weight: 600;
+  line-height: 1.2;
   text-decoration: none;
+  white-space: nowrap;
   cursor: pointer;
+  transition:
+    background var(--transicion),
+    border-color var(--transicion),
+    color var(--transicion),
+    box-shadow var(--transicion);
 }
 
 .boton:hover:not(:disabled) {
-  border-color: #c5c9d6;
+  border-color: var(--borde-fuerte);
+  background: var(--fondo-sutil);
+  color: var(--texto);
+}
+
+.boton:active:not(:disabled) {
+  transform: translateY(1px);
 }
 
 .boton:disabled {
@@ -242,13 +369,29 @@ a {
   background: var(--primario);
   border-color: var(--primario);
   color: #fff;
+  box-shadow: var(--sombra-sm);
 }
 
 .boton-primario:hover:not(:disabled) {
   background: var(--navy-claro);
+  border-color: var(--navy-claro);
+  color: #fff;
+}
+
+.boton-secundario {
+  background: var(--superficie);
+  border-color: var(--borde-fuerte);
+  box-shadow: var(--sombra-sm);
 }
 
 .boton-peligro {
+  color: var(--rojo);
+  border-color: rgb(198 61 61 / 0.35);
+}
+
+.boton-peligro:hover:not(:disabled) {
+  background: var(--rojo-fondo);
+  border-color: var(--rojo);
   color: var(--rojo);
 }
 
@@ -259,8 +402,14 @@ a {
 .boton-texto {
   border-color: transparent;
   background: transparent;
-  padding: 0.35rem 0.5rem;
+  padding: 0.4rem 0.6rem;
   font-weight: 500;
+  color: var(--texto);
+}
+
+.boton-texto:hover:not(:disabled) {
+  background: var(--gris-fondo);
+  border-color: transparent;
 }
 
 .boton-bloque {
@@ -269,11 +418,15 @@ a {
 }
 
 .badge {
-  display: inline-block;
-  padding: 0.1rem 0.55rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.12rem 0.6rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
 }
 
 .nivel-bajo {
@@ -311,10 +464,10 @@ a {
 }
 
 .tipo {
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
   color: var(--texto-suave);
 }
 
@@ -326,16 +479,19 @@ a {
 
 .chip {
   background: var(--gris-fondo);
-  border-radius: 6px;
-  padding: 0.15rem 0.5rem;
-  font-size: 0.78rem;
+  border-radius: var(--radio-xs);
+  padding: 0.15rem 0.55rem;
+  font-size: var(--fs-xs);
+  font-weight: 500;
 }
 
+/* Alertas: fondo suave y una barra de color a la izquierda. */
 .alerta {
   border-radius: var(--radio);
+  border-left: 3px solid currentColor;
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
 }
 
 .alerta ul {
@@ -350,7 +506,7 @@ a {
 
 .alerta-aviso {
   background: var(--naranja-fondo);
-  color: #7a4306;
+  color: var(--naranja-texto);
 }
 
 /* --- Formularios ----------------------------------------------------------- */
@@ -358,9 +514,9 @@ a {
 .campo {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  margin-bottom: 0.75rem;
-  font-size: 0.85rem;
+  gap: 0.3rem;
+  margin-bottom: 0.85rem;
+  font-size: var(--fs-md);
   font-weight: 600;
   flex: 1 1 160px;
   min-width: 0;
@@ -371,21 +527,55 @@ a {
 .campo textarea {
   font: inherit;
   font-weight: 400;
-  font-size: 0.9rem;
-  padding: 0.5rem 0.65rem;
+  font-size: var(--fs-base);
+  min-height: 2.5rem;
+  padding: 0.5rem 0.7rem;
   border: 1px solid var(--borde);
-  border-radius: 8px;
-  background: #f8f9fb;
+  border-radius: var(--radio-sm);
+  background: var(--fondo-sutil);
   color: var(--texto);
   width: 100%;
+  transition:
+    border-color var(--transicion),
+    background var(--transicion),
+    box-shadow var(--transicion);
+}
+
+.campo textarea {
+  min-height: 5rem;
+  resize: vertical;
+}
+
+.campo input:hover,
+.campo select:hover,
+.campo textarea:hover {
+  border-color: var(--borde-fuerte);
 }
 
 .campo input:focus,
 .campo select:focus,
 .campo textarea:focus {
-  outline: 2px solid var(--acento);
-  outline-offset: -1px;
-  background: #fff;
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: var(--foco);
+  background: var(--superficie);
+}
+
+.campo input::placeholder,
+.campo textarea::placeholder {
+  color: var(--texto-suave);
+  opacity: 0.8;
+}
+
+.campo input:disabled,
+.campo select:disabled,
+.campo textarea:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.campo small {
+  font-weight: 400;
 }
 
 .campo-busqueda {
@@ -402,12 +592,20 @@ a {
 .filtros {
   display: flex;
   flex-wrap: wrap;
-  gap: 0 0.75rem;
+  gap: 0 0.85rem;
   align-items: flex-end;
 }
 
+/* Los filtros reparten el ancho y no cortan el texto de las opciones. */
+.filtros .campo {
+  flex: 1 1 170px;
+}
+.filtros .campo-busqueda {
+  flex: 2 1 240px;
+}
+
 .filtros .boton-texto {
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
 .opciones-roles {
@@ -420,7 +618,14 @@ a {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.9rem;
+  font-size: var(--fs-base);
+}
+
+.opcion input,
+.opcion-tarea input {
+  accent-color: var(--acento);
+  width: 1rem;
+  height: 1rem;
 }
 
 .titulo-seccion {
@@ -428,7 +633,7 @@ a {
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.85rem;
 }
 
 .titulo-seccion h2 {
@@ -438,13 +643,14 @@ a {
 .bloque {
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  padding: 0.75rem 1rem 0.25rem;
-  margin: 0 0 0.75rem;
+  padding: 0.85rem 1rem 0.25rem;
+  margin: 0 0 0.85rem;
+  background: var(--fondo-sutil);
 }
 
 .bloque legend {
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   padding: 0 0.35rem;
   color: var(--texto-suave);
 }
@@ -465,14 +671,14 @@ a {
 
 .resumen-lateral {
   position: sticky;
-  top: 1rem;
+  top: 4.5rem;
 }
 
 .requisitos {
   list-style: none;
   padding: 0;
   margin: 0;
-  font-size: 0.875rem;
+  font-size: var(--fs-md);
 }
 
 .requisitos li {
@@ -506,7 +712,7 @@ a {
 }
 
 .tarjeta-escenario:hover {
-  border-color: #b9bfd1;
+  border-color: var(--borde-fuerte);
 }
 
 .tarjeta-escenario h2 {
@@ -515,7 +721,7 @@ a {
 
 .conteos {
   margin: auto 0 0;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   color: var(--texto-suave);
 }
 
@@ -538,7 +744,7 @@ a {
 }
 
 .inject-numero {
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--acento);
   text-transform: uppercase;
@@ -556,9 +762,9 @@ a {
 }
 
 .tarea {
-  background: #f8f9fb;
+  background: var(--fondo-sutil);
   border: 1px solid var(--borde);
-  border-radius: 8px;
+  border-radius: var(--radio-sm);
   padding: 0.65rem 0.8rem;
   margin-bottom: 0.6rem;
 }
@@ -569,7 +775,7 @@ a {
 }
 
 .tarea details {
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
 }
 
 .tarea summary {
@@ -586,22 +792,45 @@ a {
 .tabla {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.875rem;
+  font-size: var(--fs-md);
 }
 
 .tabla th {
   text-align: left;
-  background: #f4f5f8;
-  padding: 0.6rem 0.9rem;
-  font-size: 0.78rem;
+  background: var(--fondo-sutil);
+  padding: 0.65rem 1rem;
+  font-size: var(--fs-xs);
   color: var(--texto-suave);
   font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border-bottom: 1px solid var(--borde);
+  white-space: nowrap;
 }
 
 .tabla td {
-  padding: 0.65rem 0.9rem;
+  padding: 0.75rem 1rem;
   border-top: 1px solid var(--borde);
   vertical-align: top;
+}
+
+.tabla tbody tr:first-child td {
+  border-top: none;
+}
+
+/* La fila bajo el cursor se resalta: ayuda a leer tablas anchas. */
+.tabla tbody tr {
+  transition: background var(--transicion);
+}
+
+.tabla tbody tr:hover {
+  background: var(--fondo-sutil);
+}
+
+/* Las tarjetas que solo contienen una tabla redondean también la cabecera. */
+.tarjeta.tabla-contenedor {
+  overflow: hidden;
+  overflow-x: auto;
 }
 
 .sin-salto {
@@ -613,6 +842,11 @@ a {
 .alerta-exito {
   background: var(--verde-fondo);
   color: var(--verde);
+}
+
+.alerta-info {
+  background: var(--azul-fondo);
+  color: var(--acento-oscuro);
 }
 
 .estado-activo {
@@ -632,19 +866,26 @@ a {
 .acciones-fila {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 0.15rem;
+  gap: 0.25rem;
+}
+
+/* Dentro de una tabla las acciones van en una sola línea: la tabla ya se
+   desplaza horizontalmente si no caben. */
+.tabla .acciones-fila {
+  flex-wrap: nowrap;
 }
 
 .panel-formulario {
-  border-color: #b9bfd1;
+  border-color: var(--borde-fuerte);
 }
 
 .requisitos-compactos {
   flex: 1 1 220px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   margin-bottom: 0.75rem;
 }
 
@@ -691,10 +932,10 @@ a {
   background: var(--navy);
   color: #fff;
   font-weight: 700;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   letter-spacing: 0.08em;
   padding: 0.3rem 0.6rem;
-  border-radius: 6px;
+  border-radius: var(--radio-xs);
 }
 
 .campo-con-boton {
@@ -760,12 +1001,12 @@ a {
   background: var(--navy);
   border-radius: var(--radio);
   padding: 1rem 0.5rem;
-  color: #c9cbe0;
+  color: var(--texto-sobre-oscuro);
 }
 
 .pasos-titulo {
   margin: 0 0.75rem 0.75rem;
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: #9a9dbb;
 }
@@ -784,11 +1025,11 @@ a {
   padding: 0.55rem 0.75rem;
   border: 0;
   border-left: 3px solid transparent;
-  border-radius: 6px;
+  border-radius: var(--radio-xs);
   background: transparent;
   color: #9a9dbb;
   font: inherit;
-  font-size: 0.875rem;
+  font-size: var(--fs-md);
   text-align: left;
 }
 
@@ -820,7 +1061,7 @@ button.paso:hover {
   height: 1.6rem;
   border-radius: 50%;
   background: #34365a;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   font-weight: 700;
 }
 
@@ -885,7 +1126,7 @@ button.paso:hover {
   padding: 0.6rem 0.85rem;
   border: 1px solid var(--borde);
   border-left: 3px solid transparent;
-  border-radius: 8px;
+  border-radius: var(--radio-sm);
   background: var(--superficie);
   color: var(--texto);
   font: inherit;
@@ -894,7 +1135,7 @@ button.paso:hover {
 }
 
 .rol-item span {
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   color: var(--texto-suave);
 }
 
@@ -938,7 +1179,7 @@ button.paso:hover {
 .injects-compactos {
   margin: 0;
   padding-left: 1.25rem;
-  font-size: 0.875rem;
+  font-size: var(--fs-md);
 }
 
 .boton-agregar {
@@ -963,11 +1204,11 @@ button.paso:hover {
   flex: 1;
   min-width: 0;
   font: inherit;
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
   padding: 0.4rem 0.6rem;
   border: 1px solid var(--borde);
-  border-radius: 8px;
-  background: #f8f9fb;
+  border-radius: var(--radio-sm);
+  background: var(--fondo-sutil);
 }
 
 .suma-pesos {
@@ -984,7 +1225,7 @@ button.paso:hover {
   font: inherit;
   padding: 0.3rem 0.5rem;
   border: 1px solid var(--borde);
-  border-radius: 6px;
+  border-radius: var(--radio-xs);
 }
 
 .tabla tfoot td {
@@ -1052,7 +1293,7 @@ button.paso:hover {
 }
 
 .tarjeta-sesion:hover {
-  border-color: #b9bfd1;
+  border-color: var(--borde-fuerte);
 }
 
 .tarjeta-sesion h2 {
@@ -1070,7 +1311,7 @@ button.paso:hover {
 }
 
 .tu-rol .texto-suave {
-  color: #c9cbe0;
+  color: var(--texto-sobre-oscuro);
 }
 
 .rol-destacado {
@@ -1087,7 +1328,7 @@ button.paso:hover {
 }
 
 .datos-sesion dt {
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   font-weight: 700;
   color: var(--texto-suave);
 }
@@ -1148,14 +1389,14 @@ button.paso:hover {
   gap: 0.6rem;
   padding: 0.55rem 0;
   border-top: 1px solid var(--borde);
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
 }
 
 .punto {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  background: #c5c9d6;
+  background: var(--borde-fuerte);
 }
 
 .punto.conectado {
@@ -1186,7 +1427,7 @@ button.paso:hover {
 .boton-grande {
   flex: 1 1 160px;
   padding: 0.8rem 1rem;
-  font-size: 0.95rem;
+  font-size: var(--fs-base);
 }
 
 .boton-pausa {
@@ -1222,7 +1463,7 @@ button.paso:hover {
 
 .barra-avance {
   height: 8px;
-  border-radius: 999px;
+  border-radius: 999px;;
   background: var(--gris-fondo);
   overflow: hidden;
 }
@@ -1263,10 +1504,10 @@ button.paso:hover {
   justify-content: space-between;
   align-items: center;
   gap: 0.75rem;
-  margin: -1.1rem -1.25rem 0.9rem;
-  padding: 0.8rem 1.25rem;
+  margin: -1.25rem -1.5rem 0.9rem;
+  padding: 0.8rem 1.5rem;
   background: var(--navy);
-  border-radius: var(--radio) var(--radio) 0 0;
+  border-radius: var(--radio-lg) var(--radio-lg) 0 0;
   color: #fff;
 }
 
@@ -1277,7 +1518,7 @@ button.paso:hover {
 .reloj-tarea {
   flex: none;
   padding: 0.3rem 0.7rem;
-  border-radius: 8px;
+  border-radius: var(--radio-sm);
   background: var(--navy-claro);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -1289,7 +1530,7 @@ button.paso:hover {
 
 .tarea-vivo-enunciado {
   margin: 0.6rem 0 0.9rem;
-  font-size: 1.05rem;
+  font-size: var(--fs-lg);
   font-weight: 600;
 }
 
@@ -1306,7 +1547,7 @@ button.paso:hover {
   margin-top: 0.5rem;
   padding: 0.7rem 0.85rem;
   border: 1px solid var(--borde);
-  border-radius: 8px;
+  border-radius: var(--radio-sm);
   cursor: pointer;
 }
 
@@ -1317,9 +1558,9 @@ button.paso:hover {
 
 .respuesta-enviada-texto {
   white-space: pre-line;
-  background: #f8f9fb;
+  background: var(--fondo-sutil);
   border: 1px solid var(--borde);
-  border-radius: 8px;
+  border-radius: var(--radio-sm);
   padding: 0.65rem 0.8rem;
 }
 
@@ -1379,7 +1620,11 @@ button.paso:hover {
   .sidebar {
     flex-direction: row;
     overflow-x: auto;
+    scrollbar-width: none;
     padding: 0.5rem;
+  }
+  .sidebar a.active::before {
+    display: none;
   }
   .sidebar a {
     white-space: nowrap;
@@ -1434,7 +1679,7 @@ button.paso:hover {
 
 .detalle-evaluacion {
   margin-top: 0.35rem;
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
 }
 
 .detalle-evaluacion summary {
@@ -1525,7 +1770,7 @@ button.paso:hover {
 }
 
 .avance-rol-datos {
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
 }
 
 .lista-injects-vivo li,
@@ -1543,7 +1788,7 @@ button.paso:hover {
   height: 1.5rem;
   border-radius: 50%;
   background: var(--gris-fondo);
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
 }
 
 .inject-lanzado .inject-marca {
@@ -1604,11 +1849,11 @@ button.paso:hover {
 
 .progreso-persona {
   display: grid;
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
 }
 
 .progreso-persona .texto-suave {
-  font-size: 0.78rem;
+  font-size: var(--fs-xs);
 }
 
 .progreso-nombre {
@@ -1618,7 +1863,7 @@ button.paso:hover {
 }
 
 .progreso-porcentaje {
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
   text-align: right;
 }
 
@@ -1656,7 +1901,7 @@ button.paso:hover {
 
 .lanzado-hace {
   margin: 0.4rem 0 0.75rem;
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
 }
 
 .respuestas-recientes {
@@ -1665,7 +1910,7 @@ button.paso:hover {
 
 .respuestas-recientes h3 {
   margin: 0 0 0.5rem;
-  font-size: 0.95rem;
+  font-size: var(--fs-base);
 }
 
 .respuestas-recientes ul {
@@ -1680,7 +1925,7 @@ button.paso:hover {
   padding: 0.6rem 0.75rem;
   border-radius: var(--radio);
   background: var(--fondo);
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
 }
 
 .respuestas-recientes li p {
@@ -1744,7 +1989,7 @@ button.paso:hover {
 
 .tablero-texto-suave {
   color: rgb(255 255 255 / 0.65);
-  font-size: 0.8rem;
+  font-size: var(--fs-sm);
 }
 
 /* Ranking por rol: el orden (de mayor a menor) ya viene del backend; sin
@@ -1766,12 +2011,12 @@ button.paso:hover {
 
 .ranking-roles-nombre {
   display: grid;
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
 }
 
 .barra-avance-tablero {
   height: 8px;
-  border-radius: 999px;
+  border-radius: 999px;;
   background: rgb(255 255 255 / 0.12);
   overflow: hidden;
 }
@@ -1822,11 +2067,11 @@ button.paso:hover {
 }
 
 .podio-nombre {
-  font-size: 0.9rem;
+  font-size: var(--fs-md);
 }
 
 .podio-rol {
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   color: rgb(255 255 255 / 0.65);
 }
 
@@ -1878,8 +2123,8 @@ button.paso:hover {
   align-items: center;
   gap: 0.5rem;
   padding: 0.35rem 0.4rem;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  border-radius: var(--radio-xs);
+  font-size: var(--fs-sm);
 }
 
 .ranking-completo li.leaderboard-podio {
@@ -1957,19 +2202,19 @@ button.paso:hover {
   background: var(--superficie);
   border: 1px solid var(--borde);
   border-radius: var(--radio);
-  font-size: 0.85rem;
+  font-size: var(--fs-sm);
 }
 
 .reporte-indice strong {
   margin-bottom: 0.4rem;
   color: var(--texto-suave);
-  font-size: 0.75rem;
+  font-size: var(--fs-xs);
   text-transform: uppercase;
 }
 
 .reporte-indice a {
   padding: 0.35rem 0.5rem;
-  border-radius: 6px;
+  border-radius: var(--radio-xs);
   color: var(--texto);
   text-decoration: none;
 }
@@ -1991,7 +2236,7 @@ button.paso:hover {
 
 .reporte-contenido h3 {
   margin: 1.25rem 0 0.5rem;
-  font-size: 0.95rem;
+  font-size: var(--fs-base);
 }
 
 .reporte-barras {
@@ -2016,7 +2261,7 @@ button.paso:hover {
 
 .reporte-barra {
   height: 9px;
-  border-radius: 999px;
+  border-radius: 999px;;
   background: var(--gris-fondo);
   overflow: hidden;
 }
@@ -2077,4 +2322,58 @@ button.paso:hover {
     grid-column: 1 / -1;
     grid-row: 2;
   }
+}
+
+/* Mis tabletops: el nombre de la sesión no se aprieta por los botones. */
+.tabla-sesiones td:first-child {
+  min-width: 12rem;
+  font-weight: 600;
+}
+
+/* Dato secundario debajo del principal en una celda (p. ej. la duración). */
+.celda-secundaria {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--fs-sm);
+}
+
+/* Botones más compactos dentro de las tablas: caben en una línea sin
+   ensanchar la tabla. */
+.tabla .boton {
+  min-height: 2rem;
+  padding: 0.3rem 0.65rem;
+  font-size: var(--fs-sm);
+}
+
+.tabla .boton-texto {
+  padding: 0.3rem 0.5rem;
+}
+
+/* Monitoreo: las métricas de cada tarjeta van en una fila compacta, sin
+   tarjetas anidadas. */
+.tarjeta-sesion .metricas {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.tarjeta-sesion .metrica {
+  padding: 0.6rem 0.7rem;
+  background: var(--fondo-sutil);
+  border: none;
+  box-shadow: none;
+  border-radius: var(--radio-sm);
+}
+
+.tarjeta-sesion .metrica strong {
+  font-size: var(--fs-lg);
+}
+
+.tarjeta-sesion .metrica span {
+  font-size: var(--fs-xs);
+}
+
+.tarjeta-sesion > .boton {
+  align-self: flex-start;
+  margin-top: 0.5rem;
 }

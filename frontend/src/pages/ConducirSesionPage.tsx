@@ -121,6 +121,8 @@ function Panel({
     recarga,
   )
   const avance = new Map((puntajes.datos?.participantes ?? []).map((p) => [p.usuario_id, p]))
+  // Mientras llega el primer avance se muestra "…", no un "0/0" engañoso.
+  const cargandoAvance = conDatos && !puntajes.datos
   const recibidas = puntajes.datos?.participantes.reduce((n, p) => n + p.respondidas, 0) ?? 0
   const esperadas =
     puntajes.datos?.participantes.reduce((n, p) => n + p.respondidas + p.sin_responder, 0) ?? 0
@@ -174,7 +176,7 @@ function Panel({
           color="azul"
         />
         <Metrica
-          valor={`${recibidas}/${esperadas}`}
+          valor={cargandoAvance ? '…' : `${recibidas}/${esperadas}`}
           nombre="Respuestas recibidas"
           color="naranja"
         />
@@ -182,6 +184,7 @@ function Panel({
 
       <div className="disenador-columnas">
         <ProgresoParticipantes
+          cargando={cargandoAvance}
           injectActual={vista?.inject_actual ?? 0}
           filas={sesion.participantes.map((p) => {
             const suyo = avance.get(p.usuario_id)

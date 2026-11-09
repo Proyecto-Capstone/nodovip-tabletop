@@ -859,8 +859,15 @@ a:hover {
 .acciones-fila {
   display: flex;
   justify-content: flex-end;
+  align-items: center;
   flex-wrap: wrap;
-  gap: 0.15rem;
+  gap: 0.25rem;
+}
+
+/* Dentro de una tabla las acciones van en una sola línea: la tabla ya se
+   desplaza horizontalmente si no caben. */
+.tabla .acciones-fila {
+  flex-wrap: nowrap;
 }
 
 .panel-formulario {
@@ -1606,7 +1613,11 @@ button.paso:hover {
   .sidebar {
     flex-direction: row;
     overflow-x: auto;
+    scrollbar-width: none;
     padding: 0.5rem;
+  }
+  .sidebar a.active::before {
+    display: none;
   }
   .sidebar a {
     white-space: nowrap;
@@ -2304,4 +2315,29 @@ button.paso:hover {
     grid-column: 1 / -1;
     grid-row: 2;
   }
+}
+
+/* Mis tabletops: el nombre de la sesión no se aprieta por los botones. */
+.tabla-sesiones td:first-child {
+  min-width: 12rem;
+  font-weight: 600;
+}
+
+/* Dato secundario debajo del principal en una celda (p. ej. la duración). */
+.celda-secundaria {
+  display: block;
+  color: var(--texto-suave);
+  font-size: var(--fs-sm);
+}
+
+/* Botones más compactos dentro de las tablas: caben en una línea sin
+   ensanchar la tabla. */
+.tabla .boton {
+  min-height: 2rem;
+  padding: 0.3rem 0.65rem;
+  font-size: var(--fs-sm);
+}
+
+.tabla .boton-texto {
+  padding: 0.3rem 0.5rem;
 }

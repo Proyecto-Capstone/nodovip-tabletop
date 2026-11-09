@@ -51,7 +51,7 @@ export function SesionesPage() {
       )}
       {sesiones.datos && sesiones.datos.length > 0 && (
         <div className="tarjeta tabla-contenedor">
-          <table className="tabla">
+          <table className="tabla tabla-sesiones">
             <thead>
               <tr>
                 <th>Sesión</th>
@@ -73,7 +73,11 @@ export function SesionesPage() {
                   </td>
                   <td className="sin-salto">
                     {formatoFecha(s.fecha_programada)}
-                    {s.duracion_minutos ? ` · ${formatoDuracion(s.duracion_minutos)}` : ''}
+                    {s.duracion_minutos ? (
+                      <span className="celda-secundaria">
+                        {formatoDuracion(s.duracion_minutos)}
+                      </span>
+                    ) : null}
                   </td>
                   <td>
                     {s.total_participantes} / {s.roles.length} roles

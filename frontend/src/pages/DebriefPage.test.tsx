@@ -5,13 +5,7 @@ import { describe, expect, it, vi } from 'vitest'
 import type { Debrief } from '../api/debrief'
 import type { Reporte } from '../api/reportes'
 import type { Sesion } from '../api/auth'
-import {
-  ANALISTA,
-  MODERADOR,
-  renderConSesion,
-  respuesta,
-  sesionDePrueba,
-} from '../test/utilidades'
+import { ANALISTA, MODERADOR, renderConSesion, respuesta, sesionDePrueba } from '../test/utilidades'
 import { DebriefPage } from './DebriefPage'
 
 const ID = 'ffffffff-0000-0000-0000-000000000001'
@@ -57,7 +51,11 @@ function abrir(
     if (url.includes('/reportes/')) return respuesta(200, REPORTE)
     if (url.endsWith('/completar')) return alCompletar()
     if (init?.method === 'PUT') {
-      return respuesta(200, { ...debrief, estado: 'borrador', actualizado_en: '2026-11-10T15:00:00Z' })
+      return respuesta(200, {
+        ...debrief,
+        estado: 'borrador',
+        actualizado_en: '2026-11-10T15:00:00Z',
+      })
     }
     return respuesta(200, debrief)
   })
@@ -94,14 +92,21 @@ describe('Debrief (PC-45)', () => {
       fortalezas: ['Escalaron rápido'],
       mejoras: ['Respaldos sin probar'],
       acciones: [
-        { descripcion: 'Simulacro trimestral', prioridad: 'media', rol_codigo: 'legal', plazo: null },
+        {
+          descripcion: 'Simulacro trimestral',
+          prioridad: 'media',
+          rol_codigo: 'legal',
+          plazo: null,
+        },
       ],
     })
   })
 
   it('suma una recomendación del reporte al plan con su responsable y prioridad', async () => {
     abrir(MODERADOR, VACIO)
-    const hallazgos = await screen.findByRole('complementary', { name: 'Hallazgos del ejercicio' })
+    const hallazgos = await screen.findByRole('complementary', {
+      name: 'Hallazgos del ejercicio',
+    })
     await userEvent.click(within(hallazgos).getByRole('button', { name: '+ Agregar al plan' }))
     expect(screen.getByLabelText('Qué se hará')).toHaveValue('Probar la restauración de respaldos')
     expect(screen.getByLabelText('Responsable')).toHaveValue('ti')
@@ -110,7 +115,9 @@ describe('Debrief (PC-45)', () => {
 
   it('al completar muestra lo que falta', async () => {
     abrir(MODERADOR, VACIO, () =>
-      respuesta(422, { detail: { errores: ['Agrega al menos una acción al plan'] } }),
+      respuesta(422, {
+        detail: { errores: ['Agrega al menos una acción al plan'] },
+      }),
     )
     await screen.findByText('Debrief: Simulacro Q4')
     await userEvent.click(screen.getByRole('button', { name: 'Completar debrief' }))

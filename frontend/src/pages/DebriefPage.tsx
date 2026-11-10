@@ -130,10 +130,7 @@ function Contenido({
     setAviso(undefined)
   }
 
-  const ejecutar = async (
-    accion: 'guardar' | 'completar' | 'reabrir',
-    mensaje: string,
-  ) => {
+  const ejecutar = async (accion: 'guardar' | 'completar' | 'reabrir', mensaje: string) => {
     setEnviando(accion)
     setErrores(undefined)
     setAviso(undefined)
@@ -207,9 +204,9 @@ function Contenido({
 
       {editable && (
         <p className="parrafo texto-suave debrief-intro">
-          Reúne al equipo justo después del ejercicio (hot wash): ¿qué funcionó?, ¿qué
-          hay que mejorar? y ¿qué haremos al respecto? Al completarlo, las lecciones y el
-          plan de acción se agregan al reporte de brechas.
+          Reúne al equipo justo después del ejercicio (hot wash): ¿qué funcionó?, ¿qué hay que
+          mejorar? y ¿qué haremos al respecto? Al completarlo, las lecciones y el plan de acción se
+          agregan al reporte de brechas.
         </p>
       )}
       <Errores errores={errores} />
@@ -279,7 +276,9 @@ function Contenido({
                     })
                   }
                   onQuitar={() =>
-                    cambiar({ acciones: f.acciones.filter((x) => x.clave !== a.clave) })
+                    cambiar({
+                      acciones: f.acciones.filter((x) => x.clave !== a.clave),
+                    })
                   }
                 />
               ))}

@@ -65,8 +65,8 @@ export function ResumenDelParticipante({ sesionId }: { sesionId: string }) {
           <Lecciones {...r.lecciones} />
         ) : (
           <p className="texto-suave">
-            El moderador compartirá aquí las lecciones aprendidas y el plan de acción
-            cuando complete el debrief.
+            El moderador compartirá aquí las lecciones aprendidas y el plan de acción cuando
+            complete el debrief.
           </p>
         )}
       </section>

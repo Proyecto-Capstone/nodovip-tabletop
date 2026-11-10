@@ -218,3 +218,16 @@ def test_si_redis_se_pierde_las_tareas_vuelven_a_tener_su_tiempo(e):
     e["reloj"].avanzar(seconds=100)
     e["motor"].almacen.eliminar(e["sesion"].id)
     assert _tareas(e)[0].segundos_restantes == 120
+
+
+def test_tras_el_cierre_no_se_responde_ni_hay_tareas(e):
+    """PC-45: la sesión finalizada sigue visible para el participante (su
+    resumen), pero ya no recibe tareas ni respuestas."""
+    from app.domain.sesiones import ReglaSesionError
+
+    _lanzar(e)
+    tarea = _tareas(e)[0].tarea
+    e["motor"].cerrar(e["sesion"].id, MODERADOR)
+    assert _tareas(e) == []
+    with pytest.raises(ReglaSesionError, match="no está en curso"):
+        _responder(e, tarea, "Respuesta tardía")

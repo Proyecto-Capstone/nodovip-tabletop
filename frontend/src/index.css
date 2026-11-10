@@ -1296,7 +1296,8 @@ button.paso:hover {
   border-color: var(--borde-fuerte);
 }
 
-.tarjeta-sesion h2 {
+.tarjeta-sesion h2,
+.tarjeta-sesion h3 {
   margin: 0;
 }
 
@@ -3109,4 +3110,27 @@ button.paso:hover {
     flex: 1;
     min-width: 0;
   }
+}
+
+/* Mis sesiones agrupadas: próximas y finalizadas (PC-45). */
+.grupo-mis-sesiones + .grupo-mis-sesiones {
+  margin-top: 1.75rem;
+}
+
+.titulo-grupo {
+  margin: 0 0 0.6rem;
+  font-size: var(--fs-lg);
+}
+
+.grupo-mis-sesiones .texto-chico {
+  margin: -0.35rem 0 0.75rem;
+}
+
+.tarjeta-sesion h3 {
+  font-size: var(--fs-lg);
+}
+
+.badge.badge-vivo {
+  background: var(--rojo-fondo);
+  color: var(--rojo);
 }

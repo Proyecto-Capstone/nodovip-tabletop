@@ -37,6 +37,8 @@ export function SesionEnVivoPage() {
   if (!mia.datos) return <Cargando />
 
   const estado = vista?.estado ?? mia.datos.estado
+  // Al terminar, el avance y el reloj ya no aportan: se muestra el resumen.
+  const terminada = estado === 'finalizada'
   const avance = vista?.total_injects ? (100 * vista.inject_actual) / vista.total_injects : 0
 
   return (
@@ -47,43 +49,49 @@ export function SesionEnVivoPage() {
           <span className="chip chip-rol">Rol: {mia.datos.rol_nombre}</span>
         </div>
         <div className="sala-cabecera-acciones">
-          <button
-            type="button"
-            className="boton boton-texto boton-sonido"
-            aria-pressed={sonido}
-            onClick={alternarSonido}
-            title={sonido ? 'Silenciar el aviso de nuevos injects' : 'Activar el sonido'}
-          >
-            <span aria-hidden="true">{sonido ? '🔔' : '🔕'}</span>{' '}
-            {sonido ? 'Sonido activado' : 'Silenciado'}
-          </button>
+          {!terminada && (
+            <button
+              type="button"
+              className="boton boton-texto boton-sonido"
+              aria-pressed={sonido}
+              onClick={alternarSonido}
+              title={sonido ? 'Silenciar el aviso de nuevos injects' : 'Activar el sonido'}
+            >
+              <span aria-hidden="true">{sonido ? '🔔' : '🔕'}</span>{' '}
+              {sonido ? 'Sonido activado' : 'Silenciado'}
+            </button>
+          )}
           <EstadoVivo estado={estado} pausada={vista?.pausada ?? false} />
         </div>
       </div>
 
       <AvisoInject inject={aviso} onCerrar={cerrarAviso} />
 
-      <div
-        className="barra-avance"
-        role="progressbar"
-        aria-label="Avance de la sesión"
-        aria-valuenow={Math.round(avance)}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
-        <span style={{ width: `${avance}%` }} />
-      </div>
-      <div className="sala-datos texto-suave">
-        <span>
-          Inject {vista?.inject_actual ?? 0} de {vista?.total_injects ?? '…'}
-        </span>
-        <span>{formatoReloj(segundos)}</span>
-        <span>
-          {vista
-            ? `${vista.total_conectados} ${vista.total_conectados === 1 ? 'conectado' : 'conectados'}`
-            : ''}
-        </span>
-      </div>
+      {!terminada && (
+        <>
+          <div
+            className="barra-avance"
+            role="progressbar"
+            aria-label="Avance de la sesión"
+            aria-valuenow={Math.round(avance)}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <span style={{ width: `${avance}%` }} />
+          </div>
+          <div className="sala-datos texto-suave">
+            <span>
+              Inject {vista?.inject_actual ?? 0} de {vista?.total_injects ?? '…'}
+            </span>
+            <span>{formatoReloj(segundos)}</span>
+            <span>
+              {vista
+                ? `${vista.total_conectados} ${vista.total_conectados === 1 ? 'conectado' : 'conectados'}`
+                : ''}
+            </span>
+          </div>
+        </>
+      )}
 
       {conexion === 'reconectando' && (
         <div className="alerta alerta-aviso" role="status">
@@ -104,8 +112,8 @@ export function SesionEnVivoPage() {
           )}
           {estado !== 'en_curso' && (
             <p className="tarjeta parrafo">
-              La sesión todavía no empieza. Esta pantalla se actualizará sola cuando el
-              moderador la inicie.
+              La sesión todavía no empieza. Esta pantalla se actualizará sola cuando el moderador la
+              inicie.
             </p>
           )}
           {estado === 'en_curso' && vista && (

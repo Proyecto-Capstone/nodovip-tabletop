@@ -203,18 +203,42 @@ export function EscenarioDetallePage() {
                 <article key={t.id} className="tarea">
                   <p className="tarea-enunciado">{t.enunciado}</p>
                   <div className="fila-badges">
+                    {t.inject_orden !== null && (
+                      <span className="badge inject-badge inject-0">
+                        Inject {t.inject_orden}
+                      </span>
+                    )}
                     <NivelBadge nivel={t.dificultad} />
+                    {t.tipo === 'seleccion_multiple' && (
+                      <span className="badge tipo-seleccion">Selección múltiple</span>
+                    )}
                     <span className="texto-suave">
                       {t.puntaje_maximo} pts · {formatoTiempo(t.tiempo_limite_segundos)}
                     </span>
                   </div>
                   <details>
-                    <summary>Criterios de evaluación ({t.criterios.length})</summary>
-                    <ul>
-                      {t.criterios.map((c) => (
-                        <li key={c}>{c}</li>
-                      ))}
-                    </ul>
+                    {t.tipo === 'seleccion_multiple' ? (
+                      <>
+                        <summary>Opciones ({t.opciones.length})</summary>
+                        <ul className="lista-opciones">
+                          {t.opciones.map((o, i) => (
+                            <li key={i} className={o.correcta ? 'opcion-correcta' : undefined}>
+                              {o.correcta && <span className="solo-lector">Correcta: </span>}
+                              {o.texto}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : (
+                      <>
+                        <summary>Criterios de evaluación ({t.criterios.length})</summary>
+                        <ul>
+                          {t.criterios.map((c) => (
+                            <li key={c}>{c}</li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
                     {t.respuesta_esperada && (
                       <p className="parrafo">
                         <strong>Respuesta esperada:</strong> {t.respuesta_esperada}

@@ -19,7 +19,7 @@ from app.adapters.outbound.persistence.repositorio_escenarios import (
     SqlEscenarioRepository,
 )
 from app.application.escenarios import ServicioEscenarios
-from app.domain.escenarios import EstadoEscenario, Nivel, NivelAlerta
+from app.domain.escenarios import EstadoEscenario, Nivel, NivelAlerta, TipoTarea
 from app.ports.escenario_repository import FiltroBanco, FiltroEscenarios
 from app.seed_escenarios import escenario_ransomware
 from tests.pg import purgar_respuestas
@@ -60,11 +60,18 @@ def test_guardar_publicar_y_leer_escenario_completo(servicio):
     leido = servicio.obtener(creado.id, puede_gestionar=False)
     assert publicado.estado == EstadoEscenario.PUBLICADO
     assert [i.orden for i in leido.injects] == [1, 2, 3, 4]
-    assert len(leido.tareas) == 5
+    assert len(leido.tareas) == len(escenario_ransomware().tareas)
+    # PC-46: tipo, opciones e inject de cada pregunta se guardan y vuelven igual.
+    seleccion = [t for t in leido.tareas if t.tipo == TipoTarea.SELECCION_MULTIPLE]
+    original = [
+        t
+        for t in escenario_ransomware().tareas
+        if t.tipo == TipoTarea.SELECCION_MULTIPLE
+    ]
+    assert [(t.opciones, t.inject_orden) for t in seleccion] == [
+        (t.opciones, t.inject_orden) for t in original
+    ]
     assert leido.tareas[0].criterios[0].startswith("Aislar")
-    # PC-44: la evidencia simulada se guarda en JSON y vuelve igual.
-    assert leido.injects[0].evidencia == escenario_ransomware().injects[0].evidencia
-    assert leido.injects[0].evidencia.nivel == NivelAlerta.CRITICA
     # PC-44: la evidencia simulada se guarda en JSON y vuelve igual.
     assert leido.injects[0].evidencia == escenario_ransomware().injects[0].evidencia
     assert leido.injects[0].evidencia.nivel == NivelAlerta.CRITICA
@@ -76,6 +83,8 @@ def test_actualizar_conserva_ids_y_reemplaza_contenido(servicio):
     nuevo.tareas = creado.tareas[:]
     nuevo.tareas[0].enunciado = "Enunciado editado"
     nuevo.injects = nuevo.injects[:3]
+    # Las preguntas del inject quitado se van con él (PC-46: cada una tiene su inject).
+    nuevo.tareas = [t for t in nuevo.tareas if t.inject_orden != 4]
     actualizado = servicio.actualizar(creado.id, nuevo)
     assert actualizado.tareas[0].id == creado.tareas[0].id
     assert actualizado.tareas[0].enunciado == "Enunciado editado"

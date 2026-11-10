@@ -18,9 +18,11 @@ from app.domain.escenarios import (
     Evidencia,
     Inject,
     Nivel,
+    OpcionRespuesta,
     RolEjercicio,
     Tarea,
     TipoEscenario,
+    TipoTarea,
 )
 from app.ports.escenario_repository import (
     FiltroBanco,
@@ -64,6 +66,9 @@ def _tarea_a_dominio(t: TareaModel) -> Tarea:
         puntaje_maximo=t.puntaje_maximo,
         tiempo_limite_segundos=t.tiempo_limite_segundos,
         respuesta_esperada=t.respuesta_esperada,
+        tipo=TipoTarea(t.tipo),
+        opciones=[OpcionRespuesta(**o) for o in t.opciones or []],
+        inject_orden=t.inject_orden,
     )
 
 
@@ -147,6 +152,11 @@ class SqlEscenarioRepository:
                 puntaje_maximo=t.puntaje_maximo,
                 tiempo_limite_segundos=t.tiempo_limite_segundos,
                 respuesta_esperada=t.respuesta_esperada,
+                tipo=t.tipo.value,
+                opciones=[
+                    {"texto": o.texto, "correcta": o.correcta} for o in t.opciones
+                ],
+                inject_orden=t.inject_orden,
             )
             for pos, t in enumerate(escenario.tareas)
         ]

@@ -307,3 +307,39 @@ def test_catalogos(client):
     roles = client.get("/api/catalogos/roles-ejercicio", headers=MODERADOR).json()
     assert {t["codigo"] for t in tipos} == {"ransomware", "ddos"}
     assert len(roles) == 3
+
+
+def test_tarea_de_seleccion_multiple_con_su_inject(client):
+    """PC-46: el banco guarda preguntas de selección múltiple y el inject en que
+    se hacen; para publicar, la pregunta necesita una opción correcta."""
+    tareas = _payload()["tareas"]
+    tareas.append(
+        {
+            "enunciado": "¿Qué hace con los respaldos cifrados?",
+            "rol_codigo": "ti",
+            "dificultad": "medio",
+            "tipo": "seleccion_multiple",
+            "opciones": [
+                {"texto": "Restaurar sin revisar", "correcta": False},
+                {"texto": "Verificar la copia fuera de línea", "correcta": False},
+            ],
+            "inject_orden": 2,
+        }
+    )
+    r = client.post("/api/escenarios", json=_payload(tareas=tareas), headers=ADMIN)
+    assert r.status_code == 201, r.text
+    cuerpo = r.json()
+    nueva = cuerpo["tareas"][2]
+    assert nueva["tipo"] == "seleccion_multiple" and nueva["inject_orden"] == 2
+    assert nueva["opciones"][1]["texto"] == "Verificar la copia fuera de línea"
+    assert cuerpo["pendientes_para_publicar"] == [
+        'La tarea "¿Qué hace con los respaldos cifrados?" no tiene una opción correcta'
+    ]
+
+
+def test_tarea_en_un_inject_inexistente_se_rechaza(client):
+    tareas = _payload()["tareas"]
+    tareas[0]["inject_orden"] = 9
+    r = client.post("/api/escenarios", json=_payload(tareas=tareas), headers=ADMIN)
+    assert r.status_code == 422
+    assert "Hay tareas asignadas a un inject que no existe" in r.text

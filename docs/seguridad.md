@@ -87,10 +87,18 @@ se mide el contraste de colores.
 | `<html lang="en">` y título "frontend" | `lang="es"` y título "NODOVIP Tabletop" (WCAG 3.1.1 y 2.4.2) |
 | Sin forma de saltar el menú con el teclado | Enlace "Saltar al contenido", visible al recibir el foco (WCAG 2.4.1) |
 
-**Resultado:** 0 violaciones en las 13 pantallas del administrador y del
-analista: biblioteca, detalle, formulario nuevo y de edición, banco de
-preguntas, usuarios, accesos, reportes, reporte, debrief, leaderboard (lista y
-sesión) y monitoreo.
+**Resultado:** 0 violaciones en **28 pantallas de los tres roles**:
+
+- **Administrador y analista (13):** biblioteca, detalle, formulario nuevo y
+  de edición, banco de preguntas, usuarios, accesos, reportes, reporte,
+  debrief, leaderboard (lista y sesión) y monitoreo.
+- **Moderador (10):** Mis tabletops, nueva sesión, los 5 pasos del diseñador,
+  el panel en vivo (sesión programada y finalizada) y las respuestas.
+- **Participante (5):** Mis sesiones, el detalle de una sesión programada y de
+  una finalizada, la sala de espera y el resumen personal.
+
+La pantalla de inicio de sesión se revisa con la prueba automática (sección
+siguiente). Usa las mismas variables de color, que ya cumplen el contraste.
 
 Como los colores salen de las variables del sistema de diseño (PC-43), la
 corrección se aplica a todas las pantallas a la vez.

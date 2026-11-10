@@ -23,8 +23,8 @@ export function MiSesionPage() {
   if (consulta.status === 404) {
     return (
       <div className="alerta alerta-aviso">
-        No encontramos esta sesión entre tus invitaciones. Revisa que hayas entrado con
-        la cuenta a la que llegó el correo. <Link to="/mis-sesiones">Ver mis sesiones</Link>
+        No encontramos esta sesión entre tus invitaciones. Revisa que hayas entrado con la cuenta a
+        la que llegó el correo. <Link to="/mis-sesiones">Ver mis sesiones</Link>
       </div>
     )
   }
@@ -91,16 +91,21 @@ export function MiSesionPage() {
         )}
       </section>
 
+      {s.estado === 'finalizada' && (
+        <Link className="boton boton-primario boton-bloque" to={`/mis-sesiones/${s.id}/en-vivo`}>
+          Ver mi resultado y retroalimentación
+        </Link>
+      )}
       {(s.estado === 'programada' || s.estado === 'en_curso') && (
         <Link className="boton boton-primario boton-bloque" to={`/mis-sesiones/${s.id}/en-vivo`}>
           {s.estado === 'en_curso' ? '● Entrar a la sesión en vivo' : 'Entrar a la sala de espera'}
         </Link>
       )}
 
-      {s.invitacion === 'aceptada' ? (
+      {s.estado === 'finalizada' ? null : s.invitacion === 'aceptada' ? (
         <div className="alerta alerta-exito" role="status">
-          Confirmaste tu asistencia. El día de la sesión entra desde aquí: las tareas de
-          tu rol aparecerán cuando el moderador inicie el ejercicio.
+          Confirmaste tu asistencia. El día de la sesión entra desde aquí: las tareas de tu rol
+          aparecerán cuando el moderador inicie el ejercicio.
         </div>
       ) : (
         <button

@@ -118,7 +118,10 @@ class EstadoInvitacion(StrEnum):
 # Se (re)envían al programar o cuando el moderador lo pide en el paso 6.
 POR_ENVIAR = (EstadoInvitacion.PENDIENTE, EstadoInvitacion.FALLIDA)
 # Estados en los que el participante ve la sesión y puede aceptar.
-VISIBLES_PARA_PARTICIPANTE = (EstadoSesion.PROGRAMADA, EstadoSesion.EN_CURSO)
+# Invitaciones abiertas: se envían y se aceptan mientras la sesión no termina.
+CON_INVITACION_ABIERTA = (EstadoSesion.PROGRAMADA, EstadoSesion.EN_CURSO)
+# El participante también ve las finalizadas: allí está su resumen (PC-45).
+VISIBLES_PARA_PARTICIPANTE = (*CON_INVITACION_ABIERTA, EstadoSesion.FINALIZADA)
 
 
 @dataclass
@@ -345,14 +348,15 @@ class SesionTabletop:
 
     def visible_para(self, usuario_id: UUID) -> bool:
         """Un participante solo ve sesiones a las que fue invitado y que ya
-        fueron programadas (un borrador todavía puede cambiar)."""
+        fueron programadas (un borrador todavía puede cambiar). Las finalizadas
+        siguen visibles para consultar su resumen (PC-45)."""
         return (
             self.estado in VISIBLES_PARA_PARTICIPANTE
             and self.participante_de(usuario_id) is not None
         )
 
     def invitaciones_por_enviar(self) -> list[ParticipanteSesion]:
-        if self.estado not in VISIBLES_PARA_PARTICIPANTE:
+        if self.estado not in CON_INVITACION_ABIERTA:
             raise ReglaSesionError(
                 ["Las invitaciones se envían cuando la sesión está programada"]
             )
@@ -362,6 +366,8 @@ class SesionTabletop:
         participante = self.participante_de(usuario_id)
         if participante is None or not self.visible_para(usuario_id):
             raise ReglaSesionError(["No tienes una invitación a esta sesión"])
+        if self.estado not in CON_INVITACION_ABIERTA:
+            raise ReglaSesionError(["La sesión ya finalizó"])
         if participante.invitacion != EstadoInvitacion.ACEPTADA:
             participante.invitacion = EstadoInvitacion.ACEPTADA
             participante.invitacion_aceptada_en = ahora

@@ -273,3 +273,19 @@ class GeneradorPdfFalso:
             raise RuntimeError("WeasyPrint no disponible")
         self.recibidos.append(reporte)
         return b"%PDF-falso " + reporte.nombre.encode()
+
+
+# --- Debrief (PC-45) -------------------------------------------------------------
+
+
+class RepoDebriefEnMemoria:
+    def __init__(self):
+        self.datos = {}
+
+    def obtener(self, sesion_id):
+        d = self.datos.get(sesion_id)
+        return copy.deepcopy(d) if d else None
+
+    def guardar(self, debrief):
+        self.datos[debrief.sesion_id] = copy.deepcopy(debrief)
+        return copy.deepcopy(debrief)

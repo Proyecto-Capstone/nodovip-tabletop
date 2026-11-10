@@ -14,14 +14,21 @@ export function MisSesionesPage() {
 
   if (!permitido) return <SinPermiso />
 
+  // PC-45: las finalizadas van aparte, la más reciente primero.
+  const todas = sesiones.datos ?? []
+  const proximas = todas.filter((s) => s.estado !== 'finalizada')
+  const finalizadas = todas
+    .filter((s) => s.estado === 'finalizada')
+    .sort((a, b) => (b.fecha_programada ?? '').localeCompare(a.fecha_programada ?? ''))
+
   return (
     <>
       <div className="encabezado">
         <div>
           <h1>Mis sesiones</h1>
           <p className="texto-suave">
-            Ejercicios tabletop a los que te invitaron. Confirma tu asistencia en cada
-            uno.
+            Ejercicios tabletop a los que te invitaron. Confirma tu asistencia y, al terminar,
+            revisa tu resultado.
           </p>
         </div>
       </div>
@@ -30,18 +37,49 @@ export function MisSesionesPage() {
       {sesiones.cargando && <Cargando />}
       {sesiones.datos?.length === 0 && (
         <p className="tarjeta vacio">
-          Todavía no tienes invitaciones. Cuando un moderador te invite, la sesión
-          aparecerá aquí y recibirás un correo.
+          Todavía no tienes invitaciones. Cuando un moderador te invite, la sesión aparecerá aquí y
+          recibirás un correo.
         </p>
       )}
+      {proximas.length > 0 && <ListaSesiones titulo="Próximas y en curso" sesiones={proximas} />}
+      {finalizadas.length > 0 && (
+        <ListaSesiones
+          titulo="Finalizadas"
+          descripcion="Revisa tu resultado, la retroalimentación de cada tarea y las lecciones del ejercicio."
+          sesiones={finalizadas}
+        />
+      )}
+    </>
+  )
+}
+
+function ListaSesiones({
+  titulo,
+  descripcion,
+  sesiones,
+}: {
+  titulo: string
+  descripcion?: string
+  sesiones: MiSesion[]
+}) {
+  return (
+    <section className="grupo-mis-sesiones" aria-label={titulo}>
+      <h2 className="titulo-grupo">{titulo}</h2>
+      {descripcion && <p className="texto-suave texto-chico">{descripcion}</p>}
       <div className="lista-mis-sesiones">
-        {sesiones.datos?.map((s) => (
+        {sesiones.map((s) => (
           <Link key={s.id} to={`/mis-sesiones/${s.id}`} className="tarjeta tarjeta-sesion">
             <div className="fila-badges">
               <span className="tipo">{s.rol_nombre}</span>
-              <InvitacionBadge estado={s.invitacion} />
+              {s.estado === 'finalizada' ? (
+                <span className="badge debrief-completado">Finalizada</span>
+              ) : s.estado === 'en_curso' ? (
+                <span className="badge badge-vivo">● En vivo</span>
+              ) : (
+                <InvitacionBadge estado={s.invitacion} />
+              )}
             </div>
-            <h2>{s.nombre}</h2>
+            <h3>{s.nombre}</h3>
             <p className="texto-suave">
               {formatoFecha(s.fecha_programada)}
               {s.duracion_minutos ? ` · ${formatoDuracion(s.duracion_minutos)}` : ''}
@@ -50,6 +88,6 @@ export function MisSesionesPage() {
           </Link>
         ))}
       </div>
-    </>
+    </section>
   )
 }

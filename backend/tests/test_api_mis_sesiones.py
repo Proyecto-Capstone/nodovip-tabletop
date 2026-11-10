@@ -218,3 +218,22 @@ def test_una_sesion_ajena_responde_404(entorno):
     url = f"/api/mis-sesiones/{sesion.id}"
     assert client.get(url, headers=PARTICIPANTE).status_code == 404
     assert client.post(f"{url}/aceptar", headers=PARTICIPANTE).status_code == 404
+
+
+def test_la_sesion_finalizada_sigue_visible_pero_no_se_acepta(entorno):
+    """PC-45: el participante vuelve a su sesión finalizada para ver su resumen,
+    pero ya no puede aceptar la invitación."""
+    _programar(entorno)
+    sesion = entorno["repo"].obtener(entorno["sesion"].id)
+    sesion.iniciar(AHORA)
+    sesion.finalizar(AHORA + timedelta(minutes=30), 1)
+    entorno["repo"].guardar(sesion)
+
+    client = entorno["client"]
+    [s] = client.get("/api/mis-sesiones", headers=PARTICIPANTE).json()
+    assert s["estado"] == "finalizada"
+    url = f"/api/mis-sesiones/{sesion.id}"
+    assert client.get(url, headers=PARTICIPANTE).status_code == 200
+    r = client.post(f"{url}/aceptar", headers=PARTICIPANTE)
+    assert r.status_code == 422
+    assert r.json()["detail"]["errores"] == ["La sesión ya finalizó"]

@@ -22,11 +22,14 @@ from uuid import UUID
 
 from app.application.respuestas import RespuestaRegistrada, ServicioRegistroRespuestas
 from app.application.sesiones import SesionNoEncontrada
+from app.domain.debrief import Debrief
 from app.domain.evaluacion import sin_respuesta
 from app.domain.reportes import (
+    AccionReporte,
     Brecha,
     EstadoReporte,
     FilaPuntaje,
+    LeccionesAprendidas,
     ReporteGuardado,
     ReporteSesion,
     RespuestaReporte,
@@ -37,6 +40,7 @@ from app.domain.reportes import (
     superadas,
 )
 from app.domain.sesiones import EstadoSesion, SesionTabletop
+from app.ports.debrief import DebriefRepository
 from app.ports.en_vivo import AlmacenEnVivo
 from app.ports.escenario_repository import CatalogoRepository, EscenarioRepository
 from app.ports.reportes import GeneradorPdf, ReporteRepository
@@ -74,8 +78,10 @@ class ServicioReportes:
         reportes: ReporteRepository,
         generador: GeneradorPdf,
         reloj: Callable[[], datetime] = _ahora,
+        debriefs: DebriefRepository | None = None,
     ):
         self.sesiones = sesiones
+        self.debriefs = debriefs
         self.usuarios = usuarios
         self.escenarios = escenarios
         self.reportes = reportes
@@ -220,6 +226,32 @@ class ServicioReportes:
             recomendaciones=recomendar(brechas, len(anteriores)),
             sesiones_anteriores=len(anteriores),
             generado_en=self.reloj(),
+            lecciones=self._lecciones(sesion),
+        )
+
+    def _lecciones(self, sesion: SesionTabletop) -> LeccionesAprendidas | None:
+        """El debrief entra al reporte solo cuando el moderador lo completó (PC-45)."""
+        debrief: Debrief | None = (
+            self.debriefs.obtener(sesion.id) if self.debriefs else None
+        )
+        if debrief is None or not debrief.completado:
+            return None
+        roles = self.registro.nombres_roles()
+        return LeccionesAprendidas(
+            fortalezas=list(debrief.fortalezas),
+            mejoras=list(debrief.mejoras),
+            acciones=[
+                AccionReporte(
+                    descripcion=a.descripcion,
+                    responsable=roles.get(a.rol_codigo, a.rol_codigo)
+                    if a.rol_codigo
+                    else "Toda la organización",
+                    prioridad=a.prioridad.value,
+                    plazo=a.plazo,
+                )
+                for a in debrief.acciones
+            ],
+            completado_en=debrief.completado_en,
         )
 
     def _anteriores(self, sesion: SesionTabletop) -> list[SesionTabletop]:

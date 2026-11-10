@@ -263,7 +263,8 @@ def test_generar_al_cerrar_no_lanza_y_registra_el_fallo(e):
     e["servicio"].generar_al_cerrar(sesion.id)  # no lanza
     guardado = e["reportes"].obtener(sesion.id)
     assert guardado.estado == EstadoReporte.FALLIDO
-    assert "WeasyPrint no disponible" in guardado.error
+    # PC-47: se guarda el tipo de error; el detalle técnico queda solo en el log.
+    assert guardado.error == "Error al generar el PDF (RuntimeError)"
 
 
 def test_el_html_escapa_lo_que_escriben_los_participantes(e):

@@ -155,7 +155,11 @@ class ServicioReportes:
         try:
             pdf = self.generador.generar(self._componer(sesion))
         except Exception as e:
-            self.reportes.marcar_fallido(sesion.id, str(e)[:500], self.reloj())
+            # Se guarda solo el tipo de error: el detalle técnico queda en el log.
+            log.exception("No se pudo generar el PDF de la sesión %s", sesion.id)
+            self.reportes.marcar_fallido(
+                sesion.id, f"Error al generar el PDF ({type(e).__name__})", self.reloj()
+            )
             raise
         self.reportes.guardar_pdf(sesion.id, pdf, self.reloj())
         return pdf

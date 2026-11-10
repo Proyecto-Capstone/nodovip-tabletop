@@ -11,3 +11,6 @@ services:
     restart: unless-stopped
   nginx:
     restart: unless-stopped
+    environment:
+      # Detrás de HTTPS en la VM de NODOVIP (PC-47).
+      NGINX_HSTS: "max-age=31536000; includeSubDomains"

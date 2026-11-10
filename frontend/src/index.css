@@ -3134,3 +3134,41 @@ button.paso:hover {
   background: var(--rojo-fondo);
   color: var(--rojo);
 }
+
+/* Banco de preguntas: selección múltiple en el detalle del escenario (PC-46). */
+.badge.tipo-seleccion {
+  background: var(--azul-fondo);
+  color: var(--acento-oscuro);
+}
+
+.lista-opciones {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding: 0;
+}
+
+.lista-opciones li {
+  position: relative;
+  margin: 0.2rem 0;
+  padding: 0.3rem 0.6rem 0.3rem 1.6rem;
+  border-radius: var(--radio-xs);
+  background: var(--fondo-sutil);
+}
+
+.lista-opciones li::before {
+  content: '○';
+  position: absolute;
+  left: 0.55rem;
+  color: var(--texto-suave);
+}
+
+.lista-opciones li.opcion-correcta {
+  background: var(--verde-fondo);
+  color: #175c36;
+  font-weight: 600;
+}
+
+.lista-opciones li.opcion-correcta::before {
+  content: '✓';
+  color: var(--verde);
+}

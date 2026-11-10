@@ -3,11 +3,13 @@
 import { useState } from 'react'
 import type { Nivel } from '../../api/escenarios'
 import type { SesionDiseno, TareaSesion, TipoTarea } from '../../api/sesiones'
+import { EditorOpciones } from '../../components/EditorOpciones'
 import { EditorEvidencia } from '../../components/Evidencia'
 import { ETIQUETA_NIVEL, NIVELES, nombreRol } from '../../lib/etiquetas'
 import {
   ETIQUETA_TIPO_TAREA,
   nuevoId,
+  opcionesIniciales,
   participanteDe,
   tareaCompleta,
   tareaNueva,
@@ -298,10 +300,6 @@ function EditorTarea({
   cambiar: (cambios: Partial<TareaSesion>) => void
   quitar: () => void
 }) {
-  const cambiarOpcion = (indice: number, cambios: Partial<TareaSesion['opciones'][0]>) =>
-    cambiar({
-      opciones: t.opciones.map((o, i) => (i === indice ? { ...o, ...cambios } : o)),
-    })
 
   return (
     <div className="editor-tarea">
@@ -330,10 +328,7 @@ function EditorTarea({
                 tipo,
                 opciones:
                   tipo === 'seleccion_multiple' && t.opciones.length === 0
-                    ? [
-                        { texto: '', correcta: true },
-                        { texto: '', correcta: false },
-                      ]
+                    ? opcionesIniciales()
                     : t.opciones,
               })
             }}
@@ -357,43 +352,7 @@ function EditorTarea({
       </label>
 
       {t.tipo === 'seleccion_multiple' ? (
-        <fieldset className="bloque">
-          <legend>Opciones (marca las correctas)</legend>
-          {t.opciones.map((o, i) => (
-            <div key={i} className="fila-opcion">
-              <input
-                type="checkbox"
-                aria-label={`Opción ${i + 1} correcta`}
-                checked={o.correcta}
-                onChange={(e) => cambiarOpcion(i, { correcta: e.target.checked })}
-              />
-              <input
-                aria-label={`Texto de la opción ${i + 1}`}
-                maxLength={300}
-                value={o.texto}
-                onChange={(e) => cambiarOpcion(i, { texto: e.target.value })}
-              />
-              <button
-                type="button"
-                className="boton boton-texto texto-peligro"
-                aria-label={`Quitar opción ${i + 1}`}
-                onClick={() => cambiar({ opciones: t.opciones.filter((_, x) => x !== i) })}
-              >
-                ✕
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="boton boton-texto"
-            disabled={t.opciones.length >= 8}
-            onClick={() =>
-              cambiar({ opciones: [...t.opciones, { texto: '', correcta: false }] })
-            }
-          >
-            + Agregar opción
-          </button>
-        </fieldset>
+        <EditorOpciones opciones={t.opciones} onChange={(opciones) => cambiar({ opciones })} />
       ) : (
         <label className="campo">
           <span>Criterios de evaluación (uno por línea)</span>

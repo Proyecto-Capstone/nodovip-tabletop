@@ -16,9 +16,12 @@ import {
 } from '../api/escenarios'
 import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
+import { EditorOpciones } from '../components/EditorOpciones'
 import { EditorEvidencia } from '../components/Evidencia'
 import { ETIQUETA_NIVEL, NIVELES, nombreRol } from '../lib/etiquetas'
 import { useGet } from '../lib/useGet'
+import type { Opcion, TipoTarea } from '../api/sesiones'
+import { ETIQUETA_TIPO_TAREA, opcionesIniciales } from './disenador/comun'
 
 const MIN_INJECTS = 3
 
@@ -41,6 +44,10 @@ interface TareaForm {
   puntaje: string
   tiempoMin: string
   respuesta: string
+  tipo: TipoTarea
+  opciones: Opcion[]
+  /** Clave del inject en el que se pregunta ('' = repartir en orden). */
+  injectClave: string
 }
 
 interface Formulario {
@@ -72,6 +79,9 @@ const tareaVacia = (rol = ''): TareaForm => ({
   puntaje: '10',
   tiempoMin: '5',
   respuesta: '',
+  tipo: 'texto_libre',
+  opciones: [],
+  injectClave: '',
 })
 
 function desdeDetalle(e: EscenarioDetalle): Formulario {
@@ -99,6 +109,9 @@ function desdeDetalle(e: EscenarioDetalle): Formulario {
       puntaje: String(t.puntaje_maximo),
       tiempoMin: String(Math.round(t.tiempo_limite_segundos / 60)),
       respuesta: t.respuesta_esperada ?? '',
+      tipo: t.tipo,
+      opciones: t.opciones,
+      injectClave: e.injects.find((i) => i.orden === t.inject_orden)?.id ?? '',
     })),
   }
 }
@@ -136,6 +149,15 @@ function aEntrada(f: Formulario): EscenarioEntrada {
       puntaje_maximo: Number(t.puntaje),
       tiempo_limite_segundos: Math.round(Number(t.tiempoMin) * 60),
       respuesta_esperada: t.respuesta.trim() || null,
+      tipo: t.tipo,
+      opciones:
+        t.tipo === 'seleccion_multiple'
+          ? t.opciones.map((o) => ({ ...o, texto: o.texto.trim() }))
+          : [],
+      // El inject se guarda por su posición actual (los injects se pueden reordenar).
+      inject_orden: t.injectClave
+        ? f.injects.findIndex((i) => i.clave === t.injectClave) + 1 || null
+        : null,
     })),
   }
 }
@@ -532,6 +554,44 @@ function FormularioEscenario({
                     />
                   </label>
                 </div>
+                <div className="fila-campos">
+                  <label className="campo">
+                    <span>Se pregunta en</span>
+                    <select
+                      value={t.injectClave}
+                      onChange={(e) => cambiarTarea(t.clave, { injectClave: e.target.value })}
+                    >
+                      <option value="">Repartir en orden</option>
+                      {f.injects.map((i, n) => (
+                        <option key={i.clave} value={i.clave}>
+                          Inject {n + 1}
+                          {i.titulo ? ` · ${i.titulo}` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="campo">
+                    <span>Tipo de respuesta</span>
+                    <select
+                      value={t.tipo}
+                      onChange={(e) => {
+                        const tipo = e.target.value as TipoTarea
+                        cambiarTarea(t.clave, {
+                          tipo,
+                          opciones:
+                            tipo === 'seleccion_multiple' && t.opciones.length === 0
+                              ? opcionesIniciales()
+                              : t.opciones,
+                        })
+                      }}
+                    >
+                      <option value="texto_libre">{ETIQUETA_TIPO_TAREA.texto_libre}</option>
+                      <option value="seleccion_multiple">
+                        {ETIQUETA_TIPO_TAREA.seleccion_multiple}
+                      </option>
+                    </select>
+                  </label>
+                </div>
                 <label className="campo">
                   <span>Pregunta o tarea</span>
                   <textarea
@@ -542,15 +602,22 @@ function FormularioEscenario({
                     onChange={(e) => cambiarTarea(t.clave, { enunciado: e.target.value })}
                   />
                 </label>
-                <label className="campo">
-                  <span>Criterios de evaluación (uno por línea)</span>
-                  <textarea
-                    required
-                    rows={3}
-                    value={t.criterios}
-                    onChange={(e) => cambiarTarea(t.clave, { criterios: e.target.value })}
+                {t.tipo === 'seleccion_multiple' ? (
+                  <EditorOpciones
+                    opciones={t.opciones}
+                    onChange={(opciones) => cambiarTarea(t.clave, { opciones })}
                   />
-                </label>
+                ) : (
+                  <label className="campo">
+                    <span>Criterios de evaluación (uno por línea)</span>
+                    <textarea
+                      required
+                      rows={3}
+                      value={t.criterios}
+                      onChange={(e) => cambiarTarea(t.clave, { criterios: e.target.value })}
+                    />
+                  </label>
+                )}
                 <label className="campo">
                   <span>Respuesta esperada (opcional)</span>
                   <textarea

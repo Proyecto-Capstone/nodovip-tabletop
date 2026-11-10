@@ -1,5 +1,7 @@
 // Tipos y llamadas de la biblioteca de escenarios (PB-03, PB-04).
 
+import type { Opcion, TipoTarea } from './sesiones'
+
 import { api } from './client'
 
 export type Nivel = 'bajo' | 'medio' | 'alto'
@@ -50,6 +52,11 @@ export interface Tarea {
   puntaje_maximo: number
   tiempo_limite_segundos: number
   respuesta_esperada: string | null
+  /** PC-46: selección múltiple con opciones, o texto libre con criterios. */
+  tipo: TipoTarea
+  opciones: Opcion[]
+  /** Orden del inject en el que se pregunta; null: se reparte en orden. */
+  inject_orden: number | null
 }
 
 export interface EscenarioResumen {
@@ -94,6 +101,9 @@ export interface TareaEntrada {
   puntaje_maximo: number
   tiempo_limite_segundos: number
   respuesta_esperada: string | null
+  tipo: TipoTarea
+  opciones: Opcion[]
+  inject_orden: number | null
 }
 
 export interface EscenarioEntrada {

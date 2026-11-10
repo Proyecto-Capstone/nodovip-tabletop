@@ -310,8 +310,13 @@ describe('DisenadorPage', () => {
     const fetchFalso = simularApi()
     abrir(4)
     await screen.findByTestId('puntaje-total')
-    fetchFalso.mockImplementationOnce(async () =>
-      respuesta(422, { detail: { errores: ['Los pesos de puntuación deben sumar 100'] } }),
+    // Solo el guardado (PUT) falla: una carga que llegue tarde no debe
+    // consumir el error (con mockImplementationOnce la prueba era intermitente).
+    const normal = fetchFalso.getMockImplementation()!
+    fetchFalso.mockImplementation(async (url: string, init?: RequestInit) =>
+      init?.method === 'PUT'
+        ? respuesta(422, { detail: { errores: ['Los pesos de puntuación deben sumar 100'] } })
+        : normal(url, init),
     )
     const tiempo = screen.getByLabelText('Tiempo (%)')
     await userEvent.clear(tiempo)

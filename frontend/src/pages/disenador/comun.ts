@@ -30,6 +30,12 @@ export const ETIQUETA_TIPO_TAREA = {
 
 export const nuevoId = () => crypto.randomUUID()
 
+/** Dos opciones vacías (la primera correcta) para empezar una pregunta nueva. */
+export const opcionesIniciales = () => [
+  { texto: '', correcta: true },
+  { texto: '', correcta: false },
+]
+
 export function tareaNueva(rol: string, inject_id: string | null): TareaSesion {
   return {
     id: nuevoId(),

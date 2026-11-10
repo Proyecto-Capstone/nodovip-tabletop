@@ -125,9 +125,12 @@ def _generando_pdf(funcion):
         except SesionNoEncontrada:
             raise
         except Exception as e:
+            # PC-47 (OWASP A05): el detalle técnico va al log, no al cliente.
+            log.exception("Falló la generación del PDF")
             raise HTTPException(
                 status.HTTP_503_SERVICE_UNAVAILABLE,
-                f"No se pudo generar el PDF: {e}"[:300],
+                "No se pudo generar el PDF. Intenta regenerarlo en unos minutos; "
+                "si el problema sigue, avisa al administrador.",
             ) from e
 
     return _manejar_errores(con_manejo)

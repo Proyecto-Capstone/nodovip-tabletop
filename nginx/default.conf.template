@@ -1,6 +1,25 @@
 server {
     listen 80;
 
+    # --- PC-47: endurecimiento (OWASP A05 · configuración de seguridad) ------
+    # Sin versión de NGINX en errores ni cabeceras.
+    server_tokens off;
+    # La API solo recibe JSON pequeño: se corta cualquier cuerpo mayor a 1 MB.
+    client_max_body_size 1m;
+
+    # `always` agrega la cabecera también en respuestas de error (4xx/5xx).
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "DENY" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=(), usb=()" always;
+    add_header Cross-Origin-Opener-Policy "same-origin" always;
+    # La política de contenido depende del ambiente (Vite en local necesita
+    # scripts en línea y su WebSocket de recarga). Ver docker-compose*.yml.
+    add_header Content-Security-Policy "${NGINX_CSP}" always;
+    # HSTS solo donde hay HTTPS (Staging/Demo). Vacío en local: NGINX no envía
+    # cabeceras con valor vacío.
+    add_header Strict-Transport-Security "${NGINX_HSTS}" always;
+
     # WebSocket del motor en tiempo real (PB-07). Va antes de /api/ por ser
     # más específico. Una sesión puede pasar varios minutos sin mensajes: se
     # amplía el tiempo de espera para que NGINX no corte la conexión.

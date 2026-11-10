@@ -266,3 +266,19 @@ def test_al_cerrar_el_participante_recibe_el_fin_y_se_cierra_el_socket(entorno):
         with pytest.raises(WebSocketDisconnect) as e:
             ws.receive_json()
         assert e.value.code == 1000
+
+
+def test_el_websocket_rechaza_conexiones_de_otro_sitio():
+    """PC-47: si un sitio ajeno intenta abrir el WebSocket con la cookie de la
+    víctima, el origen no coincide y se trata como no autenticado (4401)."""
+    from app.adapters.inbound.api.seguridad import obtener_usuario_ws, origen_permitido
+
+    assert origen_permitido("http://localhost:8080", "localhost")
+    assert origen_permitido(
+        "https://tabletop.nodovip.test", "tabletop.nodovip.test:443"
+    )
+    assert origen_permitido(None, "localhost")  # cliente que no es navegador
+    assert not origen_permitido("https://atacante.example", "localhost")
+    assert not origen_permitido("http://localhost.atacante.example", "localhost")
+    # Con otro origen ni siquiera se valida el token (no toca la base de datos).
+    assert obtener_usuario_ws("token", "https://atacante.example", "localhost") is None

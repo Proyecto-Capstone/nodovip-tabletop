@@ -11,9 +11,10 @@ Los endpoints no dependen de cómo se autentica: siguen usando
 from dataclasses import dataclass
 from functools import cache
 from typing import Annotated
+from urllib.parse import urlsplit
 from uuid import UUID
 
-from fastapi import Cookie, Depends, HTTPException, Request, status
+from fastapi import Cookie, Depends, Header, HTTPException, Request, status
 from sqlalchemy.orm import Session
 
 from app import config
@@ -104,15 +105,32 @@ def requiere_permiso(permiso: PermisoCodigo):
     return _verificar
 
 
+def origen_permitido(origin: str | None, host: str | None) -> bool:
+    """PC-47 (OWASP, secuestro de WebSocket entre sitios): el navegador siempre
+    envía `Origin` en un WebSocket. Si viene de otro sitio se rechaza, aunque la
+    cookie SameSite=Strict ya lo impediría. Sin `Origin` (clientes que no son
+    navegador, pruebas) no hay riesgo de que un sitio ajeno use la cookie.
+
+    Se compara solo el nombre de host: NGINX reenvía `Host` sin el puerto.
+    """
+    if not origin:
+        return True
+    destino = (host or "").split(":")[0].lower()
+    return bool(destino) and urlsplit(origin).hostname == destino
+
+
 def obtener_usuario_ws(
     token: Annotated[str | None, Cookie(alias=NOMBRE_COOKIE)] = None,
+    origin: Annotated[str | None, Header()] = None,
+    host: Annotated[str | None, Header()] = None,
 ) -> UsuarioActual | None:
-    """Usuario de un WebSocket (misma cookie que la API). None si no hay sesión.
+    """Usuario de un WebSocket (misma cookie que la API). None si no hay sesión
+    o si la conexión viene de otro sitio.
 
     Abre y cierra su propia sesión de base de datos: el WebSocket puede durar
     horas y no debe retener una conexión del pool.
     """
-    if not token:
+    if not token or not origen_permitido(origin, host):
         return None
     with abrir_sesion() as session:
         usuario = ServicioAutenticacion(

@@ -48,8 +48,11 @@ jobs:
       - name: Formato (ruff)
         run: ruff format --check .
 
-      - name: Pruebas (pytest)
-        run: pytest -q
+      # PC-47: cobertura con umbral mínimo. Sin PostgreSQL ni Redis en el CI
+      # (eso llega con PB-15) se omiten las pruebas de integración; localmente
+      # con TEST_DATABASE_URL y TEST_REDIS_URL la cobertura sube a ~94 %.
+      - name: Pruebas y cobertura (pytest-cov, mínimo 85 %)
+        run: pytest -q --cov=app --cov-report=term-missing:skip-covered --cov-fail-under=85
 
   frontend:
     name: Frontend · lint + test + build

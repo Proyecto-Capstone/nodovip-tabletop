@@ -1,0 +1,2 @@
+# Herramientas de desarrollo y CI (no van en la imagen de Docker).
+pytest-cov==7.1.0

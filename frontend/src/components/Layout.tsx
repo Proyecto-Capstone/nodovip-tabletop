@@ -25,6 +25,10 @@ export function Layout() {
 
   return (
     <div className="app">
+      {/* PC-47 (WCAG 2.4.1): con teclado se salta el menú y se va al contenido. */}
+      <a className="saltar-contenido" href="#contenido">
+        Saltar al contenido
+      </a>
       <header className="topbar">
         <span className="marca">NODOVIP — Plataforma Tabletop Exercise</span>
         {usuario && (
@@ -72,7 +76,7 @@ export function Layout() {
         )}
       </nav>
 
-      <main className="contenido">
+      <main className="contenido" id="contenido" tabIndex={-1}>
         <Outlet />
       </main>
     </div>

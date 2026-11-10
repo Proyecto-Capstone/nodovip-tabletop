@@ -150,7 +150,10 @@ def test_si_weasyprint_falla_responde_503_y_queda_registrado(e):
     e["repo"].guardar(sesion)
     e["servicio"].generador = GeneradorPdfFalso(fallar=True)
     r = e["client"].get(f"/api/reportes/{sesion.id}/pdf", headers=_como("analista"))
-    assert r.status_code == 503 and "WeasyPrint" in r.json()["detail"]
+    assert r.status_code == 503
+    # PC-47: el cliente recibe un mensaje claro, sin detalles internos.
+    assert "No se pudo generar el PDF" in r.json()["detail"]
+    assert "WeasyPrint" not in r.json()["detail"]
     estado = e["client"].get(f"/api/reportes/{sesion.id}", headers=_como("analista"))
     assert estado.json()["pdf"]["estado"] == "fallido"
 

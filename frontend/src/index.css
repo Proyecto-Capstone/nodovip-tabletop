@@ -15,18 +15,19 @@
   --borde: #e1e4ec;
   --borde-fuerte: #c5c9d6;
   --texto: #1c1e2e;
-  --texto-suave: #6b7085;
+  --texto-suave: #61667a;
   --primario: #1c1d33;
-  --acento: #2f6fed;
+  --acento: #2a63d8;
   --acento-oscuro: #2459c8;
 
-  /* Estados */
-  --verde: #22874f;
+  /* Estados. PC-47: tonos ajustados para contraste WCAG AA (≥ 4.5:1) como
+     texto sobre todos los fondos claros del sistema. */
+  --verde: #1b7343;
   --verde-fondo: #e3f4ea;
-  --naranja: #c46a0c;
+  --naranja: #9a5207;
   --naranja-fondo: #fdf0e1;
   --naranja-texto: #7a4306;
-  --rojo: #c63d3d;
+  --rojo: #b23434;
   --rojo-fondo: #fbe7e7;
   --azul-fondo: #e6eefd;
   --gris-fondo: #eceef3;
@@ -2090,7 +2091,7 @@ button.paso:hover {
 }
 
 .podio-1 .podio-rol {
-  color: rgb(28 29 51 / 0.7);
+  color: rgb(28 29 51 / 0.85);
 }
 
 .podio-2 {
@@ -2490,7 +2491,7 @@ button.paso:hover {
   color: #fff;
 }
 .severidad-alta {
-  background: #e0752d;
+  background: #a9531a;
   color: #fff;
 }
 .severidad-media {
@@ -2498,7 +2499,7 @@ button.paso:hover {
   color: #1c1d33;
 }
 .severidad-baja {
-  background: #3d7be0;
+  background: #2a63d8;
   color: #fff;
 }
 .evidencia-alerta-titulo {
@@ -3171,4 +3172,28 @@ button.paso:hover {
 .lista-opciones li.opcion-correcta::before {
   content: '✓';
   color: var(--verde);
+}
+
+/* PC-47 (WCAG 2.4.1): enlace para saltar al contenido. Oculto hasta que
+   recibe el foco con el teclado. */
+.saltar-contenido {
+  position: absolute;
+  left: 0.75rem;
+  top: -3rem;
+  z-index: 100;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radio-sm);
+  background: var(--superficie);
+  color: var(--texto);
+  font-weight: 600;
+  box-shadow: var(--sombra-lg);
+  transition: top var(--transicion);
+}
+
+.saltar-contenido:focus {
+  top: 0.75rem;
+}
+
+.contenido:focus {
+  outline: none;
 }

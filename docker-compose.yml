@@ -59,6 +59,10 @@ services:
       - "${HTTP_PORT:-8080}:80"
     environment:
       FRONTEND_UPSTREAM: frontend:80
+      # PC-47: cabeceras de seguridad (ver nginx/default.conf.template y docs/seguridad.md).
+      # 'self' en connect-src incluye el WebSocket del mismo origen (ws/wss).
+      NGINX_CSP: "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+      NGINX_HSTS: ""
     volumes:
       - ./nginx/default.conf.template:/etc/nginx/templates/default.conf.template:ro,z
     depends_on:

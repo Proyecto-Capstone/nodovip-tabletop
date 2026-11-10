@@ -21,3 +21,5 @@ services:
   nginx:
     environment:
       FRONTEND_UPSTREAM: frontend:5173
+      # Vite dev: script en línea de React Refresh y WebSocket de recarga (HMR).
+      NGINX_CSP: "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"

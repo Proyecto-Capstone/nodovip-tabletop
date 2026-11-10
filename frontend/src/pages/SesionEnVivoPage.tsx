@@ -7,9 +7,11 @@ import { rutasMisSesiones, type MiSesion } from '../api/misSesiones'
 import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { EstadoVivo } from '../components/EstadoVivo'
+import { useAvisoInject } from '../lib/useAvisoInject'
 import { formatoReloj, useCronometro, useEnVivo } from '../lib/useEnVivo'
 import { useGet } from '../lib/useGet'
 import { InjectActual } from './ConducirSesionPage'
+import { AvisoInject, LineaDeTiempo } from './LineaDeTiempo'
 import { TareasDelRol } from './TareasDelRol'
 
 export function SesionEnVivoPage() {
@@ -19,6 +21,7 @@ export function SesionEnVivoPage() {
   const mia = useGet<MiSesion>(permitido ? rutasMisSesiones.sesion(id) : null, rol)
   const { vista, conexion, error, recibidaEn } = useEnVivo(permitido ? id : undefined)
   const segundos = useCronometro(vista, recibidaEn)
+  const { aviso, cerrarAviso, sonido, alternarSonido } = useAvisoInject(vista)
 
   if (!permitido) return <SinPermiso />
   if (mia.status === 404) {
@@ -42,8 +45,22 @@ export function SesionEnVivoPage() {
           <h1>{mia.datos.nombre}</h1>
           <span className="chip chip-rol">Rol: {mia.datos.rol_nombre}</span>
         </div>
-        <EstadoVivo estado={estado} pausada={vista?.pausada ?? false} />
+        <div className="sala-cabecera-acciones">
+          <button
+            type="button"
+            className="boton boton-texto boton-sonido"
+            aria-pressed={sonido}
+            onClick={alternarSonido}
+            title={sonido ? 'Silenciar el aviso de nuevos injects' : 'Activar el sonido'}
+          >
+            <span aria-hidden="true">{sonido ? '🔔' : '🔕'}</span>{' '}
+            {sonido ? 'Sonido activado' : 'Silenciado'}
+          </button>
+          <EstadoVivo estado={estado} pausada={vista?.pausada ?? false} />
+        </div>
       </div>
+
+      <AvisoInject inject={aviso} onCerrar={cerrarAviso} />
 
       <div
         className="barra-avance"
@@ -98,6 +115,7 @@ export function SesionEnVivoPage() {
                 <InjectActual vista={vista} />
               </section>
               <TareasDelRol sesionId={id} rolNombre={mia.datos.rol_nombre} vista={vista} />
+              <LineaDeTiempo lanzados={vista.lanzados ?? []} />
             </>
           )}
         </>

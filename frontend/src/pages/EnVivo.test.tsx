@@ -2,7 +2,7 @@ import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import type { VistaEnVivo } from '../api/enVivo'
+import type { InjectEnVivo, VistaEnVivo } from '../api/enVivo'
 import type { MiSesion } from '../api/misSesiones'
 import type { SesionDetalle } from '../api/sesiones'
 import {
@@ -61,6 +61,7 @@ const VISTA: VistaEnVivo = {
   total_injects: 3,
   inject_actual: 0,
   inject: null,
+  lanzados: [],
   pausada: false,
   iniciada_en: null,
   inject_lanzado_en: null,
@@ -71,8 +72,32 @@ const VISTA: VistaEnVivo = {
   conectados: null,
 }
 
-const INJECT_1 = { orden: 1, titulo: 'Detección inicial', descripcion: 'TI detecta archivos cifrados' }
-const INJECT_2 = { orden: 2, titulo: 'Nota de rescate', descripcion: 'Piden 40 BTC en 72 horas' }
+const INJECT_1: InjectEnVivo = {
+  orden: 1,
+  titulo: 'Detección inicial',
+  descripcion: 'TI detecta archivos cifrados',
+  evidencia: {
+    tipo: 'alerta',
+    origen: 'EDR corporativo',
+    asunto: 'Cifrado masivo en FS-01',
+    contenido: '18.412 archivos renombrados a .lock',
+    nivel: 'critica',
+  },
+  lanzado_segundo: 5,
+}
+const INJECT_2: InjectEnVivo = {
+  orden: 2,
+  titulo: 'Nota de rescate',
+  descripcion: 'Piden 40 BTC en 72 horas',
+  evidencia: {
+    tipo: 'correo',
+    origen: 'soporte@extorsion.example',
+    asunto: 'Sus datos — 24 horas',
+    contenido: 'Pague o publicamos todo.',
+    nivel: null,
+  },
+  lanzado_segundo: 900,
+}
 
 const MI_SESION: MiSesion = {
   id: ID,
@@ -100,7 +125,11 @@ afterEach(() => {
 })
 
 function abrirParticipante() {
-  vi.stubGlobal('fetch', vi.fn(async () => respuesta(200, MI_SESION)))
+  // Las tareas del rol se piden aparte (PB-08): aquí no hay ninguna.
+  vi.stubGlobal(
+    'fetch',
+    vi.fn(async (url: string) => respuesta(200, String(url).includes('/tareas') ? [] : MI_SESION)),
+  )
   renderConSesion(
     <Routes>
       <Route path="/mis-sesiones/:id/en-vivo" element={<SesionEnVivoPage />} />
@@ -129,6 +158,58 @@ describe('Sala del participante', () => {
 
     ultimo().recibir({ estado: 'finalizada', inject_actual: 1, version: 4 })
     expect(screen.getByText(/La sesión terminó/)).toBeInTheDocument()
+  })
+
+  it('avisa del inject nuevo, muestra su evidencia y la línea de tiempo (PC-44)', async () => {
+    abrirParticipante()
+    await screen.findByText('Rol: CISO')
+    ultimo().abrir()
+    // La primera vista (al entrar) no avisa aunque ya haya un inject.
+    ultimo().recibir({
+      estado: 'en_curso',
+      inject_actual: 1,
+      inject: INJECT_1,
+      lanzados: [INJECT_1],
+      version: 2,
+    })
+    expect(screen.queryByText('Nuevo inject 1')).toBeNull()
+    expect(
+      screen.getByRole('article', { name: /Alerta de seguridad.*Cifrado masivo/ }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('Crítica')).toBeInTheDocument()
+
+    ultimo().recibir({
+      estado: 'en_curso',
+      inject_actual: 2,
+      inject: INJECT_2,
+      lanzados: [INJECT_1, INJECT_2],
+      version: 3,
+    })
+    expect(screen.getByText('Nuevo inject 2')).toBeInTheDocument()
+    expect(
+      screen.getByRole('article', { name: /Correo electrónico: Sus datos/ }),
+    ).toBeInTheDocument()
+    // El inject anterior queda en la línea de tiempo, con el momento en que se lanzó.
+    const linea = screen.getByRole('region', { name: 'Línea de tiempo del incidente' })
+    expect(within(linea).getByText('Inject 1 · Detección inicial')).toBeInTheDocument()
+    expect(within(linea).getByText('00:00:05')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Cerrar aviso' }))
+    expect(screen.queryByText('Nuevo inject 2')).toBeNull()
+  })
+
+  it('el sonido del aviso se puede silenciar y se recuerda', async () => {
+    abrirParticipante()
+    await screen.findByText('Rol: CISO')
+    const boton = screen.getByRole('button', { name: /Sonido activado/ })
+    expect(boton).toHaveAttribute('aria-pressed', 'true')
+    await userEvent.click(boton)
+    expect(screen.getByRole('button', { name: /Silenciado/ })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect(localStorage.getItem('nodovip_sonido_injects')).toBe('no')
+    localStorage.removeItem('nodovip_sonido_injects')
   })
 
   it('si se cae la conexión, reconecta y recupera el estado actual', async () => {

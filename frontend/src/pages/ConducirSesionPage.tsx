@@ -23,6 +23,7 @@ import {
 import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { EstadoVivo } from '../components/EstadoVivo'
+import { EvidenciaSimulada } from '../components/Evidencia'
 import { nombreRol } from '../lib/etiquetas'
 import { formatoReloj, useCronometro, useEnVivo } from '../lib/useEnVivo'
 import { useGet, useGetVigente } from '../lib/useGet'
@@ -320,6 +321,7 @@ export function InjectActual({ vista }: { vista?: VistaEnVivo }) {
       <span className="badge inject-badge inject-0">Inject {vista.inject.orden}</span>
       <h3>{vista.inject.titulo}</h3>
       <p className="parrafo">{vista.inject.descripcion}</p>
+      {vista.inject.evidencia && <EvidenciaSimulada evidencia={vista.inject.evidencia} />}
     </div>
   )
 }

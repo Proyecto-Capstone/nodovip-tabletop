@@ -1,7 +1,17 @@
 // Motor en tiempo real (PB-07): comandos del moderador y vista en vivo.
 
 import { api } from './client'
+import type { Evidencia } from './escenarios'
 import type { EstadoSesion } from './sesiones'
+
+export interface InjectEnVivo {
+  orden: number
+  titulo: string
+  descripcion: string
+  evidencia: Evidencia | null
+  /** Segundo efectivo de la sesión en que se lanzó; null si no se conoce. */
+  lanzado_segundo: number | null
+}
 
 export interface VistaEnVivo {
   sesion_id: string
@@ -9,7 +19,9 @@ export interface VistaEnVivo {
   estado: EstadoSesion
   total_injects: number
   inject_actual: number
-  inject: { orden: number; titulo: string; descripcion: string } | null
+  inject: InjectEnVivo | null
+  /** Injects lanzados hasta ahora, en orden (línea de tiempo, PC-44). */
+  lanzados: InjectEnVivo[]
   pausada: boolean
   iniciada_en: string | null
   inject_lanzado_en: string | null

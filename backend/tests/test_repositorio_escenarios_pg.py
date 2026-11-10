@@ -19,7 +19,7 @@ from app.adapters.outbound.persistence.repositorio_escenarios import (
     SqlEscenarioRepository,
 )
 from app.application.escenarios import ServicioEscenarios
-from app.domain.escenarios import EstadoEscenario, Nivel
+from app.domain.escenarios import EstadoEscenario, Nivel, NivelAlerta
 from app.ports.escenario_repository import FiltroBanco, FiltroEscenarios
 from app.seed_escenarios import escenario_ransomware
 from tests.pg import purgar_respuestas
@@ -62,6 +62,12 @@ def test_guardar_publicar_y_leer_escenario_completo(servicio):
     assert [i.orden for i in leido.injects] == [1, 2, 3, 4]
     assert len(leido.tareas) == 5
     assert leido.tareas[0].criterios[0].startswith("Aislar")
+    # PC-44: la evidencia simulada se guarda en JSON y vuelve igual.
+    assert leido.injects[0].evidencia == escenario_ransomware().injects[0].evidencia
+    assert leido.injects[0].evidencia.nivel == NivelAlerta.CRITICA
+    # PC-44: la evidencia simulada se guarda en JSON y vuelve igual.
+    assert leido.injects[0].evidencia == escenario_ransomware().injects[0].evidencia
+    assert leido.injects[0].evidencia.nivel == NivelAlerta.CRITICA
 
 
 def test_actualizar_conserva_ids_y_reemplaza_contenido(servicio):

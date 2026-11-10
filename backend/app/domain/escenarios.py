@@ -49,12 +49,67 @@ class RolEjercicio:
     nombre: str
 
 
+class TipoEvidencia(StrEnum):
+    """Forma en que el inject llega a los participantes, como en un incidente real."""
+
+    CORREO = "correo"
+    ALERTA = "alerta"
+    NOTICIA = "noticia"
+    LLAMADA = "llamada"
+    MENSAJE = "mensaje"
+    DOCUMENTO = "documento"
+
+
+class NivelAlerta(StrEnum):
+    """Severidad con que una consola (SIEM, EDR) muestra una alerta."""
+
+    BAJA = "baja"
+    MEDIA = "media"
+    ALTA = "alta"
+    CRITICA = "critica"
+
+
+@dataclass(frozen=True)
+class Evidencia:
+    """Artefacto simulado que acompaña a un inject (PC-44): un correo, una
+    alerta, una noticia… Siempre ficticio. El nivel solo aplica a alertas."""
+
+    tipo: TipoEvidencia
+    origen: str
+    asunto: str
+    contenido: str
+    nivel: NivelAlerta | None = None
+
+    def a_dict(self) -> dict:
+        return {
+            "tipo": self.tipo.value,
+            "origen": self.origen,
+            "asunto": self.asunto,
+            "contenido": self.contenido,
+            "nivel": self.nivel.value if self.nivel else None,
+        }
+
+    @classmethod
+    def desde_dict(cls, datos: dict | None) -> "Evidencia | None":
+        if not datos:
+            return None
+        nivel = datos.get("nivel")
+        return cls(
+            tipo=TipoEvidencia(datos["tipo"]),
+            origen=datos["origen"],
+            asunto=datos["asunto"],
+            contenido=datos["contenido"],
+            nivel=NivelAlerta(nivel) if nivel else None,
+        )
+
+
 @dataclass
 class Inject:
     titulo: str
     descripcion: str
     orden: int
     minuto_sugerido: int | None = None
+    evidencia: Evidencia | None = None
     id: UUID = field(default_factory=uuid4)
 
 

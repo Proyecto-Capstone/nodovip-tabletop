@@ -117,6 +117,7 @@ export function aDiseno(s: SesionDetalle): SesionDiseno {
       titulo: i.titulo,
       descripcion: i.descripcion,
       minuto_sugerido: i.minuto_sugerido,
+      evidencia: i.evidencia,
     })),
     tareas: s.tareas,
     participantes: s.participantes.map((p) => ({

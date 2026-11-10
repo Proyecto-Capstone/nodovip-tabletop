@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import type { Nivel } from '../../api/escenarios'
 import type { SesionDiseno, TareaSesion, TipoTarea } from '../../api/sesiones'
+import { EditorEvidencia } from '../../components/Evidencia'
 import { ETIQUETA_NIVEL, NIVELES, nombreRol } from '../../lib/etiquetas'
 import {
   ETIQUETA_TIPO_TAREA,
@@ -99,7 +100,7 @@ function Injects({ d, cambiar }: PropsPaso) {
       ...a,
       injects: [
         ...a.injects,
-        { id: nuevoId(), titulo: '', descripcion: '', minuto_sugerido: null },
+        { id: nuevoId(), titulo: '', descripcion: '', minuto_sugerido: null, evidencia: null },
       ],
     }))
   }
@@ -169,6 +170,10 @@ function Injects({ d, cambiar }: PropsPaso) {
                 onChange={(e) => cambiarInject(i.id, { descripcion: e.target.value })}
               />
             </label>
+            <EditorEvidencia
+              valor={i.evidencia}
+              onChange={(evidencia) => cambiarInject(i.id, { evidencia })}
+            />
             <div className="acciones-bloque">
               <button
                 type="button"

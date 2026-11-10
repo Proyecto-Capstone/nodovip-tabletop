@@ -7,6 +7,7 @@ import { Link } from 'react-router-dom'
 import type { Inject } from '../api/escenarios'
 import type { PuntajeRol, RespuestaRegistrada } from '../api/respuestas'
 import type { Participante } from '../api/sesiones'
+import { TIPOS_EVIDENCIA } from '../lib/evidencias'
 
 const formatoPuntaje = (n: number) => n.toLocaleString('es-EC', { maximumFractionDigits: 2 })
 
@@ -92,6 +93,15 @@ export function InjectsLanzados({ injects, actual }: { injects: Inject[]; actual
                 </span>
                 <span>
                   {i.titulo}
+                  {i.evidencia && (
+                    <span
+                      className="texto-suave"
+                      title={TIPOS_EVIDENCIA[i.evidencia.tipo].nombre}
+                    >
+                      {' '}
+                      {TIPOS_EVIDENCIA[i.evidencia.tipo].icono}
+                    </span>
+                  )}
                   {i.minuto_sugerido !== null && (
                     <span className="texto-suave"> · min {i.minuto_sugerido}</span>
                   )}

@@ -8,9 +8,12 @@ import pytest
 from app.domain.escenarios import (
     Escenario,
     EstadoEscenario,
+    Evidencia,
     Inject,
     Nivel,
+    NivelAlerta,
     Tarea,
+    TipoEvidencia,
 )
 from app.domain.sesiones import (
     EstadoSesion,
@@ -76,6 +79,33 @@ def test_desde_escenario_copia_contenido_con_ids_nuevos():
     assert {t.id for t in sesion.tareas}.isdisjoint(t.id for t in escenario.tareas)
     assert all(t.tipo == TipoTarea.TEXTO_LIBRE for t in sesion.tareas)
     assert sesion.pesos == PesosPuntuacion(40, 40, 20)
+
+
+def test_desde_escenario_copia_la_evidencia_de_cada_inject():
+    """PC-44: la evidencia simulada viaja del escenario a la sesión."""
+    escenario = _escenario()
+    noticia = Evidencia(
+        TipoEvidencia.NOTICIA,
+        "Diario El Ficticio",
+        "Clientes reportan caída del portal",
+        "Usuarios en redes sociales reportan que no pueden ingresar.",
+    )
+    escenario.injects[1].evidencia = noticia
+    sesion = SesionTabletop.desde_escenario(escenario, MODERADOR)
+    copiado = next(i for i in sesion.injects if i.titulo == escenario.injects[1].titulo)
+    assert copiado.evidencia == noticia
+
+
+def test_evidencia_ida_y_vuelta_a_json():
+    alerta = Evidencia(
+        TipoEvidencia.ALERTA,
+        "SIEM",
+        "Exfiltración",
+        "8 GB a un host externo",
+        NivelAlerta.ALTA,
+    )
+    assert Evidencia.desde_dict(alerta.a_dict()) == alerta
+    assert Evidencia.desde_dict(None) is None
 
 
 def test_desde_escenario_reparte_las_tareas_de_cada_rol_entre_los_injects():

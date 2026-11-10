@@ -7,13 +7,50 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.domain.escenarios import (
     Escenario,
     EstadoEscenario,
+    Evidencia,
     Inject,
     Nivel,
+    NivelAlerta,
     RolEjercicio,
     Tarea,
     TipoEscenario,
+    TipoEvidencia,
 )
 from app.ports.escenario_repository import TareaDelBanco
+
+
+class EvidenciaEsquema(BaseModel):
+    """Evidencia simulada de un inject (PC-44). Igual para entrada y salida."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    tipo: TipoEvidencia
+    origen: str = Field(min_length=2, max_length=150)
+    asunto: str = Field(min_length=2, max_length=200)
+    contenido: str = Field(min_length=5, max_length=5000)
+    nivel: NivelAlerta | None = None
+
+    def a_dominio(self) -> Evidencia:
+        return Evidencia(
+            tipo=self.tipo,
+            origen=self.origen,
+            asunto=self.asunto,
+            contenido=self.contenido,
+            # El nivel solo tiene sentido en una alerta.
+            nivel=self.nivel if self.tipo == TipoEvidencia.ALERTA else None,
+        )
+
+    @classmethod
+    def desde(cls, e: Evidencia | None) -> "EvidenciaEsquema | None":
+        if e is None:
+            return None
+        return cls(
+            tipo=e.tipo,
+            origen=e.origen,
+            asunto=e.asunto,
+            contenido=e.contenido,
+            nivel=e.nivel,
+        )
 
 
 class InjectEntrada(BaseModel):
@@ -23,6 +60,7 @@ class InjectEntrada(BaseModel):
     titulo: str = Field(min_length=3, max_length=150)
     descripcion: str = Field(min_length=10, max_length=5000)
     minuto_sugerido: int | None = Field(default=None, ge=0, le=600)
+    evidencia: EvidenciaEsquema | None = None
 
 
 class TareaEntrada(BaseModel):
@@ -63,6 +101,7 @@ class EscenarioEntrada(BaseModel):
                     descripcion=i.descripcion,
                     orden=pos,
                     minuto_sugerido=i.minuto_sugerido,
+                    evidencia=i.evidencia.a_dominio() if i.evidencia else None,
                     **({"id": i.id} if i.id else {}),
                 )
                 for pos, i in enumerate(self.injects, start=1)
@@ -89,6 +128,18 @@ class InjectSalida(BaseModel):
     titulo: str
     descripcion: str
     minuto_sugerido: int | None
+    evidencia: EvidenciaEsquema | None = None
+
+    @classmethod
+    def desde(cls, i: Inject) -> "InjectSalida":
+        return cls(
+            id=i.id,
+            orden=i.orden,
+            titulo=i.titulo,
+            descripcion=i.descripcion,
+            minuto_sugerido=i.minuto_sugerido,
+            evidencia=EvidenciaEsquema.desde(i.evidencia),
+        )
 
 
 class TareaSalida(BaseModel):
@@ -139,7 +190,7 @@ class EscenarioDetalle(EscenarioResumen):
             **EscenarioResumen.desde(e).model_dump(),
             descripcion=e.descripcion,
             es_base=e.es_base,
-            injects=[InjectSalida(**vars(i)) for i in e.injects],
+            injects=[InjectSalida.desde(i) for i in e.injects],
             tareas=[TareaSalida(**vars(t)) for t in e.tareas],
             pendientes_para_publicar=e.errores_para_publicar(),
         )

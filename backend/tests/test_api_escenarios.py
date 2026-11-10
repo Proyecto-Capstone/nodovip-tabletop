@@ -165,6 +165,44 @@ def test_admin_crea_borrador_con_injects_ordenados(client):
     assert cuerpo["pendientes_para_publicar"] == []
 
 
+def test_inject_con_evidencia_simulada(client):
+    """PC-44: la evidencia se guarda y vuelve igual; el nivel solo queda en alertas."""
+    injects = _payload()["injects"]
+    injects[0]["evidencia"] = {
+        "tipo": "correo",
+        "origen": "soporte@banco-ficticio.test",
+        "asunto": "Verifique su cuenta hoy",
+        "contenido": "Ingrese al enlace para evitar el bloqueo.",
+        "nivel": "alta",
+    }
+    injects[1]["evidencia"] = {
+        "tipo": "alerta",
+        "origen": "SIEM",
+        "asunto": "Inicio de sesión imposible",
+        "contenido": "Mismo usuario desde Quito y Singapur en 4 minutos.",
+        "nivel": "critica",
+    }
+    r = client.post("/api/escenarios", json=_payload(injects=injects), headers=ADMIN)
+    assert r.status_code == 201, r.text
+    salida = r.json()["injects"]
+    assert salida[0]["evidencia"]["tipo"] == "correo"
+    assert salida[0]["evidencia"]["nivel"] is None
+    assert salida[1]["evidencia"]["nivel"] == "critica"
+    assert salida[2]["evidencia"] is None
+
+
+def test_evidencia_de_tipo_desconocido_se_rechaza(client):
+    injects = _payload()["injects"]
+    injects[0]["evidencia"] = {
+        "tipo": "fax",
+        "origen": "Oficina",
+        "asunto": "Aviso",
+        "contenido": "Contenido del aviso",
+    }
+    r = client.post("/api/escenarios", json=_payload(injects=injects), headers=ADMIN)
+    assert r.status_code == 422
+
+
 def test_validacion_de_campos(client):
     r = client.post("/api/escenarios", json=_payload(nombre="ab"), headers=ADMIN)
     assert r.status_code == 422

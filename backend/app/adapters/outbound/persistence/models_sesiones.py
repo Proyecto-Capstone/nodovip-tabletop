@@ -100,6 +100,8 @@ class SesionInjectModel(Base):
     titulo: Mapped[str] = mapped_column(String(150))
     descripcion: Mapped[str] = mapped_column(Text)
     minuto_sugerido: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    # Evidencia simulada del inject (PC-44): correo, alerta, noticia… o nada.
+    evidencia: Mapped[dict | None] = mapped_column(JSON, nullable=True)
 
 
 class SesionTareaModel(Base):

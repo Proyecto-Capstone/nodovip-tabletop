@@ -9,12 +9,14 @@ import {
   rutas,
   type EscenarioDetalle,
   type EscenarioEntrada,
+  type Evidencia,
   type Nivel,
   type RolEjercicio,
   type TipoEscenario,
 } from '../api/escenarios'
 import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
+import { EditorEvidencia } from '../components/Evidencia'
 import { ETIQUETA_NIVEL, NIVELES, nombreRol } from '../lib/etiquetas'
 import { useGet } from '../lib/useGet'
 
@@ -26,6 +28,7 @@ interface InjectForm {
   titulo: string
   descripcion: string
   minuto: string
+  evidencia: Evidencia | null
 }
 
 interface TareaForm {
@@ -57,6 +60,7 @@ const injectVacio = (): InjectForm => ({
   titulo: '',
   descripcion: '',
   minuto: '',
+  evidencia: null,
 })
 
 const tareaVacia = (rol = ''): TareaForm => ({
@@ -83,6 +87,7 @@ function desdeDetalle(e: EscenarioDetalle): Formulario {
       titulo: i.titulo,
       descripcion: i.descripcion,
       minuto: i.minuto_sugerido === null ? '' : String(i.minuto_sugerido),
+      evidencia: i.evidencia,
     })),
     tareas: e.tareas.map((t) => ({
       clave: t.id,
@@ -110,6 +115,14 @@ function aEntrada(f: Formulario): EscenarioEntrada {
       titulo: i.titulo.trim(),
       descripcion: i.descripcion.trim(),
       minuto_sugerido: i.minuto === '' ? null : Number(i.minuto),
+      evidencia: i.evidencia
+        ? {
+            ...i.evidencia,
+            origen: i.evidencia.origen.trim(),
+            asunto: i.evidencia.asunto.trim(),
+            contenido: i.evidencia.contenido.trim(),
+          }
+        : null,
     })),
     tareas: f.tareas.map((t) => ({
       ...(t.id ? { id: t.id } : {}),
@@ -402,6 +415,10 @@ function FormularioEscenario({
                     }
                   />
                 </label>
+                <EditorEvidencia
+                  valor={i.evidencia}
+                  onChange={(evidencia) => cambiarInject(i.clave, { evidencia })}
+                />
                 <div className="acciones-bloque">
                   <button
                     type="button"

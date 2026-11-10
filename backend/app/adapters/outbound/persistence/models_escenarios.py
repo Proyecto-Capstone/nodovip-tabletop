@@ -118,3 +118,7 @@ class TareaModel(Base):
     puntaje_maximo: Mapped[int] = mapped_column(SmallInteger)
     tiempo_limite_segundos: Mapped[int] = mapped_column(Integer)
     respuesta_esperada: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # PC-46: texto_libre | seleccion_multiple, y sus opciones en JSON.
+    tipo: Mapped[str] = mapped_column(String(20), default="texto_libre")
+    opciones: Mapped[list[dict]] = mapped_column(JSON, default=list)
+    inject_orden: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)

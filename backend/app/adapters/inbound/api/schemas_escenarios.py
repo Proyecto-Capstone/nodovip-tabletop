@@ -11,10 +11,12 @@ from app.domain.escenarios import (
     Inject,
     Nivel,
     NivelAlerta,
+    OpcionRespuesta,
     RolEjercicio,
     Tarea,
     TipoEscenario,
     TipoEvidencia,
+    TipoTarea,
 )
 from app.ports.escenario_repository import TareaDelBanco
 
@@ -63,6 +65,13 @@ class InjectEntrada(BaseModel):
     evidencia: EvidenciaEsquema | None = None
 
 
+class OpcionEsquema(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
+    texto: str = Field(min_length=1, max_length=300)
+    correcta: bool = False
+
+
 class TareaEntrada(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
@@ -70,7 +79,13 @@ class TareaEntrada(BaseModel):
     enunciado: str = Field(min_length=10, max_length=2000)
     rol_codigo: str = Field(min_length=2, max_length=40)
     dificultad: Nivel
-    criterios: list[str] = Field(min_length=1, max_length=10)
+    # PC-46: selección múltiple con opciones; texto libre con criterios. Lo que
+    # falta para publicar lo informa `pendientes_para_publicar`.
+    tipo: TipoTarea = TipoTarea.TEXTO_LIBRE
+    opciones: list[OpcionEsquema] = Field(default_factory=list, max_length=8)
+    criterios: list[str] = Field(default_factory=list, max_length=10)
+    # Orden del inject en el que se pregunta; sin valor se reparte en orden.
+    inject_orden: int | None = Field(default=None, ge=1, le=30)
     puntaje_maximo: int = Field(default=10, ge=1, le=100)
     tiempo_limite_segundos: int = Field(default=300, ge=30, le=3600)
     respuesta_esperada: str | None = Field(default=None, max_length=5000)
@@ -115,6 +130,11 @@ class EscenarioEntrada(BaseModel):
                     puntaje_maximo=t.puntaje_maximo,
                     tiempo_limite_segundos=t.tiempo_limite_segundos,
                     respuesta_esperada=t.respuesta_esperada,
+                    tipo=t.tipo,
+                    opciones=[OpcionRespuesta(o.texto, o.correcta) for o in t.opciones]
+                    if t.tipo == TipoTarea.SELECCION_MULTIPLE
+                    else [],
+                    inject_orden=t.inject_orden,
                     **({"id": t.id} if t.id else {}),
                 )
                 for t in self.tareas
@@ -151,6 +171,17 @@ class TareaSalida(BaseModel):
     puntaje_maximo: int
     tiempo_limite_segundos: int
     respuesta_esperada: str | None
+    tipo: TipoTarea = TipoTarea.TEXTO_LIBRE
+    opciones: list[OpcionEsquema] = []
+    inject_orden: int | None = None
+
+    @classmethod
+    def datos(cls, t: Tarea) -> dict:
+        return vars(t) | {
+            "opciones": [
+                OpcionEsquema(texto=o.texto, correcta=o.correcta) for o in t.opciones
+            ]
+        }
 
 
 class EscenarioResumen(BaseModel):
@@ -191,7 +222,7 @@ class EscenarioDetalle(EscenarioResumen):
             descripcion=e.descripcion,
             es_base=e.es_base,
             injects=[InjectSalida.desde(i) for i in e.injects],
-            tareas=[TareaSalida(**vars(t)) for t in e.tareas],
+            tareas=[TareaSalida(**TareaSalida.datos(t)) for t in e.tareas],
             pendientes_para_publicar=e.errores_para_publicar(),
         )
 
@@ -204,7 +235,7 @@ class TareaBancoSalida(TareaSalida):
     @classmethod
     def desde(cls, item: TareaDelBanco) -> "TareaBancoSalida":
         return cls(
-            **vars(item.tarea),
+            **TareaSalida.datos(item.tarea),
             escenario_id=item.escenario_id,
             escenario_nombre=item.escenario_nombre,
             tipo_codigo=item.tipo_codigo,

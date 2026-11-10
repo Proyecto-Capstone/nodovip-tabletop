@@ -1,10 +1,17 @@
-"""Carga un escenario de ejemplo publicado (banco de preguntas inicial).
+"""Carga el catálogo de escenarios profesionales ficticios publicados (PC-46).
 
-Uso: docker compose exec backend python -m app.seed_escenarios
+Uso:
+    docker compose exec backend python -m app.seed_escenarios
+    docker compose exec backend python -m app.seed_escenarios --actualizar
 
-Es idempotente: si el escenario ya existe, no hace nada. Todo el contenido es
-ficticio, sin datos reales de clientes de NODOVIP.
+Es idempotente: un escenario que ya existe (mismo nombre) no se duplica. Con
+`--actualizar` se reemplaza su contenido por el del catálogo; las sesiones ya
+creadas no cambian porque copiaron el contenido al crearse. Todo es ficticio,
+sin datos reales de clientes de NODOVIP.
 """
+
+import sys
+from dataclasses import dataclass
 
 from sqlalchemy.orm import Session
 
@@ -14,210 +21,58 @@ from app.adapters.outbound.persistence.repositorio_escenarios import (
     SqlEscenarioRepository,
 )
 from app.application.escenarios import ServicioEscenarios
-from app.domain.escenarios import (
-    Escenario,
-    Evidencia,
-    Inject,
-    Nivel,
-    NivelAlerta,
-    Tarea,
-    TipoEvidencia,
-)
+from app.catalogo_escenarios import CATALOGO
+from app.catalogo_escenarios.ransomware import NOMBRE, escenario_ransomware
+from app.domain.escenarios import EstadoEscenario
 from app.ports.escenario_repository import FiltroEscenarios
 
-NOMBRE = "Ransomware en servidores de archivos"
+# Se mantienen para quienes ya los importaban desde aquí (pruebas, scripts).
+__all__ = ["NOMBRE", "cargar", "escenario_ransomware"]
 
 
-def escenario_ransomware() -> Escenario:
-    return Escenario(
-        nombre=NOMBRE,
-        tipo_codigo="ransomware",
-        nivel=Nivel.ALTO,
-        descripcion=(
-            "Un lunes a las 07:40 el equipo de TI detecta que los servidores de "
-            "archivos de la empresa ficticia Comercial Andina S.A. muestran archivos "
-            "con extensión .lock y una nota de rescate que exige 40 BTC en 72 horas."
-        ),
-        roles=["ciso", "comunicaciones", "director_ejecutivo", "legal", "ti"],
-        injects=[
-            Inject(
-                orden=1,
-                titulo="Detección inicial",
-                descripcion=(
-                    "Mesa de ayuda recibe 25 llamadas: nadie puede abrir documentos "
-                    "compartidos y aparece una nota de rescate en cada carpeta."
-                ),
-                minuto_sugerido=0,
-                evidencia=Evidencia(
-                    tipo=TipoEvidencia.ALERTA,
-                    origen="EDR corporativo · FS-01",
-                    asunto="Cifrado masivo de archivos detectado",
-                    contenido=(
-                        "Proceso svc_update.exe renombró 18.412 archivos a .lock en "
-                        "6 minutos en la carpeta compartida de FS-01. Se creó LEEME.txt en "
-                        "cada carpeta. Host origen: PC-CONT-07 (usuario mlopez)."
-                    ),
-                    nivel=NivelAlerta.CRITICA,
-                ),
-            ),
-            Inject(
-                orden=2,
-                titulo="Propagación a respaldos",
-                descripcion=(
-                    "TI confirma que el servidor de respaldos en la red interna "
-                    "también fue cifrado. Solo queda una copia fuera de línea de "
-                    "hace 9 días."
-                ),
-                minuto_sugerido=15,
-                evidencia=Evidencia(
-                    tipo=TipoEvidencia.MENSAJE,
-                    origen="Jefe de infraestructura (chat interno)",
-                    asunto="Respaldos comprometidos",
-                    contenido=(
-                        "Malas noticias: BKP-02 también está cifrado, el catálogo de "
-                        "Veeam no abre. Lo único limpio es la cinta fuera de sitio "
-                        "del día 31. ¿Restauramos desde ahí o esperamos a forense?"
-                    ),
-                ),
-            ),
-            Inject(
-                orden=3,
-                titulo="Amenaza de publicación",
-                descripcion=(
-                    "Los atacantes envían una muestra de 200 registros de clientes y "
-                    "amenazan con publicar toda la base si no se paga en 24 horas."
-                ),
-                minuto_sugerido=30,
-                evidencia=Evidencia(
-                    tipo=TipoEvidencia.CORREO,
-                    origen="lockbit-support@onionmail.example",
-                    asunto="Prueba de los datos de sus clientes — 24 horas",
-                    contenido=(
-                        "Adjuntamos 200 registros de su base de clientes (nombre, "
-                        "cédula, correo, saldo). Tenemos 1,8 millones más. Si no "
-                        "recibimos el pago en 24 horas publicaremos todo en nuestro "
-                        "blog y avisaremos a la prensa."
-                    ),
-                ),
-            ),
-            Inject(
-                orden=4,
-                titulo="Consulta de la prensa",
-                descripcion=(
-                    "Un periodista llama a la central preguntando por un posible "
-                    "ataque informático que afecta a los clientes."
-                ),
-                minuto_sugerido=45,
-                evidencia=Evidencia(
-                    tipo=TipoEvidencia.LLAMADA,
-                    origen="Periodista de Diario El Observador (ficticio)",
-                    asunto="Consulta sobre un ataque informático",
-                    contenido=(
-                        "Buenos días, le llamo de Diario El Observador. Varios "
-                        "clientes nos escriben que no pueden usar sus servicios y en "
-                        "un foro dicen que Comercial Andina fue hackeada. ¿Pueden "
-                        "confirmarlo? Publicamos a las 18:00."
-                    ),
-                ),
-            ),
-        ],
-        tareas=[
-            Tarea(
-                enunciado=(
-                    "¿Cuáles son las tres primeras acciones técnicas para contener "
-                    "la propagación del ransomware?"
-                ),
-                rol_codigo="ti",
-                dificultad=Nivel.MEDIO,
-                criterios=[
-                    "Aislar los equipos y segmentos afectados de la red",
-                    "Preservar evidencia antes de restaurar",
-                    "Verificar la integridad de la copia fuera de línea",
-                ],
-                puntaje_maximo=10,
-                tiempo_limite_segundos=300,
-            ),
-            Tarea(
-                enunciado=(
-                    "Clasifique la severidad del incidente y explique a quién "
-                    "escala la decisión y en qué plazo."
-                ),
-                rol_codigo="ciso",
-                dificultad=Nivel.MEDIO,
-                criterios=[
-                    "Clasifica el incidente como crítico",
-                    "Activa el plan de respuesta a incidentes",
-                    "Escala a la alta dirección de inmediato",
-                ],
-                puntaje_maximo=10,
-                tiempo_limite_segundos=300,
-            ),
-            Tarea(
-                enunciado=(
-                    "¿Qué obligaciones de notificación tiene la empresa ante la "
-                    "posible exposición de datos personales de clientes?"
-                ),
-                rol_codigo="legal",
-                dificultad=Nivel.ALTO,
-                criterios=[
-                    (
-                        "Identifica la obligación de notificar a la autoridad de "
-                        "protección de datos"
-                    ),
-                    "Considera la notificación a los titulares afectados",
-                    "Documenta plazos y evidencia del incidente",
-                ],
-                puntaje_maximo=15,
-                tiempo_limite_segundos=420,
-            ),
-            Tarea(
-                enunciado=(
-                    "Los atacantes exigen el pago del rescate. ¿Qué decisión toma y "
-                    "qué factores considera?"
-                ),
-                rol_codigo="director_ejecutivo",
-                dificultad=Nivel.ALTO,
-                criterios=[
-                    "Consulta a Legal, CISO y asesores antes de decidir",
-                    "Considera que pagar no garantiza recuperar los datos",
-                    "Prioriza la continuidad del negocio y la recuperación",
-                ],
-                puntaje_maximo=15,
-                tiempo_limite_segundos=420,
-            ),
-            Tarea(
-                enunciado=(
-                    "Redacte la respuesta inicial al periodista que pregunta por el "
-                    "ataque."
-                ),
-                rol_codigo="comunicaciones",
-                dificultad=Nivel.BAJO,
-                criterios=[
-                    "No confirma datos no verificados",
-                    "Usa un mensaje coordinado con Legal y Dirección",
-                    "Indica que habrá información oficial posterior",
-                ],
-                puntaje_maximo=10,
-                tiempo_limite_segundos=300,
-            ),
-        ],
-    )
+@dataclass
+class ResultadoCarga:
+    creados: list[str]
+    actualizados: list[str]
+    sin_cambios: list[str]
+
+
+def cargar(servicio: ServicioEscenarios, actualizar: bool = False) -> ResultadoCarga:
+    """Crea y publica cada escenario del catálogo que falte."""
+    resultado = ResultadoCarga([], [], [])
+    for fabrica in CATALOGO:
+        nuevo = fabrica()
+        existentes = servicio.listar(
+            FiltroEscenarios(texto=nuevo.nombre), puede_gestionar=True
+        )
+        actual = next((e for e in existentes if e.nombre == nuevo.nombre), None)
+        if actual is None:
+            creado = servicio.crear(nuevo)
+            servicio.publicar(creado.id)
+            resultado.creados.append(nuevo.nombre)
+        elif actualizar:
+            servicio.actualizar(actual.id, nuevo)
+            if actual.estado != EstadoEscenario.PUBLICADO:
+                servicio.publicar(actual.id)
+            resultado.actualizados.append(nuevo.nombre)
+        else:
+            resultado.sin_cambios.append(nuevo.nombre)
+    return resultado
 
 
 def main() -> None:
+    actualizar = "--actualizar" in sys.argv[1:]
     with Session(get_engine()) as session:
         servicio = ServicioEscenarios(
             SqlEscenarioRepository(session), SqlCatalogoRepository(session)
         )
-        existentes = servicio.listar(
-            FiltroEscenarios(texto=NOMBRE), puede_gestionar=True
-        )
-        if any(e.nombre == NOMBRE for e in existentes):
-            print(f"Ya existe: {NOMBRE}")
-            return
-        escenario = servicio.crear(escenario_ransomware())
-        servicio.publicar(escenario.id)
-        print(f"Escenario publicado: {NOMBRE} ({escenario.id})")
+        r = cargar(servicio, actualizar)
+    for nombre in r.creados:
+        print(f"Publicado: {nombre}")
+    for nombre in r.actualizados:
+        print(f"Actualizado: {nombre}")
+    for nombre in r.sin_cambios:
+        print(f"Ya existe (usa --actualizar para reemplazarlo): {nombre}")
 
 
 if __name__ == "__main__":

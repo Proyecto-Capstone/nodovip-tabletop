@@ -8,6 +8,7 @@ from enum import StrEnum
 from uuid import UUID, uuid4
 
 MIN_INJECTS_PARA_PUBLICAR = 3
+MIN_OPCIONES = 2
 
 
 class Nivel(StrEnum):
@@ -16,6 +17,17 @@ class Nivel(StrEnum):
     BAJO = "bajo"
     MEDIO = "medio"
     ALTO = "alto"
+
+
+class TipoTarea(StrEnum):
+    TEXTO_LIBRE = "texto_libre"
+    SELECCION_MULTIPLE = "seleccion_multiple"
+
+
+@dataclass(frozen=True)
+class OpcionRespuesta:
+    texto: str
+    correcta: bool = False
 
 
 class EstadoEscenario(StrEnum):
@@ -124,7 +136,40 @@ class Tarea:
     puntaje_maximo: int = 10
     tiempo_limite_segundos: int = 300
     respuesta_esperada: str | None = None
+    # PC-46: el banco también guarda preguntas de selección múltiple.
+    tipo: TipoTarea = TipoTarea.TEXTO_LIBRE
+    opciones: list[OpcionRespuesta] = field(default_factory=list)
+    # Inject en el que se pregunta (su orden). None: se reparte en orden.
+    inject_orden: int | None = None
     id: UUID = field(default_factory=uuid4)
+
+    def errores_de_contenido(self) -> list[str]:
+        """Texto libre se evalúa con criterios; selección múltiple, con las
+        opciones correctas. Lo comparten el escenario y la sesión."""
+        return errores_de_tarea(
+            self.enunciado, self.tipo, self.opciones, self.criterios
+        )
+
+
+def errores_de_tarea(
+    enunciado: str,
+    tipo: TipoTarea,
+    opciones: list[OpcionRespuesta],
+    criterios: list[str],
+) -> list[str]:
+    inicio = enunciado[:40]
+    if tipo == TipoTarea.SELECCION_MULTIPLE:
+        errores = []
+        if len(opciones) < MIN_OPCIONES:
+            errores.append(
+                f'La tarea "{inicio}" necesita al menos {MIN_OPCIONES} opciones'
+            )
+        if not any(o.correcta for o in opciones):
+            errores.append(f'La tarea "{inicio}" no tiene una opción correcta')
+        return errores
+    if not criterios:
+        return [f'La tarea "{inicio}" necesita al menos un criterio de evaluación']
+    return []
 
 
 @dataclass
@@ -154,6 +199,8 @@ class Escenario:
         sin_tareas = [r for r in self.roles if r not in roles_con_tareas]
         if sin_tareas:
             errores.append("Faltan tareas para los roles: " + ", ".join(sin_tareas))
+        for t in self.tareas:
+            errores += t.errores_de_contenido()
         return errores
 
     def validar_consistencia(self) -> None:
@@ -171,6 +218,13 @@ class Escenario:
         ordenes = [i.orden for i in self.injects]
         if len(set(ordenes)) != len(ordenes):
             errores.append("Hay injects con el mismo orden")
+        if any(
+            t.inject_orden is not None and t.inject_orden not in ordenes
+            for t in self.tareas
+        ):
+            errores.append("Hay tareas asignadas a un inject que no existe")
+        if any(t.tipo == TipoTarea.TEXTO_LIBRE and t.opciones for t in self.tareas):
+            errores.append("Las tareas de texto libre no llevan opciones")
         if errores:
             raise ReglaEscenarioError(errores)
 

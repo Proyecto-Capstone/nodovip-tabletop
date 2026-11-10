@@ -13,9 +13,19 @@ from datetime import datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from app.domain.escenarios import Escenario, EstadoEscenario, Inject, Nivel
+from app.domain.escenarios import (
+    MIN_OPCIONES,
+    Escenario,
+    EstadoEscenario,
+    Inject,
+    Nivel,
+    OpcionRespuesta,
+    TipoTarea,
+    errores_de_tarea,
+)
 
-MIN_OPCIONES = 2
+# Se reexportan: el resto del código los importa desde aquí.
+__all__ = ["MIN_OPCIONES", "OpcionRespuesta", "TipoTarea"]
 
 
 class EstadoSesion(StrEnum):
@@ -34,23 +44,12 @@ ESTADOS_EDITABLES = (EstadoSesion.BORRADOR, EstadoSesion.PROGRAMADA)
 MAX_SESIONES_ACTIVAS_POR_DEFECTO = 10
 
 
-class TipoTarea(StrEnum):
-    TEXTO_LIBRE = "texto_libre"
-    SELECCION_MULTIPLE = "seleccion_multiple"
-
-
 class ReglaSesionError(ValueError):
     """Una sesión no cumple una regla de negocio de RF-01."""
 
     def __init__(self, errores: list[str]):
         self.errores = errores
         super().__init__("; ".join(errores))
-
-
-@dataclass
-class OpcionRespuesta:
-    texto: str
-    correcta: bool = False
 
 
 @dataclass
@@ -74,19 +73,9 @@ class TareaSesion:
     id: UUID = field(default_factory=uuid4)
 
     def errores_para_programar(self) -> list[str]:
-        inicio = self.enunciado[:40]
-        if self.tipo == TipoTarea.SELECCION_MULTIPLE:
-            errores = []
-            if len(self.opciones) < MIN_OPCIONES:
-                errores.append(
-                    f'La tarea "{inicio}" necesita al menos {MIN_OPCIONES} opciones'
-                )
-            if not any(o.correcta for o in self.opciones):
-                errores.append(f'La tarea "{inicio}" no tiene una opción correcta')
-            return errores
-        if not self.criterios:
-            return [f'La tarea "{inicio}" necesita al menos un criterio de evaluación']
-        return []
+        return errores_de_tarea(
+            self.enunciado, self.tipo, self.opciones, self.criterios
+        )
 
 
 @dataclass
@@ -203,19 +192,27 @@ class SesionTabletop:
         ]
         tareas: list[TareaSesion] = []
         usadas_por_rol: dict[str, int] = {}
+        por_orden = {i.orden: i for i in injects}
         for t in escenario.tareas:
             n = usadas_por_rol.get(t.rol_codigo, 0)
             usadas_por_rol[t.rol_codigo] = n + 1
+            # PC-46: si el escenario dice en qué inject va, se respeta.
+            elegido = por_orden.get(t.inject_orden) if t.inject_orden else None
+            if elegido is None and injects:
+                elegido = injects[n % len(injects)]
             tareas.append(
                 TareaSesion(
                     enunciado=t.enunciado,
                     rol_codigo=t.rol_codigo,
                     dificultad=t.dificultad,
                     criterios=list(t.criterios),
-                    inject_id=injects[n % len(injects)].id if injects else None,
+                    inject_id=elegido.id if elegido else None,
                     puntaje_maximo=t.puntaje_maximo,
                     tiempo_limite_segundos=t.tiempo_limite_segundos,
                     respuesta_esperada=t.respuesta_esperada,
+                    # PC-46: la pregunta llega a la sesión con su tipo y opciones.
+                    tipo=t.tipo,
+                    opciones=list(t.opciones),
                 )
             )
         return cls(

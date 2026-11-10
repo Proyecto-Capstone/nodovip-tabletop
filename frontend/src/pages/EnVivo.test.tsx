@@ -2,6 +2,7 @@ import { act, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { ResumenParticipante } from '../api/debrief'
 import type { InjectEnVivo, VistaEnVivo } from '../api/enVivo'
 import type { MiSesion } from '../api/misSesiones'
 import type { SesionDetalle } from '../api/sesiones'
@@ -72,6 +73,36 @@ const VISTA: VistaEnVivo = {
   conectados: null,
 }
 
+const RESUMEN: ResumenParticipante = {
+  sesion_id: ID,
+  nombre: 'Simulacro Q4',
+  finalizada_en: '2026-11-02T15:00:00Z',
+  rol_nombre: 'CISO',
+  puntaje: 7.5,
+  maximo: 10,
+  porcentaje: 75,
+  posicion: 1,
+  total_participantes: 3,
+  tareas: [
+    {
+      inject_orden: 1,
+      inject_titulo: 'Detección inicial',
+      enunciado: '¿A quién escala el incidente?',
+      tipo: 'texto_libre',
+      puntaje_maximo: 10,
+      respondida: true,
+      respuesta: 'A la dirección',
+      puntaje: 7.5,
+      aciertos: ['Escalar a la dirección'],
+      faltantes: ['Mencionar al regulador'],
+      errores: [],
+      opciones_correctas: [],
+      ajuste_motivo: 'Buena priorización',
+    },
+  ],
+  lecciones: null,
+}
+
 const INJECT_1: InjectEnVivo = {
   orden: 1,
   titulo: 'Detección inicial',
@@ -125,10 +156,16 @@ afterEach(() => {
 })
 
 function abrirParticipante() {
-  // Las tareas del rol se piden aparte (PB-08): aquí no hay ninguna.
+  // Las tareas del rol se piden aparte (PB-08): aquí no hay ninguna. Al
+  // finalizar se pide el resumen del participante (PC-45).
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (url: string) => respuesta(200, String(url).includes('/tareas') ? [] : MI_SESION)),
+    vi.fn(async (url: string) => {
+      const ruta = String(url)
+      if (ruta.includes('/tareas')) return respuesta(200, [])
+      if (ruta.includes('/resumen')) return respuesta(200, RESUMEN)
+      return respuesta(200, MI_SESION)
+    }),
   )
   renderConSesion(
     <Routes>
@@ -157,7 +194,12 @@ describe('Sala del participante', () => {
     expect(screen.getByText(/pausó la sesión/)).toBeInTheDocument()
 
     ultimo().recibir({ estado: 'finalizada', inject_actual: 1, version: 4 })
-    expect(screen.getByText(/La sesión terminó/)).toBeInTheDocument()
+    // PC-45: al terminar ve su resultado y la retroalimentación de cada tarea.
+    expect(await screen.findByText('Tu resultado como CISO')).toBeInTheDocument()
+    expect(screen.getByText('#1')).toBeInTheDocument()
+    expect(screen.getByText('Comentario del moderador:')).toBeInTheDocument()
+    expect(screen.getByText('Mencionar al regulador')).toBeInTheDocument()
+    expect(screen.getByText(/compartirá aquí las lecciones/)).toBeInTheDocument()
   })
 
   it('avisa del inject nuevo, muestra su evidencia y la línea de tiempo (PC-44)', async () => {

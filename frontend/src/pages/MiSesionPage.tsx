@@ -91,6 +91,11 @@ export function MiSesionPage() {
         )}
       </section>
 
+      {s.estado === 'finalizada' && (
+        <Link className="boton boton-primario boton-bloque" to={`/mis-sesiones/${s.id}/en-vivo`}>
+          Ver mi resultado y retroalimentación
+        </Link>
+      )}
       {(s.estado === 'programada' || s.estado === 'en_curso') && (
         <Link className="boton boton-primario boton-bloque" to={`/mis-sesiones/${s.id}/en-vivo`}>
           {s.estado === 'en_curso' ? '● Entrar a la sesión en vivo' : 'Entrar a la sala de espera'}

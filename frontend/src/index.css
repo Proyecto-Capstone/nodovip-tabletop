@@ -2793,3 +2793,320 @@ button.paso:hover {
 .linea-incidente details .parrafo {
   margin: 0.5rem 0 0;
 }
+
+/* ---------------------------------------------------------------------------
+   Debrief, lecciones aprendidas y resumen del participante (PC-45).
+   --------------------------------------------------------------------------- */
+
+.badge.debrief-sin_iniciar {
+  background: var(--gris-fondo);
+  color: var(--texto-suave);
+}
+.badge.debrief-borrador {
+  background: var(--naranja-fondo);
+  color: var(--naranja-texto);
+}
+.badge.debrief-completado {
+  background: var(--verde-fondo);
+  color: var(--verde);
+}
+
+.debrief-intro {
+  max-width: 70ch;
+}
+
+.debrief-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 20rem;
+  gap: 1rem;
+  align-items: start;
+}
+
+.debrief-contexto {
+  position: sticky;
+  top: 4.75rem;
+}
+
+.debrief-contexto h3 {
+  margin: 0.75rem 0 0.35rem;
+  font-size: var(--fs-md);
+}
+
+.debrief-recomendaciones {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: var(--fs-sm);
+}
+
+.debrief-recomendaciones li {
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--borde);
+}
+
+.debrief-recomendaciones .boton-texto {
+  display: block;
+  margin-top: 0.25rem;
+  padding-left: 0;
+}
+
+.debrief-barra {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  background: var(--superficie);
+  box-shadow: var(--sombra-lg);
+}
+
+.lista-editable-fila {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.lista-editable-fila textarea {
+  flex: 1;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  font: inherit;
+  resize: vertical;
+}
+
+.lista-editable-fila textarea:focus {
+  outline: none;
+  border-color: var(--acento);
+  box-shadow: var(--foco);
+}
+
+.lista-editable > .boton-texto {
+  padding-left: 0;
+}
+
+.editor-accion .acciones-bloque {
+  justify-content: space-between;
+}
+
+/* Lecciones aprendidas (reporte, debrief completado y resumen). */
+.lecciones-columnas {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.lecciones-bloque {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--borde);
+  border-left-width: 4px;
+  border-radius: var(--radio);
+  background: var(--fondo-sutil);
+}
+
+.lecciones-bloque h3,
+.lecciones > h3 {
+  margin: 0 0 0.4rem;
+  font-size: var(--fs-base);
+}
+
+.lecciones-bloque ul {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+
+.lecciones-bloque li + li {
+  margin-top: 0.3rem;
+}
+
+.lecciones-fortalezas {
+  border-left-color: var(--verde);
+}
+
+.lecciones-mejoras {
+  border-left-color: var(--naranja);
+}
+
+/* Resumen del participante. */
+.resumen-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-claro) 100%);
+  border-color: var(--navy);
+  color: #fff;
+}
+
+.resumen-hero h2 {
+  margin: 0.15rem 0 0.25rem;
+  font-size: var(--fs-xl);
+}
+
+.resumen-hero .texto-suave {
+  color: var(--texto-sobre-oscuro);
+}
+
+.resumen-etiqueta {
+  margin: 0;
+  color: #8fb3ff;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.resumen-cifras {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.resumen-cifras > div {
+  display: flex;
+  flex-direction: column;
+  min-width: 7.5rem;
+  padding: 0.65rem 0.9rem;
+  border-radius: var(--radio);
+  background: rgb(255 255 255 / 0.08);
+}
+
+.resumen-cifras strong {
+  font-size: 1.75rem;
+  line-height: 1.15;
+  font-variant-numeric: tabular-nums;
+}
+
+.resumen-cifras small {
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+/* En el fondo oscuro los colores de nivel necesitan más brillo. */
+.resumen-cifras .texto-verde {
+  color: #5fd38f;
+}
+.resumen-cifras .texto-naranja {
+  color: #ffb25c;
+}
+.resumen-cifras .texto-rojo {
+  color: #ff8a80;
+}
+
+.resumen-tareas {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.resumen-tarea {
+  padding: 1rem 0;
+  border-top: 1px solid var(--borde);
+}
+
+.resumen-tarea:first-child {
+  border-top: none;
+  padding-top: 0.25rem;
+}
+
+.resumen-tarea-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: var(--fs-sm);
+}
+
+.resumen-puntaje {
+  margin-left: auto;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.resumen-enunciado {
+  margin: 0.5rem 0;
+  font-weight: 600;
+}
+
+.resumen-respuesta {
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radio-sm);
+  background: var(--fondo-sutil);
+  border: 1px solid var(--borde);
+}
+
+.resumen-respuesta p {
+  margin: 0.15rem 0 0;
+  white-space: pre-line;
+}
+
+.resumen-retro {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.retro {
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radio-sm);
+  font-size: var(--fs-sm);
+}
+
+.retro ul {
+  margin: 0.2rem 0 0;
+  padding-left: 1.1rem;
+}
+
+.retro-bien {
+  background: var(--verde-fondo);
+  color: #175c36;
+}
+
+.retro-falta {
+  background: var(--naranja-fondo);
+  color: var(--naranja-texto);
+}
+
+.retro-error {
+  background: var(--rojo-fondo);
+  color: #8e2b2b;
+}
+
+.resumen-comentario {
+  margin: 0.6rem 0 0;
+  padding: 0.55rem 0.8rem;
+  border-left: 3px solid var(--acento);
+  background: var(--azul-fondo);
+  border-radius: var(--radio-xs);
+  font-size: var(--fs-sm);
+}
+
+@media (max-width: 900px) {
+  .debrief-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .debrief-contexto {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 480px) {
+  .resumen-cifras {
+    width: 100%;
+  }
+  .resumen-cifras > div {
+    flex: 1;
+    min-width: 0;
+  }
+}

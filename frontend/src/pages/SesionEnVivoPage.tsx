@@ -12,6 +12,7 @@ import { formatoReloj, useCronometro, useEnVivo } from '../lib/useEnVivo'
 import { useGet } from '../lib/useGet'
 import { InjectActual } from './ConducirSesionPage'
 import { AvisoInject, LineaDeTiempo } from './LineaDeTiempo'
+import { ResumenDelParticipante } from './ResumenParticipante'
 import { TareasDelRol } from './TareasDelRol'
 
 export function SesionEnVivoPage() {
@@ -92,9 +93,8 @@ export function SesionEnVivoPage() {
       <Errores errores={error ? [error] : undefined} />
 
       {estado === 'finalizada' ? (
-        <div className="alerta alerta-exito" role="status">
-          La sesión terminó. ¡Gracias por participar!
-        </div>
+        // PC-45: al terminar, su resultado y la retroalimentación de cada tarea.
+        <ResumenDelParticipante sesionId={id} />
       ) : (
         <>
           {vista?.pausada && (

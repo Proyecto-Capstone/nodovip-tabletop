@@ -102,6 +102,7 @@ const REPORTE: Reporte = {
     },
   ],
   sesiones_anteriores: 3,
+  lecciones: null,
   pdf: {
     estado: 'generado',
     solicitado_en: '2026-11-02T14:45:01Z',
@@ -137,7 +138,7 @@ describe('Reporte de brechas', () => {
     expect(screen.getByText(/1 brechas se repiten/)).toBeInTheDocument()
 
     const indice = screen.getByRole('navigation', { name: 'Contenido del reporte' })
-    expect(within(indice).getAllByRole('link')).toHaveLength(5)
+    expect(within(indice).getAllByRole('link')).toHaveLength(6)
 
     const brechas = screen.getByRole('region', { name: 'Brechas detectadas por rol' })
     const fila = within(brechas)

@@ -6,6 +6,7 @@ import { AccesosPage } from './pages/AccesosPage'
 import { BancoPreguntasPage } from './pages/BancoPreguntasPage'
 import { BibliotecaPage } from './pages/BibliotecaPage'
 import { ConducirSesionPage } from './pages/ConducirSesionPage'
+import { DebriefPage } from './pages/DebriefPage'
 import { DisenadorPage } from './pages/DisenadorPage'
 import { EscenarioDetallePage } from './pages/EscenarioDetallePage'
 import { EscenarioFormPage } from './pages/EscenarioFormPage'
@@ -55,6 +56,7 @@ export default function App() {
               <Route element={<RutaProtegida permiso="reportes:ver" />}>
                 <Route path="reportes" element={<ReportesPage />} />
                 <Route path="reportes/:id" element={<ReportePage />} />
+                <Route path="sesiones/:id/debrief" element={<DebriefPage />} />
               </Route>
               <Route element={<RutaProtegida permiso="leaderboard:ver" />}>
                 <Route path="leaderboard" element={<LeaderboardPage />} />

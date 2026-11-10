@@ -1,6 +1,7 @@
 // Reporte de brechas de una sesión finalizada (PB-14).
 
 import { api } from './client'
+import type { AccionConResponsable } from './debrief'
 
 export type EstadoPdf = 'generando' | 'generado' | 'fallido'
 export type Severidad = 'alta' | 'media' | 'baja'
@@ -88,6 +89,13 @@ export interface Reporte {
   respuestas: RespuestaReporte[]
   recomendaciones: Recomendacion[]
   sesiones_anteriores: number
+  /** Debrief del moderador, solo si lo completó (PC-45). */
+  lecciones: {
+    fortalezas: string[]
+    mejoras: string[]
+    acciones: Omit<AccionConResponsable, 'rol_codigo'>[]
+    completado_en: string | null
+  } | null
   pdf: EstadoReporte | null
 }
 

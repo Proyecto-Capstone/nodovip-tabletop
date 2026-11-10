@@ -156,6 +156,11 @@ function Panel({
               Ver reporte
             </Link>
           )}
+          {estado === 'finalizada' && puede('reportes:ver') && (
+            <Link className="boton boton-primario" to={`/sesiones/${sesion.id}/debrief`}>
+              Hacer el debrief
+            </Link>
+          )}
           <EstadoVivo estado={estado} pausada={vista?.pausada ?? false} />
         </div>
       </div>
@@ -239,7 +244,22 @@ function Controles({
   ejecutar: (c: ComandoEnVivo) => void
 }) {
   if (estado === 'finalizada') {
-    return <p className="parrafo">La sesión terminó. El estado final quedó guardado.</p>
+    return (
+      <div className="controles">
+        <p className="parrafo">
+          La sesión terminó y el estado final quedó guardado. Ahora reúne al equipo para el
+          debrief: lo que funcionó, lo que hay que mejorar y el plan de acción.
+        </p>
+        {vista && (
+          <Link
+            className="boton boton-primario boton-grande"
+            to={`/sesiones/${vista.sesion_id}/debrief`}
+          >
+            Hacer el debrief
+          </Link>
+        )}
+      </div>
+    )
   }
   if (estado !== 'en_curso') {
     return (

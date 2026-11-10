@@ -15,6 +15,7 @@ import {
 } from '../api/reportes'
 import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores } from '../components/Etiquetas'
+import { Lecciones } from '../components/Lecciones'
 import { useGet } from '../lib/useGet'
 import { EstadoPdfBadge } from './ReportesPage'
 
@@ -24,6 +25,7 @@ const SECCIONES = [
   ['brechas', '3. Brechas detectadas'],
   ['trazabilidad', '4. Trazabilidad'],
   ['recomendaciones', '5. Recomendaciones'],
+  ['lecciones', '6. Lecciones aprendidas'],
 ] as const
 
 const ETIQUETA_SEVERIDAD: Record<Severidad, string> = {
@@ -161,6 +163,22 @@ function Contenido({ r, recargar }: { r: Reporte; recargar: () => void }) {
                 </li>
               ))}
             </ol>
+          </section>
+          <section id="lecciones" className="tarjeta" aria-labelledby="titulo-lecciones">
+            <div className="titulo-seccion">
+              <h2 id="titulo-lecciones">Lecciones aprendidas y plan de acción</h2>
+              <Link className="boton boton-secundario" to={`/sesiones/${r.sesion_id}/debrief`}>
+                {r.lecciones ? 'Ver debrief' : 'Ir al debrief'}
+              </Link>
+            </div>
+            {r.lecciones ? (
+              <Lecciones {...r.lecciones} />
+            ) : (
+              <p className="texto-suave">
+                El moderador todavía no completó el debrief. Cuando lo haga, sus
+                lecciones y el plan de acción aparecerán aquí y en el PDF.
+              </p>
+            )}
           </section>
         </div>
       </div>

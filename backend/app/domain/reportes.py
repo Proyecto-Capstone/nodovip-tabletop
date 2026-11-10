@@ -23,7 +23,7 @@ Núcleo de dominio: no depende de FastAPI ni de SQLAlchemy.
 
 import unicodedata
 from dataclasses import dataclass, field, replace
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 from uuid import UUID
 
@@ -286,6 +286,26 @@ class RespuestaReporte:
 
 
 @dataclass(frozen=True)
+class AccionReporte:
+    """Una acción del plan del debrief (PC-45), con el responsable ya en texto."""
+
+    descripcion: str
+    responsable: str
+    prioridad: str
+    plazo: date | None
+
+
+@dataclass(frozen=True)
+class LeccionesAprendidas:
+    """El debrief completado por el moderador (PC-45)."""
+
+    fortalezas: list[str]
+    mejoras: list[str]
+    acciones: list[AccionReporte]
+    completado_en: datetime | None
+
+
+@dataclass(frozen=True)
 class ReporteSesion:
     sesion_id: UUID
     nombre: str
@@ -308,6 +328,8 @@ class ReporteSesion:
     # Sesiones finalizadas anteriores del mismo cliente usadas como historial.
     sesiones_anteriores: int
     generado_en: datetime
+    # Lecciones aprendidas del debrief, solo si el moderador lo completó.
+    lecciones: LeccionesAprendidas | None = None
 
     @property
     def porcentaje_total(self) -> float:

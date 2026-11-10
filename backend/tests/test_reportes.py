@@ -281,3 +281,37 @@ def test_el_html_escapa_lo_que_escriben_los_participantes(e):
     ):
         assert seccion in html
     assert "Banco Andino" in html and "Mónica Moderadora" in html
+    # Sin debrief completado, la sección 6 lo indica (PC-45).
+    assert "todavía no completó el debrief" in html
+
+
+def test_html_incluye_las_lecciones_del_debrief_escapadas(e):
+    """PC-45: fortalezas, mejoras y plan de acción en la sección 6 del PDF."""
+    from dataclasses import replace
+    from datetime import date
+
+    from app.domain.reportes import AccionReporte, LeccionesAprendidas
+
+    sesion = _sesion()
+    e["sesiones"].guardar(sesion)
+    contenido = replace(
+        e["servicio"].contenido(sesion.id, ID_MODERADOR, True),
+        lecciones=LeccionesAprendidas(
+            fortalezas=["Escalaron <b>rápido</b>"],
+            mejoras=["Probar respaldos"],
+            acciones=[
+                AccionReporte(
+                    "Simulacro trimestral",
+                    "Responsable de TI",
+                    "alta",
+                    date(2026, 12, 15),
+                )
+            ],
+            completado_en=None,
+        ),
+    )
+    html = renderizar(contenido)
+    assert "6. Lecciones aprendidas y plan de acción" in html
+    assert "Escalaron &lt;b&gt;rápido&lt;/b&gt;" in html
+    assert "Simulacro trimestral" in html and "15/12/2026" in html
+    assert 'class="sev sev-alta">Alta' in html

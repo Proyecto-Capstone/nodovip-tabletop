@@ -299,3 +299,41 @@ def test_cliente_y_reporte_pdf_en_postgresql(entorno):
     # La lista de estados no carga el PDF.
     [sin_pdf] = reportes.estados([sesion.id]).values()
     assert sin_pdf.pdf is None and sin_pdf.estado == EstadoReporte.GENERADO
+
+
+def test_debrief_en_postgresql(entorno):
+    """PC-45: el debrief se guarda con su plan de acción en JSON y se reemplaza."""
+    from datetime import date
+
+    from app.adapters.outbound.persistence.repositorio_debrief import (
+        SqlDebriefRepository,
+    )
+    from app.domain.debrief import (
+        AccionMejora,
+        Debrief,
+        EstadoDebrief,
+        PrioridadAccion,
+    )
+
+    servicio = entorno["servicio"]
+    sesion = servicio.crear(entorno["escenario"].id, entorno["moderadora"].id)
+    repo = SqlDebriefRepository(entorno["session"])
+    assert repo.obtener(sesion.id) is None
+
+    ahora = datetime.now(UTC)
+    d = Debrief(sesion.id, entorno["moderadora"].id, ahora, ahora)
+    accion = AccionMejora(
+        "Probar la restauración de respaldos",
+        PrioridadAccion.ALTA,
+        "ti",
+        date(2026, 12, 15),
+    )
+    d.editar(["Escaló rápido"], ["Respaldos sin probar"], [accion], {"ti"}, ahora)
+    repo.guardar(d)
+    leido = repo.obtener(sesion.id)
+    assert leido.acciones == [accion] and leido.fortalezas == ["Escaló rápido"]
+
+    leido.completar(ahora)
+    repo.guardar(leido)
+    final = repo.obtener(sesion.id)
+    assert final.estado == EstadoDebrief.COMPLETADO and final.completado_en is not None

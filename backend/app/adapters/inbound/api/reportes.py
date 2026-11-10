@@ -13,7 +13,7 @@ PDF después de responder al moderador: el motor en vivo no espera a WeasyPrint.
 """
 
 import logging
-from datetime import datetime
+from datetime import date, datetime
 from typing import Annotated
 from uuid import UUID
 
@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from app.adapters.inbound.api.seguridad import UsuarioActual, requiere_permiso
 from app.adapters.outbound.en_vivo import adaptador_en_vivo
 from app.adapters.outbound.persistence.database import abrir_sesion, get_session
+from app.adapters.outbound.persistence.repositorio_debrief import SqlDebriefRepository
 from app.adapters.outbound.persistence.repositorio_escenarios import (
     SqlCatalogoRepository,
     SqlEscenarioRepository,
@@ -42,9 +43,11 @@ from app.adapters.outbound.reportes import GeneradorWeasyPrint
 from app.application.reportes import ServicioReportes, SesionConReporte
 from app.application.sesiones import SesionNoEncontrada
 from app.domain.reportes import (
+    AccionReporte,
     Brecha,
     EstadoReporte,
     FilaPuntaje,
+    LeccionesAprendidas,
     Recomendacion,
     ReporteGuardado,
     ReporteSesion,
@@ -69,6 +72,7 @@ def _servicio(session: Session) -> ServicioReportes:
         adaptador_en_vivo(),
         SqlReporteRepository(session),
         GeneradorWeasyPrint(),
+        debriefs=SqlDebriefRepository(session),
     )
 
 
@@ -241,6 +245,35 @@ class RecomendacionSalida(BaseModel):
         return cls(**vars(r))
 
 
+class AccionReporteSalida(BaseModel):
+    descripcion: str
+    responsable: str
+    prioridad: str
+    plazo: date | None
+
+    @classmethod
+    def desde(cls, a: AccionReporte) -> "AccionReporteSalida":
+        return cls(**vars(a))
+
+
+class LeccionesSalida(BaseModel):
+    fortalezas: list[str]
+    mejoras: list[str]
+    acciones: list[AccionReporteSalida]
+    completado_en: datetime | None
+
+    @classmethod
+    def desde(cls, x: LeccionesAprendidas | None) -> "LeccionesSalida | None":
+        if x is None:
+            return None
+        return cls(
+            fortalezas=x.fortalezas,
+            mejoras=x.mejoras,
+            acciones=[AccionReporteSalida.desde(a) for a in x.acciones],
+            completado_en=x.completado_en,
+        )
+
+
 class ReporteSalida(BaseModel):
     sesion_id: UUID
     nombre: str
@@ -263,6 +296,7 @@ class ReporteSalida(BaseModel):
     respuestas: list[RespuestaReporteSalida]
     recomendaciones: list[RecomendacionSalida]
     sesiones_anteriores: int
+    lecciones: LeccionesSalida | None
     pdf: EstadoReporteSalida | None
 
     @classmethod
@@ -289,6 +323,7 @@ class ReporteSalida(BaseModel):
             respuestas=[RespuestaReporteSalida.desde(x) for x in r.respuestas],
             recomendaciones=[RecomendacionSalida.desde(x) for x in r.recomendaciones],
             sesiones_anteriores=r.sesiones_anteriores,
+            lecciones=LeccionesSalida.desde(r.lecciones),
             pdf=EstadoReporteSalida.desde(pdf),
         )
 

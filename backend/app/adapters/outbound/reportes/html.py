@@ -9,6 +9,7 @@ from datetime import datetime, timedelta, timezone
 from html import escape
 
 from app.domain.reportes import (
+    AccionReporte,
     Brecha,
     FilaPuntaje,
     Recomendacion,
@@ -58,6 +59,12 @@ tr { page-break-inside: avoid; }
 .recomendaciones { background: #f4f1fd; border-left: 4px solid #6b4fd8; padding: 8px 12px; border-radius: 4px; }
 .recomendaciones li { margin: 4px 0; }
 .vacio { color: #6b7085; font-style: italic; }
+.lecciones { display: flex; gap: 10px; margin: 6px 0 8px; }
+.lecciones > div { flex: 1; border: 1px solid #e1e4ec; border-radius: 6px; padding: 8px 12px; }
+.lecciones h3 { font-size: 10pt; margin: 0 0 4px; }
+.lecciones ul { margin: 0; padding-left: 16px; }
+.lecciones .fortalezas { border-left: 4px solid #22874f; }
+.lecciones .mejoras { border-left: 4px solid #c46a0c; }
 """
 
 
@@ -76,6 +83,7 @@ def renderizar(r: ReporteSesion) -> str:
 {_brechas(r)}
 {_trazabilidad(r)}
 {_recomendaciones(r)}
+{_lecciones(r)}
 <p class="suave">Generado el {_fecha(r.generado_en)} (hora de Ecuador, UTC−5).</p>
 </body></html>"""
 
@@ -218,6 +226,42 @@ def _item_recomendacion(x: Recomendacion) -> str:
         f'<li><span class="sev sev-{x.prioridad.value}">'
         f"{_ETIQUETA_SEVERIDAD[x.prioridad]}</span> "
         f"<strong>{escape(x.rol_nombre)}:</strong> {escape(x.texto)}</li>"
+    )
+
+
+_ETIQUETA_PRIORIDAD = {"alta": "Alta", "media": "Media", "baja": "Baja"}
+
+
+def _lecciones(r: ReporteSesion) -> str:
+    """Debrief del moderador (PC-45). Si no lo completó, la sección lo indica."""
+    titulo = "<h2>6. Lecciones aprendidas y plan de acción</h2>"
+    if r.lecciones is None:
+        return (
+            titulo + '<p class="vacio">El moderador todavía no completó el '
+            "debrief de esta sesión.</p>"
+        )
+    x = r.lecciones
+    fortalezas = "".join(f"<li>{escape(t)}</li>" for t in x.fortalezas)
+    mejoras = "".join(f"<li>{escape(t)}</li>" for t in x.mejoras)
+    acciones = "".join(_fila_accion(n, a) for n, a in enumerate(x.acciones, start=1))
+    return f"""{titulo}
+<p class="suave">Debrief del moderador, completado el {_fecha(x.completado_en)}.</p>
+<div class="lecciones">
+<div class="fortalezas"><h3>Fortalezas</h3><ul>{fortalezas}</ul></div>
+<div class="mejoras"><h3>Aspectos a mejorar</h3><ul>{mejoras}</ul></div>
+</div>
+<table><thead><tr><th>#</th><th>Acción</th><th>Responsable</th><th>Prioridad</th>
+<th>Plazo</th></tr></thead><tbody>{acciones}</tbody></table>"""
+
+
+def _fila_accion(n: int, a: AccionReporte) -> str:
+    plazo = a.plazo.strftime("%d/%m/%Y") if a.plazo else "—"
+    prioridad = _ETIQUETA_PRIORIDAD.get(a.prioridad, a.prioridad)
+    return (
+        f"<tr><td>{n}</td><td>{escape(a.descripcion)}</td>"
+        f"<td>{escape(a.responsable)}</td>"
+        f'<td><span class="sev sev-{escape(a.prioridad)}">{prioridad}</span></td>'
+        f"<td>{plazo}</td></tr>"
     )
 
 

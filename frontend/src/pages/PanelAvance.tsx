@@ -3,6 +3,7 @@
 // el WebSocket avisa de una respuesta nueva o cambia el inject.
 
 import { useEffect, useState } from 'react'
+import { Check, Circle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import type { Inject } from '../api/escenarios'
 import type { PuntajeRol, RespuestaRegistrada } from '../api/respuestas'
@@ -89,19 +90,29 @@ export function InjectsLanzados({ injects, actual }: { injects: Inject[]; actual
             return (
               <li key={i.id} className={`inject-${estado}`}>
                 <span className="inject-marca" aria-hidden="true">
-                  {estado === 'lanzado' ? '✓' : estado === 'actual' ? '●' : i.orden}
+                  {estado === 'lanzado' ? (
+                    <Check size={14} />
+                  ) : estado === 'actual' ? (
+                    <Circle size={10} fill="currentColor" />
+                  ) : (
+                    i.orden
+                  )}
                 </span>
                 <span>
                   {i.titulo}
-                  {i.evidencia && (
-                    <span
-                      className="texto-suave"
-                      title={TIPOS_EVIDENCIA[i.evidencia.tipo].nombre}
-                    >
-                      {' '}
-                      {TIPOS_EVIDENCIA[i.evidencia.tipo].icono}
-                    </span>
-                  )}
+                  {i.evidencia &&
+                    (() => {
+                      const Icono = TIPOS_EVIDENCIA[i.evidencia.tipo].icono
+                      return (
+                        <span
+                          className="texto-suave"
+                          title={TIPOS_EVIDENCIA[i.evidencia.tipo].nombre}
+                        >
+                          {' '}
+                          <Icono size={14} aria-hidden="true" />
+                        </span>
+                      )
+                    })()}
                   {i.minuto_sugerido !== null && (
                     <span className="texto-suave"> · min {i.minuto_sugerido}</span>
                   )}

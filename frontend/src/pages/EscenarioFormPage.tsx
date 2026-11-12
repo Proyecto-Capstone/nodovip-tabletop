@@ -1,6 +1,7 @@
 // PB-03: crear y editar escenarios base (solo Administrador).
 
 import { useState, type FormEvent } from 'react'
+import { Check, Circle } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
@@ -647,7 +648,12 @@ function FormularioEscenario({
           <ul className="requisitos">
             {requisitos.map((r) => (
               <li key={r.texto} className={r.ok ? 'ok' : 'pendiente'}>
-                <span aria-hidden="true">{r.ok ? '✓' : '○'}</span> {r.texto}
+                {r.ok ? (
+                  <Check size={14} aria-hidden="true" />
+                ) : (
+                  <Circle size={14} aria-hidden="true" />
+                )}{' '}
+                {r.texto}
               </li>
             ))}
           </ul>

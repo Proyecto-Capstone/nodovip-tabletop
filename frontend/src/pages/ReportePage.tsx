@@ -3,6 +3,7 @@
 // trazabilidad de respuestas y recomendaciones, con exportación a PDF.
 
 import { useState } from 'react'
+import { Download } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
@@ -121,7 +122,7 @@ function Contenido({ r, recargar }: { r: Reporte; recargar: () => void }) {
             {regenerando ? 'Generando…' : 'Regenerar PDF'}
           </button>
           <a className="boton boton-primario" href={rutasReportes.pdf(r.sesion_id)} download>
-            ⬇ Exportar PDF
+            <Download size={16} aria-hidden="true" /> Exportar PDF
           </a>
         </div>
       </div>

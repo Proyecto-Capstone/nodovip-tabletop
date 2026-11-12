@@ -4,6 +4,7 @@
 // Analista y Administrador lo ven en solo lectura.
 
 import { useState } from 'react'
+import { Circle } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
@@ -286,7 +287,15 @@ function Contenido({
 
             <div className="debrief-barra">
               <span className="texto-suave texto-chico" role="status">
-                {cambios ? '● Cambios sin guardar' : d.actualizado_en ? 'Todo guardado' : ''}
+                {cambios ? (
+                  <>
+                    <Circle size={8} fill="currentColor" aria-hidden="true" /> Cambios sin guardar
+                  </>
+                ) : d.actualizado_en ? (
+                  'Todo guardado'
+                ) : (
+                  ''
+                )}
               </span>
               <div className="acciones-fila">
                 <button

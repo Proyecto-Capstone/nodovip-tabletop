@@ -188,7 +188,7 @@ describe('Sala del participante', () => {
     ultimo().recibir({ estado: 'en_curso', inject_actual: 1, inject: INJECT_1, version: 2 })
     expect(screen.getByText('TI detecta archivos cifrados')).toBeInTheDocument()
     expect(screen.getByText('Inject 1 de 3')).toBeInTheDocument()
-    expect(screen.getByText('● EN VIVO')).toBeInTheDocument()
+    expect(screen.getByText('EN VIVO')).toBeInTheDocument()
 
     ultimo().recibir({ estado: 'en_curso', inject_actual: 1, inject: INJECT_1, pausada: true, version: 3 })
     expect(screen.getByText(/pausó la sesión/)).toBeInTheDocument()
@@ -408,13 +408,13 @@ describe('Panel del moderador', () => {
     expect(screen.getByText('CISO · Conectado')).toBeInTheDocument()
     expect(screen.getByText('1/1')).toBeInTheDocument()
 
-    await userEvent.click(screen.getByRole('button', { name: '▶ Iniciar sesión' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
     expect(llamadas(fetchFalso)).toEqual([`/api/sesiones/${ID}/en-vivo/iniciar`])
 
     ultimo().recibir({ estado: 'en_curso', version: 1, conectados: [ANA], segundos_transcurridos: 65 })
     expect(screen.getByText('00:01:05')).toBeInTheDocument()
-    await userEvent.click(screen.getByRole('button', { name: '▶ Lanzar inject 1' }))
-    await userEvent.click(screen.getByRole('button', { name: '⏸ Pausar' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Lanzar inject 1' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Pausar' }))
     expect(llamadas(fetchFalso)).toEqual([
       `/api/sesiones/${ID}/en-vivo/iniciar`,
       `/api/sesiones/${ID}/en-vivo/lanzar-inject`,
@@ -427,9 +427,9 @@ describe('Panel del moderador', () => {
     await screen.findByText('Panel del moderador: Simulacro Q4')
     ultimo().recibir({ estado: 'en_curso', pausada: true, version: 2, conectados: [] })
 
-    expect(screen.getByRole('button', { name: '▶ Lanzar inject 1' })).toBeDisabled()
-    expect(screen.getByRole('button', { name: '▶ Reanudar' })).toBeEnabled()
-    expect(screen.getByText('⏸ En pausa')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Lanzar inject 1' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: 'Reanudar' })).toBeEnabled()
+    expect(screen.getByText('En pausa')).toBeInTheDocument()
     expect(screen.getByText('CISO · Sin conexión')).toBeInTheDocument()
   })
 
@@ -476,7 +476,7 @@ describe('Panel del moderador', () => {
     ultimo().abrir()
     ultimo().recibir({ conectados: [ANA], total_conectados: 1 })
 
-    await userEvent.click(screen.getByRole('button', { name: '▶ Iniciar sesión' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent(mensaje)
   })

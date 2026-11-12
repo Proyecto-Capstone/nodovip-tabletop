@@ -2,6 +2,7 @@
 // Administrador ven cualquier sesión en curso o finalizada; el Moderador,
 // solo las suyas.
 
+import { Circle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { rutaSesionesLeaderboard, type SesionLeaderboard } from '../api/leaderboard'
 import { useSesion } from '../auth/sesionContext'
@@ -42,7 +43,11 @@ export function LeaderboardPage() {
           <Link key={s.id} to={`/leaderboard/${s.id}`} className="tarjeta tarjeta-sesion">
             <div className="fila-badges">
               <EstadoSesionBadge estado={s.estado} />
-              {s.estado === 'en_curso' && <span className="badge badge-live">● EN VIVO</span>}
+              {s.estado === 'en_curso' && (
+                <span className="badge badge-live">
+                  <Circle size={10} fill="currentColor" aria-hidden="true" /> EN VIVO
+                </span>
+              )}
             </div>
             <h2>{s.nombre}</h2>
             <p className="texto-suave">

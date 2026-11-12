@@ -126,7 +126,7 @@ describe('LeaderboardSesionPage', () => {
 
     const podio = screen.getByRole('group', { name: 'Podio' })
     expect(within(podio).getByText('Ana López')).toBeInTheDocument()
-    expect(within(podio).getByText('🥇')).toBeInTheDocument()
+    expect(podio.querySelector('.podio-1')).not.toBeNull()
     expect(within(podio).getByText('10 pts')).toBeInTheDocument()
 
     const roles = screen.getByRole('region', { name: 'Ranking por rol organizacional' })
@@ -136,7 +136,7 @@ describe('LeaderboardSesionPage', () => {
     const completo = screen.getByRole('region', { name: 'Ranking completo' })
     expect(within(completo).getByText('Carlos Ramírez')).toBeInTheDocument()
 
-    expect(screen.getByText('● EN VIVO')).toBeInTheDocument()
+    expect(screen.getByText('EN VIVO')).toBeInTheDocument()
   })
 
   it('sin participantes muestra un aviso y sin podio', async () => {
@@ -203,7 +203,7 @@ describe('LeaderboardSesionPage', () => {
     ultimo().recibir({ ...BASE, sesion: { ...BASE.sesion, estado: 'finalizada' } })
 
     expect(await screen.findByText('Resultado final')).toBeInTheDocument()
-    expect(screen.queryByText('● EN VIVO')).not.toBeInTheDocument()
+    expect(screen.queryByText('EN VIVO')).not.toBeInTheDocument()
   })
 
   it('un empate en 0 puntos no muestra medalla ni fondo de podio', async () => {

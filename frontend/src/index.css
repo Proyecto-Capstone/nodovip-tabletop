@@ -41,20 +41,31 @@
   --fs-xl: 1.25rem;
   --fs-2xl: 1.625rem;
 
-  /* Radios, sombras y movimiento */
+  /* Radios, sombras y movimiento. Jerarquía de elevación de 4 niveles:
+     base (sin sombra) < panel (--sombra) < elevado, para menús y tooltips
+     flotantes (--sombra-elevada) < superposición, para diálogos y el cajón
+     móvil (--sombra-lg + --velo). */
   --radio-xs: 6px;
   --radio-sm: 8px;
   --radio: 10px;
   --radio-lg: 14px;
   --sombra-sm: 0 1px 2px rgb(28 29 51 / 0.06);
   --sombra: 0 1px 3px rgb(28 29 51 / 0.08), 0 1px 2px rgb(28 29 51 / 0.04);
+  --sombra-elevada: 0 4px 12px rgb(28 29 51 / 0.14), 0 2px 4px rgb(28 29 51 / 0.08);
   --sombra-lg: 0 10px 30px rgb(28 29 51 / 0.12);
+  --velo: rgb(13 14 26 / 0.55);
   --foco: 0 0 0 3px rgb(47 111 237 / 0.3);
   --transicion: 150ms ease;
 
-  font-family:
-    Inter, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
-    sans-serif;
+  /* Tipografía: IBM Plex Sans para la interfaz, autoalojada (@fontsource,
+     la demo funciona sin internet). IBM Plex Mono queda reservada para la
+     consola del participante (Parte 4): no se usa en ningún otro lugar. */
+  --font-ui:
+    'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue',
+    Arial, sans-serif;
+  --font-mono: 'IBM Plex Mono', ui-monospace, 'Cascadia Code', Consolas, monospace;
+
+  font-family: var(--font-ui);
   color: var(--texto);
   background: var(--fondo);
   line-height: 1.5;
@@ -111,13 +122,22 @@ a:hover {
   background: var(--azul-fondo);
 }
 
-/* --- Estructura ------------------------------------------------------------ */
+/* --- Estructura -------------------------------------------------------------
+   Grid de 2 columnas (sidebar + contenido) con una fila para el topbar.
+   --ancho-sidebar cambia entre expandido y colapsado; la transición solo
+   anima esa variable, no cada regla por separado. */
 
 .app {
+  --ancho-sidebar: 236px;
   display: grid;
-  grid-template-columns: 236px minmax(0, 1fr);
+  grid-template-columns: var(--ancho-sidebar) minmax(0, 1fr);
   grid-template-rows: auto 1fr;
   min-height: 100vh;
+  transition: grid-template-columns var(--transicion);
+}
+
+.app.sidebar-colapsado {
+  --ancho-sidebar: 64px;
 }
 
 .topbar {
@@ -135,6 +155,32 @@ a:hover {
   z-index: 10;
 }
 
+.topbar-izquierda {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.boton-hamburguesa {
+  display: none;
+  flex: none;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.boton-hamburguesa:hover {
+  background: var(--navy-claro);
+}
+
 .marca {
   display: inline-flex;
   align-items: center;
@@ -142,6 +188,7 @@ a:hover {
   font-weight: 700;
   font-size: var(--fs-base);
   letter-spacing: -0.005em;
+  white-space: nowrap;
 }
 
 /* Isotipo simple de la marca, sin imágenes. */
@@ -156,7 +203,9 @@ a:hover {
     linear-gradient(135deg, var(--acento), #6b4fd8);
 }
 
-.usuario-barra {
+/* --- Menú de usuario: nombre, rol y "Salir" agrupados en el topbar --------- */
+
+.menu-usuario {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -196,25 +245,64 @@ a:hover {
   border-color: var(--texto-sobre-oscuro);
 }
 
+/* --- Menú lateral ----------------------------------------------------------- */
+
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding: 1.25rem 0.85rem;
+  gap: 0.1rem;
+  padding: 1rem 0.65rem;
   background: var(--navy);
+  overflow-y: auto;
+}
+
+.sidebar-grupo + .sidebar-grupo {
+  margin-top: 0.9rem;
+}
+
+.sidebar-grupo-titulo {
+  margin: 0 0.75rem 0.3rem;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #8a8db1;
+}
+
+.app.sidebar-colapsado .sidebar-grupo-titulo {
+  /* Se oculta visualmente, no con display:none: el lector de pantalla sigue
+     anunciando a qué grupo pertenece cada enlace. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
 }
 
 .sidebar a {
   position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   color: var(--texto-sobre-oscuro);
   text-decoration: none;
   padding: 0.55rem 0.8rem;
   border-radius: var(--radio-sm);
   font-size: var(--fs-md);
   font-weight: 500;
+  white-space: nowrap;
   transition:
     background var(--transicion),
     color var(--transicion);
+}
+
+.sidebar a svg {
+  flex: none;
+}
+
+.app.sidebar-colapsado .sidebar a {
+  justify-content: center;
+  padding: 0.6rem;
 }
 
 .sidebar a:hover {
@@ -232,12 +320,87 @@ a:hover {
 .sidebar a.active::before {
   content: '';
   position: absolute;
-  left: -0.85rem;
+  left: -0.65rem;
   top: 0.45rem;
   bottom: 0.45rem;
   width: 3px;
   border-radius: 0 3px 3px 0;
   background: var(--acento);
+}
+
+.app.sidebar-colapsado .sidebar a.active::before {
+  left: -0.45rem;
+}
+
+.sidebar-pie {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--navy-borde);
+}
+
+.sidebar-colapsar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.55rem 0.8rem;
+  border: 0;
+  border-radius: var(--radio-sm);
+  background: transparent;
+  color: var(--texto-sobre-oscuro);
+  font: inherit;
+  font-size: var(--fs-md);
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.app.sidebar-colapsado .sidebar-colapsar {
+  justify-content: center;
+  padding: 0.6rem;
+}
+
+.sidebar-colapsar:hover {
+  background: var(--navy-claro);
+  color: #fff;
+}
+
+/* --- Migas de pan ------------------------------------------------------------ */
+
+.migas {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+  font-size: var(--fs-sm);
+  color: var(--texto-suave);
+}
+
+.migas a {
+  color: var(--texto-suave);
+  text-decoration: none;
+}
+
+.migas a:hover {
+  color: var(--acento);
+}
+
+.migas span[aria-current] {
+  color: var(--texto);
+  font-weight: 600;
+}
+
+.migas svg {
+  flex: none;
+}
+
+/* --- Cajón móvil (superposición: --sombra-lg + --velo) ----------------------- */
+
+.velo-cajon {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--velo);
 }
 
 .contenido {
@@ -493,6 +656,13 @@ a:hover {
   padding: 0.75rem 1rem;
   margin-bottom: 1rem;
   font-size: var(--fs-md);
+}
+
+.alerta svg,
+.requisitos svg,
+.requisitos-compactos svg,
+.reloj-tarea svg {
+  vertical-align: -2px;
 }
 
 .alerta ul {
@@ -1607,29 +1777,32 @@ button.paso:hover {
   }
 }
 
-@media (max-width: 720px) {
+/* Móvil y tablet (RNF-06/07): el menú lateral deja de ser parte del grid y
+   se vuelve un cajón superpuesto, oculto fuera de pantalla hasta que se abre. */
+@media (max-width: 768px) {
   .app {
     grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto 1fr;
+  }
+  .boton-hamburguesa {
+    display: flex;
   }
   .topbar {
-    flex-wrap: wrap;
     padding: 0.6rem 1rem;
   }
-  .usuario-datos {
-    align-items: flex-start;
-  }
   .sidebar {
-    flex-direction: row;
-    overflow-x: auto;
-    scrollbar-width: none;
-    padding: 0.5rem;
+    position: fixed;
+    top: 0;
+    left: -85vw;
+    bottom: 0;
+    z-index: 50;
+    width: 85vw;
+    max-width: 300px;
+    padding: 1rem;
+    box-shadow: var(--sombra-lg);
+    transition: left var(--transicion);
   }
-  .sidebar a.active::before {
-    display: none;
-  }
-  .sidebar a {
-    white-space: nowrap;
+  .app.sidebar-abierto .sidebar {
+    left: 0;
   }
   .contenido {
     padding: 1rem;
@@ -1639,13 +1812,23 @@ button.paso:hover {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .app,
+  .sidebar {
+    transition: none;
+  }
+}
+
 @media (max-width: 400px) {
   .tarjeta-login {
     padding: 1.5rem 1.1rem;
   }
-  .usuario-barra {
+  .menu-usuario {
     width: 100%;
     justify-content: space-between;
+  }
+  .usuario-datos strong {
+    max-width: 14ch;
   }
 }
 
@@ -3149,18 +3332,18 @@ button.paso:hover {
 }
 
 .lista-opciones li {
-  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   margin: 0.2rem 0;
-  padding: 0.3rem 0.6rem 0.3rem 1.6rem;
+  padding: 0.3rem 0.6rem;
   border-radius: var(--radio-xs);
   background: var(--fondo-sutil);
+  color: var(--texto-suave);
 }
 
-.lista-opciones li::before {
-  content: '○';
-  position: absolute;
-  left: 0.55rem;
-  color: var(--texto-suave);
+.lista-opciones li svg {
+  flex: none;
 }
 
 .lista-opciones li.opcion-correcta {
@@ -3169,8 +3352,7 @@ button.paso:hover {
   font-weight: 600;
 }
 
-.lista-opciones li.opcion-correcta::before {
-  content: '✓';
+.lista-opciones li.opcion-correcta svg {
   color: var(--verde);
 }
 
@@ -3196,4 +3378,43 @@ button.paso:hover {
 
 .contenido:focus {
   outline: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Diálogo de confirmación accesible (PC-15, fix 2): reemplaza confirm().
+   Nivel "superposición": --sombra-lg + --velo, igual que el cajón móvil.
+   --------------------------------------------------------------------------- */
+
+.dialogo-fondo {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: var(--velo);
+}
+
+.dialogo {
+  width: 100%;
+  max-width: 26rem;
+  padding: 1.5rem;
+  border-radius: var(--radio-lg);
+  background: var(--superficie);
+  box-shadow: var(--sombra-lg);
+}
+
+.dialogo h2 {
+  margin-bottom: 0.5rem;
+}
+
+.dialogo-cuerpo {
+  margin: 0 0 1.25rem;
+  color: var(--texto-suave);
+}
+
+.dialogo-acciones {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.6rem;
 }

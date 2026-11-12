@@ -151,7 +151,7 @@ describe('Registro de respuestas de la sesión', () => {
     abrir([BASE])
     const fila = (await screen.findByText('Aíslo el file server')).closest('tr') as HTMLElement
     expect(within(fila).getByText('8,5 / 10')).toBeInTheDocument()
-    expect(within(fila).getByText('✓ Aislar el servidor')).toBeInTheDocument()
+    expect(within(fila).getByText(/Aislar el servidor/)).toBeInTheDocument()
     expect(within(fila).getByText('Precisión: 75 %')).toBeInTheDocument()
 
     const acumulado = screen.getByRole('region', { name: 'Puntaje acumulado' })

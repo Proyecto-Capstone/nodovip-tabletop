@@ -2,6 +2,7 @@
 // plan de acción. Se usa en el reporte, en el debrief completado y en el
 // resumen del participante.
 
+import { Check, TrendingUp } from 'lucide-react'
 import { ETIQUETA_PRIORIDAD, formatoPlazo, type PrioridadAccion } from '../api/debrief'
 
 interface Accion {
@@ -23,7 +24,7 @@ export function Lecciones({ fortalezas, mejoras, acciones }: LeccionesProps) {
       <div className="lecciones-columnas">
         <div className="lecciones-bloque lecciones-fortalezas">
           <h3>
-            <span aria-hidden="true">✓</span> Fortalezas
+            <Check size={16} aria-hidden="true" /> Fortalezas
           </h3>
           <ul>
             {fortalezas.map((t, i) => (
@@ -33,7 +34,7 @@ export function Lecciones({ fortalezas, mejoras, acciones }: LeccionesProps) {
         </div>
         <div className="lecciones-bloque lecciones-mejoras">
           <h3>
-            <span aria-hidden="true">↗</span> Aspectos a mejorar
+            <TrendingUp size={16} aria-hidden="true" /> Aspectos a mejorar
           </h3>
           <ul>
             {mejoras.map((t, i) => (

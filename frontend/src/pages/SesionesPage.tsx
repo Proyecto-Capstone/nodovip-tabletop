@@ -5,12 +5,14 @@ import { Link } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { eliminarSesion, rutasSesiones, type SesionResumen } from '../api/sesiones'
 import { useSesion } from '../auth/sesionContext'
+import { useConfirmar } from '../components/confirmacionContext'
 import { Cargando, Errores, EstadoSesionBadge, SinPermiso } from '../components/Etiquetas'
 import { useGet } from '../lib/useGet'
 import { formatoDuracion, formatoFecha } from './disenador/comun'
 
 export function SesionesPage() {
   const { rol, puede } = useSesion()
+  const confirmar = useConfirmar()
   const permitido = puede('sesiones:disenar')
   const sesiones = useGet<SesionResumen[]>(permitido ? rutasSesiones.lista : null, rol)
   const [errores, setErrores] = useState<string[]>()
@@ -18,7 +20,11 @@ export function SesionesPage() {
   if (!permitido) return <SinPermiso />
 
   const eliminar = async (s: SesionResumen) => {
-    if (!confirm(`¿Eliminar el borrador "${s.nombre}"?`)) return
+    const confirmado = await confirmar({
+      titulo: `¿Eliminar el borrador "${s.nombre}"?`,
+      textoConfirmar: 'Eliminar',
+    })
+    if (!confirmado) return
     setErrores(undefined)
     try {
       await eliminarSesion(s.id)

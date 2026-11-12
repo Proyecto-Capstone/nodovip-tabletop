@@ -1,5 +1,6 @@
 // PB-06: sesiones a las que el participante fue invitado (RNF-06/07: móvil y escritorio).
 
+import { Circle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { rutasMisSesiones, type MiSesion } from '../api/misSesiones'
 import { useSesion } from '../auth/sesionContext'
@@ -74,7 +75,9 @@ function ListaSesiones({
               {s.estado === 'finalizada' ? (
                 <span className="badge debrief-completado">Finalizada</span>
               ) : s.estado === 'en_curso' ? (
-                <span className="badge badge-vivo">● En vivo</span>
+                <span className="badge badge-vivo">
+                  <Circle size={10} fill="currentColor" aria-hidden="true" /> En vivo
+                </span>
               ) : (
                 <InvitacionBadge estado={s.invitacion} />
               )}

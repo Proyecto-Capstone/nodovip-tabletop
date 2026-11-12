@@ -2,6 +2,7 @@
 // ve su sesión y su rol, y confirma su asistencia. La vista en vivo llega con PB-08.
 
 import { useState } from 'react'
+import { Circle } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { aceptarInvitacion, rutasMisSesiones, type MiSesion } from '../api/misSesiones'
@@ -98,14 +99,22 @@ export function MiSesionPage() {
       )}
       {(s.estado === 'programada' || s.estado === 'en_curso') && (
         <Link className="boton boton-primario boton-bloque" to={`/mis-sesiones/${s.id}/en-vivo`}>
-          {s.estado === 'en_curso' ? '● Entrar a la sesión en vivo' : 'Entrar a la sala de espera'}
+          {s.estado === 'en_curso' ? (
+            <>
+              <Circle size={10} fill="currentColor" aria-hidden="true" /> Entrar a la sesión en
+              vivo
+            </>
+          ) : (
+            'Entrar a la sala de espera'
+          )}
         </Link>
       )}
 
       {s.estado === 'finalizada' ? null : s.invitacion === 'aceptada' ? (
         <div className="alerta alerta-exito" role="status">
-          Confirmaste tu asistencia. El día de la sesión entra desde aquí: las tareas de tu rol
-          aparecerán cuando el moderador inicie el ejercicio.
+          {s.estado === 'en_curso'
+            ? 'Confirmaste tu asistencia. La sesión ya está en curso: entra ahora a la sala en vivo.'
+            : 'Confirmaste tu asistencia. El día de la sesión entra desde aquí: las tareas de tu rol aparecerán cuando el moderador inicie el ejercicio.'}
         </div>
       ) : (
         <button

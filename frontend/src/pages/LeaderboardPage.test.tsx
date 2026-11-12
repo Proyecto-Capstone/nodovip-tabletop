@@ -52,7 +52,7 @@ describe('LeaderboardPage', () => {
     expect(screen.getByText('Simulacro Q3')).toBeInTheDocument()
     expect(screen.getByText('En curso')).toBeInTheDocument()
     expect(screen.getByText('Finalizada')).toBeInTheDocument()
-    expect(screen.getByText('● EN VIVO')).toBeInTheDocument()
+    expect(screen.getByText('EN VIVO')).toBeInTheDocument()
     expect(screen.getByText('Inject 1/3')).toBeInTheDocument()
   })
 

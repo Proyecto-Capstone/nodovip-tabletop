@@ -67,7 +67,7 @@ export function tareaCompleta(t: TareaSesion) {
 export const sumaPesos = (d: SesionDiseno) =>
   d.pesos.completitud + d.pesos.precision + d.pesos.tiempo
 
-/** Qué pasos (2 a 5) ya cumplen sus reglas, para marcarlos con ✓. */
+/** Qué pasos (2 a 5) ya cumplen sus reglas, para marcarlos como completos. */
 export function pasosCompletos(d: SesionDiseno, ahora = new Date()): boolean[] {
   const rolesCubiertos = d.roles.every((r) => participanteDe(d, r))
   const tareasOk =

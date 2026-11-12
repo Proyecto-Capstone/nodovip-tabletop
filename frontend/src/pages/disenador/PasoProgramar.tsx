@@ -1,6 +1,7 @@
 // Paso 5: nombre, cliente, fecha, hora y duración de la sesión (CU-03.5).
 // El cliente (PB-14) permite comparar el reporte con sus sesiones anteriores.
 
+import { Check, Circle } from 'lucide-react'
 import type { SesionDetalle } from '../../api/sesiones'
 import { aFechaLocal, desdeFechaLocal, formatoDuracion, type PropsPaso } from './comun'
 
@@ -77,13 +78,15 @@ export function PasoProgramar({
         <h2>Antes de programar</h2>
         {guardada.pendientes_para_programar.length === 0 ? (
           <p className="requisitos">
-            <span className="ok">✓ La sesión cumple todas las reglas.</span>
+            <span className="ok">
+              <Check size={14} aria-hidden="true" /> La sesión cumple todas las reglas.
+            </span>
           </p>
         ) : (
           <ul className="requisitos">
             {guardada.pendientes_para_programar.map((p) => (
               <li key={p} className="pendiente">
-                <span aria-hidden="true">○</span> {p}
+                <Circle size={10} aria-hidden="true" /> {p}
               </li>
             ))}
           </ul>

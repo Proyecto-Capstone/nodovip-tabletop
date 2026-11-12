@@ -77,6 +77,16 @@ describe('Vista del participante', () => {
     )
   })
 
+  it('si la sesión ya está en curso y ya aceptó, invita a entrar a la sala (no promete tareas futuras)', async () => {
+    const enCurso: MiSesion = { ...SESION, estado: 'en_curso', invitacion: 'aceptada' }
+    vi.stubGlobal('fetch', vi.fn(async () => respuesta(200, enCurso)))
+    abrir(`/mis-sesiones/${SESION.id}`)
+
+    expect(await screen.findByText(/La sesión ya está en curso/)).toBeInTheDocument()
+    expect(screen.queryByText(/aparecerán cuando el moderador inicie/)).toBeNull()
+    expect(screen.getByRole('link', { name: /Entrar a la sesión en vivo/ })).toBeInTheDocument()
+  })
+
   it('una sesión a la que no fue invitado muestra un aviso', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => respuesta(404, { detail: 'Sesión no encontrada' })))
     abrir(`/mis-sesiones/${SESION.id}`)

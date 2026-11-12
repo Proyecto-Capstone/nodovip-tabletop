@@ -1,6 +1,7 @@
 // PB-02: panel de administración de usuarios y roles (solo Administrador).
 
 import { useState, type FormEvent } from 'react'
+import { Check, Circle } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { ApiError, type RolSistema } from '../api/client'
 import {
@@ -14,6 +15,7 @@ import {
   type Usuario,
 } from '../api/usuarios'
 import { ROLES_SISTEMA, nombreRolSistema, useSesion } from '../auth/sesionContext'
+import { useConfirmar } from '../components/confirmacionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { contrasenaValida, reglasContrasena } from '../lib/contrasena'
 import { useDebounce, useGet } from '../lib/useGet'
@@ -38,6 +40,7 @@ function mensajes(error: unknown) {
 
 export function UsuariosPage() {
   const { rol, puedeGestionarUsuarios } = useSesion()
+  const confirmar = useConfirmar()
   const [texto, setTexto] = useState('')
   const [rolFiltro, setRolFiltro] = useState('')
   const [estado, setEstado] = useState('')
@@ -65,7 +68,14 @@ export function UsuariosPage() {
   const cambiarEstado = async (u: Usuario) => {
     setAviso(undefined)
     setErrores(undefined)
-    if (u.activo && !confirm(`¿Desactivar a ${u.nombre}? No podrá ingresar al sistema.`)) {
+    if (
+      u.activo &&
+      !(await confirmar({
+        titulo: `¿Desactivar a ${u.nombre}?`,
+        cuerpo: 'No podrá ingresar al sistema.',
+        textoConfirmar: 'Desactivar',
+      }))
+    ) {
       return
     }
     try {
@@ -81,9 +91,11 @@ export function UsuariosPage() {
     setAviso(undefined)
     setErrores(undefined)
     if (
-      !confirm(
-        `¿Eliminar definitivamente a ${u.nombre} (${u.correo})? Esta acción no se puede deshacer.`,
-      )
+      !(await confirmar({
+        titulo: `¿Eliminar definitivamente a ${u.nombre}?`,
+        cuerpo: `Correo ${u.correo}. Esta acción no se puede deshacer.`,
+        textoConfirmar: 'Eliminar',
+      }))
     ) {
       return
     }
@@ -270,7 +282,8 @@ function ReglasContrasena({ valor }: { valor: string }) {
     <ul className="requisitos requisitos-compactos" aria-label="Requisitos de la contraseña">
       {reglasContrasena(valor).map((r) => (
         <li key={r.texto} className={r.ok ? 'ok' : 'pendiente'}>
-          <span aria-hidden="true">{r.ok ? '✓' : '○'}</span> {r.texto}
+          {r.ok ? <Check size={14} aria-hidden="true" /> : <Circle size={14} aria-hidden="true" />}{' '}
+          {r.texto}
         </li>
       ))}
     </ul>

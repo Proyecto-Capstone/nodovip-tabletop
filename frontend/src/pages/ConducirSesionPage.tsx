@@ -5,6 +5,7 @@
 // el inject), recarga el avance por rol, los puntajes y las últimas respuestas.
 
 import { useState } from 'react'
+import { Pause, Play, Square } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { comandoEnVivo, type ComandoEnVivo, type VistaEnVivo } from '../api/enVivo'
@@ -21,6 +22,7 @@ import {
   type SesionDetalle,
 } from '../api/sesiones'
 import { useSesion } from '../auth/sesionContext'
+import { useConfirmar } from '../components/confirmacionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { EstadoVivo } from '../components/EstadoVivo'
 import { EvidenciaSimulada } from '../components/Evidencia'
@@ -85,11 +87,19 @@ function Panel({
 } & ReturnType<typeof useEnVivo>) {
   const segundos = useCronometro(vista, recibidaEn)
   const { puede } = useSesion()
+  const confirmar = useConfirmar()
   const [enviando, setEnviando] = useState(false)
   const [errores, setErrores] = useState<string[]>()
 
   const ejecutar = async (comando: ComandoEnVivo) => {
-    if (comando === 'cerrar' && !confirm('¿Cerrar la sesión? Los participantes ya no podrán continuar.')) {
+    if (
+      comando === 'cerrar' &&
+      !(await confirmar({
+        titulo: '¿Finalizar el ejercicio?',
+        cuerpo: 'Los participantes ya no podrán continuar.',
+        textoConfirmar: 'Finalizar ejercicio',
+      }))
+    ) {
       return
     }
     setEnviando(true)
@@ -211,7 +221,13 @@ function Panel({
           {estado === 'en_curso' && vista?.inject_lanzado_en && (
             <LanzadoHace desde={vista.inject_lanzado_en} />
           )}
-          <Controles estado={estado} vista={vista} enviando={enviando} ejecutar={ejecutar} />
+          <Controles
+            estado={estado}
+            vista={vista}
+            enviando={enviando}
+            ejecutar={ejecutar}
+            puedeVerReportes={puede('reportes:ver')}
+          />
           {conDatos && (
             <RespuestasRecientes sesionId={sesion.id} respuestas={respuestas.datos ?? []} />
           )}
@@ -237,11 +253,13 @@ function Controles({
   vista,
   enviando,
   ejecutar,
+  puedeVerReportes,
 }: {
   estado: string
   vista?: VistaEnVivo
   enviando: boolean
   ejecutar: (c: ComandoEnVivo) => void
+  puedeVerReportes: boolean
 }) {
   if (estado === 'finalizada') {
     return (
@@ -250,7 +268,7 @@ function Controles({
           La sesión terminó y el estado final quedó guardado. Ahora reúne al equipo para el
           debrief: lo que funcionó, lo que hay que mejorar y el plan de acción.
         </p>
-        {vista && (
+        {vista && puedeVerReportes && (
           <Link
             className="boton boton-primario boton-grande"
             to={`/sesiones/${vista.sesion_id}/debrief`}
@@ -270,7 +288,7 @@ function Controles({
           disabled={enviando || estado !== 'programada'}
           onClick={() => ejecutar('iniciar')}
         >
-          ▶ Iniciar sesión
+          <Play size={16} aria-hidden="true" /> Iniciar sesión
         </button>
         {estado === 'borrador' && (
           <p className="texto-suave">Programa la sesión en el diseñador antes de iniciarla.</p>
@@ -288,7 +306,13 @@ function Controles({
         disabled={enviando || !quedan || vista?.pausada}
         onClick={() => ejecutar('lanzar-inject')}
       >
-        {quedan ? `▶ Lanzar inject ${siguiente}` : 'Todos los injects lanzados'}
+        {quedan ? (
+          <>
+            <Play size={16} aria-hidden="true" /> {`Lanzar inject ${siguiente}`}
+          </>
+        ) : (
+          'Todos los injects lanzados'
+        )}
       </button>
       {vista?.pausada ? (
         <button
@@ -297,7 +321,7 @@ function Controles({
           disabled={enviando}
           onClick={() => ejecutar('reanudar')}
         >
-          ▶ Reanudar
+          <Play size={16} aria-hidden="true" /> Reanudar
         </button>
       ) : (
         <button
@@ -306,7 +330,7 @@ function Controles({
           disabled={enviando}
           onClick={() => ejecutar('pausar')}
         >
-          ⏸ Pausar
+          <Pause size={16} aria-hidden="true" /> Pausar
         </button>
       )}
       <button
@@ -315,7 +339,7 @@ function Controles({
         disabled={enviando}
         onClick={() => ejecutar('cerrar')}
       >
-        ✕ Cerrar sesión
+        <Square size={16} aria-hidden="true" /> Finalizar ejercicio
       </button>
     </div>
   )

@@ -3,6 +3,7 @@
 // opciones elegidas ni criterios: solo el acumulado (PB-10). Sigue el
 // prototipo P-06 (Figura 21): tablero oscuro, podio y ranking completo.
 
+import { Circle, Medal } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import type { Leaderboard, PosicionParticipante, PosicionRol } from '../api/leaderboard'
 import { useSesion } from '../auth/sesionContext'
@@ -10,8 +11,6 @@ import { EstadoSesionBadge, SinPermiso } from '../components/Etiquetas'
 import { useLeaderboard, useSegundosDesde } from '../lib/useLeaderboard'
 
 const formatoPuntaje = (n: number) => n.toLocaleString('es-EC', { maximumFractionDigits: 2 })
-
-const MEDALLA: Record<number, string> = { 1: '🥇', 2: '🥈', 3: '🥉' }
 
 // Con 0 puntos no hay mérito que premiar: ni medalla ni fondo de podio,
 // aunque la posición (por el empate) sea 1, 2 o 3.
@@ -104,7 +103,10 @@ function IndicadorConexion({
   if (conexion === 'conectado') {
     return (
       <span className="texto-suave">
-        <span className="badge badge-live">● EN VIVO</span> · Actualizado hace {segundos} s
+        <span className="badge badge-live">
+          <Circle size={10} fill="currentColor" aria-hidden="true" /> EN VIVO
+        </span>{' '}
+        · Actualizado hace {segundos} s
       </span>
     )
   }
@@ -165,7 +167,7 @@ function Podio({ participantes }: { participantes: PosicionParticipante[] }) {
       {top3.map((p) => (
         <div key={p.usuario_id} className={`podio-bloque podio-${p.posicion}`}>
           <span className="podio-puesto" aria-hidden="true">
-            {MEDALLA[p.posicion]}
+            <Medal size={22} />
           </span>
           <strong className="podio-nombre">{p.nombre}</strong>
           <span className="podio-rol">{p.rol_nombre}</span>

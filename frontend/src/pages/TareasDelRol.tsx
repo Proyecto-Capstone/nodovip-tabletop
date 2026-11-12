@@ -3,6 +3,7 @@
 // después queda bloqueada, igual que al vencer el tiempo.
 
 import { useEffect, useState, type FormEvent } from 'react'
+import { Check, Timer } from 'lucide-react'
 import { ApiError } from '../api/client'
 import type { VistaEnVivo } from '../api/enVivo'
 import { responderTarea, rutaTareas, type TareaParticipante } from '../api/misSesiones'
@@ -119,7 +120,7 @@ function TarjetaTarea({
             className={restantes <= 30 ? 'reloj-tarea urgente' : 'reloj-tarea'}
             aria-label={`Tiempo restante: ${restantes} segundos`}
           >
-            ⏱ {formatoMinutos(restantes)}
+            <Timer size={14} aria-hidden="true" /> {formatoMinutos(restantes)}
           </span>
         )}
       </div>
@@ -163,7 +164,7 @@ function TarjetaTarea({
 
       {tarea.estado === 'respondida' ? (
         <div className="alerta alerta-exito" role="status">
-          ✓ Respuesta enviada. Ya no se puede modificar.
+          <Check size={16} aria-hidden="true" /> Respuesta enviada. Ya no se puede modificar.
         </div>
       ) : vencida ? (
         <div className="alerta alerta-aviso" role="status">

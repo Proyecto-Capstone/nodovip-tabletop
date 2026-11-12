@@ -6550,3 +6550,222 @@ button.paso:hover {
     width: 100%;
   }
 }
+
+/* --- Inicio: portada con el logo y accesos directos (PC-15) ---------------- */
+
+.portada {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2.5rem;
+  min-height: calc(100vh - var(--alto-topbar) - 4.75rem);
+  min-height: calc(100dvh - var(--alto-topbar) - 4.75rem);
+  padding: 2rem 0 0.5rem;
+}
+
+/* Textura de puntos como en el inicio de sesión. */
+.portada::before {
+  content: '';
+  position: absolute;
+  inset: -1.75rem -2rem -3rem;
+  z-index: -2;
+  background-image: radial-gradient(rgb(143 176 245 / 0.13) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 60% 55% at 50% 42%, #000 15%, transparent 72%);
+  pointer-events: none;
+}
+
+.portada-hero {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: auto 0;
+  text-align: center;
+}
+
+.portada-halo {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: -1;
+  width: min(760px, 90vw);
+  aspect-ratio: 1;
+  transform: translate(-50%, -58%);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(42 99 216 / 0.34) 0%,
+    rgb(42 99 216 / 0.12) 38%,
+    transparent 68%
+  );
+  animation: portada-respira 7s ease-in-out infinite;
+}
+
+@keyframes portada-respira {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: translate(-50%, -58%) scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -58%) scale(1.06);
+  }
+}
+
+.portada-logo {
+  width: clamp(240px, 32vw, 460px);
+  height: auto;
+  filter: drop-shadow(0 8px 40px rgb(42 99 216 / 0.45));
+}
+
+.portada-producto {
+  margin: 0.9rem 0 0;
+  font-size: clamp(0.95rem, 1.4vw, 1.2rem);
+  font-weight: 600;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--texto-sobre-oscuro);
+}
+
+.portada-saludo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 2.25rem 0 0.4rem;
+  font-size: clamp(1.4rem, 2.2vw, 1.9rem);
+}
+
+.portada-saludo span {
+  padding: 0.15rem 0.75rem;
+  border-radius: 999px;
+  background: var(--azul-fondo);
+  border: 1px solid rgb(143 176 245 / 0.3);
+  color: var(--acento-texto);
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.portada-texto {
+  margin: 0;
+  max-width: 34rem;
+  color: var(--texto-suave);
+}
+
+/* Barra de accesos directos, como un dock. */
+.portada-dock {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+  max-width: 100%;
+  padding: 0.85rem;
+  background: rgb(31 32 57 / 0.7);
+  border: 1px solid var(--borde-fuerte);
+  border-radius: calc(var(--radio-lg) + 4px);
+  box-shadow:
+    0 20px 50px rgb(0 0 0 / 0.4),
+    inset 0 1px 0 rgb(255 255 255 / 0.05);
+  backdrop-filter: blur(10px);
+}
+
+.portada-acceso {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  width: 7.25rem;
+  height: 6.5rem;
+  padding: 0.75rem 0.5rem;
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-lg);
+  background: var(--superficie);
+  color: var(--texto);
+  text-decoration: none;
+  font-size: var(--fs-md);
+  font-weight: 600;
+  transition:
+    transform var(--transicion),
+    border-color var(--transicion),
+    box-shadow var(--transicion),
+    background var(--transicion);
+}
+
+.portada-acceso:hover,
+.portada-acceso:focus-visible {
+  color: var(--texto);
+  transform: translateY(-4px);
+  border-color: var(--acento-texto);
+  background:
+    radial-gradient(100% 80% at 50% 0%, rgb(42 99 216 / 0.22), transparent 70%),
+    var(--superficie-alta);
+  box-shadow:
+    0 10px 24px rgb(0 0 0 / 0.35),
+    0 0 22px rgb(42 99 216 / 0.3);
+}
+
+.portada-acceso-icono {
+  display: grid;
+  place-items: center;
+  color: var(--acento-texto);
+  transition: transform var(--transicion);
+}
+
+.portada-acceso-icono svg {
+  width: 1.9rem;
+  height: 1.9rem;
+  stroke-width: 1.6;
+}
+
+.portada-acceso:hover .portada-acceso-icono {
+  transform: scale(1.1);
+}
+
+.portada-acceso-texto {
+  text-align: center;
+  line-height: 1.2;
+}
+
+@media (max-width: 640px) {
+  .portada {
+    gap: 1.75rem;
+    padding-top: 1rem;
+  }
+  .portada-dock {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    width: 100%;
+    gap: 0.5rem;
+    padding: 0.6rem;
+  }
+  .portada-acceso {
+    width: auto;
+    height: 5.5rem;
+    font-size: var(--fs-sm);
+  }
+  .portada-acceso-icono svg {
+    width: 1.6rem;
+    height: 1.6rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .portada-halo {
+    animation: none;
+  }
+  .portada-acceso,
+  .portada-acceso-icono {
+    transition: none;
+  }
+  .portada-acceso:hover,
+  .portada-acceso:focus-visible {
+    transform: none;
+  }
+}

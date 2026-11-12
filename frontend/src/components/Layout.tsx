@@ -1,27 +1,10 @@
 import { useEffect, useState } from 'react'
-import {
-  Activity,
-  CalendarCheck,
-  ChevronRight,
-  ClipboardList,
-  FileBarChart2,
-  FilePlus,
-  HelpCircle,
-  History,
-  Home,
-  Library,
-  Menu,
-  PanelLeftClose,
-  PanelLeftOpen,
-  Trophy,
-  Users,
-  X,
-  type LucideIcon,
-} from 'lucide-react'
+import { ChevronRight, Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import logoNodovip from '../assets/marca/nodovip-horizontal-claro.webp'
 import { nombreRolSistema, useSesion } from '../auth/sesionContext'
 import { ProveedorConfirmacion } from './DialogoConfirmacion'
+import { useGruposNav } from './navegacion'
 
 const CLAVE_SIDEBAR = 'nodovip_sidebar_colapsado'
 
@@ -40,109 +23,6 @@ function guardarSidebar(colapsado: boolean) {
     // Sin almacenamiento disponible (navegación privada): el estado no
     // persiste entre visitas, pero el menú sigue funcionando en esta.
   }
-}
-
-interface Enlace {
-  to: string
-  fin?: boolean
-  texto: string
-  icono: LucideIcon
-  mostrar: boolean
-}
-
-interface GrupoNav {
-  titulo: string
-  enlaces: Enlace[]
-}
-
-function useGruposNav(): GrupoNav[] {
-  const { puedeLeerEscenarios, puedeGestionarEscenarios, puedeGestionarUsuarios, puede } =
-    useSesion()
-
-  return [
-    {
-      titulo: 'Operación',
-      enlaces: [
-        { to: '/', fin: true, texto: 'Inicio', icono: Home, mostrar: true },
-        {
-          to: '/sesiones',
-          texto: 'Mis tabletops',
-          icono: ClipboardList,
-          mostrar: puede('sesiones:disenar'),
-        },
-        {
-          to: '/mis-sesiones',
-          texto: 'Mis sesiones',
-          icono: CalendarCheck,
-          mostrar: puede('sesiones:participar'),
-        },
-      ],
-    },
-    {
-      titulo: 'Diseño',
-      enlaces: [
-        {
-          to: '/escenarios',
-          fin: true,
-          texto: 'Biblioteca de escenarios',
-          icono: Library,
-          mostrar: puedeLeerEscenarios,
-        },
-        {
-          to: '/banco-preguntas',
-          texto: 'Banco de preguntas',
-          icono: HelpCircle,
-          mostrar: puedeLeerEscenarios,
-        },
-        {
-          to: '/escenarios/nuevo',
-          texto: 'Nuevo escenario',
-          icono: FilePlus,
-          mostrar: puedeGestionarEscenarios,
-        },
-      ],
-    },
-    {
-      titulo: 'Análisis',
-      enlaces: [
-        {
-          to: '/leaderboard',
-          texto: 'Leaderboard',
-          icono: Trophy,
-          mostrar: puede('leaderboard:ver'),
-        },
-        {
-          to: '/monitoreo',
-          texto: 'Monitoreo',
-          icono: Activity,
-          mostrar: puede('sesiones:monitorear'),
-        },
-        {
-          to: '/reportes',
-          texto: 'Reportes',
-          icono: FileBarChart2,
-          mostrar: puede('reportes:ver'),
-        },
-      ],
-    },
-    {
-      titulo: 'Administración',
-      enlaces: [
-        {
-          to: '/usuarios',
-          texto: 'Gestión de usuarios',
-          icono: Users,
-          mostrar: puedeGestionarUsuarios,
-        },
-        {
-          to: '/accesos',
-          texto: 'Historial de accesos',
-          icono: History,
-          mostrar: puedeGestionarUsuarios,
-        },
-      ],
-    },
-  ]
 }
 
 /** Migas de pan para páginas internas; las pantallas de primer nivel (las que

@@ -16,7 +16,7 @@ function rutas() {
   )
 }
 
-const campoCorreo = () => screen.getByLabelText('Correo')
+const campoCorreo = () => screen.getByLabelText('Correo electrónico')
 const campoClave = () => screen.getByLabelText('Contraseña')
 const botonIngresar = () => screen.getByRole('button', { name: 'Ingresar' })
 
@@ -58,9 +58,7 @@ describe('LoginPage', () => {
     await userEvent.type(campoClave(), 'incorrecta')
     await userEvent.click(botonIngresar())
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      'Correo o contraseña incorrectos',
-    )
+    expect(await screen.findByRole('alert')).toHaveTextContent('Correo o contraseña incorrectos')
     expect(campoClave()).toHaveValue('')
     expect(campoCorreo()).toHaveValue('ana@example.com')
   })

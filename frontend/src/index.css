@@ -1075,38 +1075,313 @@ a:hover {
 
 /* --- Inicio de sesión e historial de accesos (PB-01) ----------------------- */
 
+/* Dos columnas sobre el azul marino de la marca: portada con el globo de red a
+   la izquierda y la tarjeta de acceso a la derecha. Bajo 900 px se apilan. */
 .pantalla-login {
   min-height: 100vh;
   display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  background:
+    radial-gradient(ellipse 60% 50% at 25% 45%, rgb(42 99 216 / 0.18), transparent 70%),
+    radial-gradient(ellipse 50% 60% at 85% 20%, rgb(42 99 216 / 0.1), transparent 70%),
+    var(--navy);
+  color: #fff;
+}
+
+.login-portada {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 2rem 2.5rem;
+  border-right: 1px solid var(--navy-borde);
+  overflow: hidden;
+}
+
+/* Textura de puntos que se desvanece hacia los bordes. */
+.login-portada::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(rgb(143 176 245 / 0.16) 1px, transparent 1px);
+  background-size: 22px 22px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, #000 20%, transparent 75%);
+}
+
+.login-logo {
+  position: relative;
+  align-self: flex-start;
+  width: clamp(200px, 17vw, 320px);
+  height: auto;
+}
+
+.login-red-global {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  width: 100%;
+  height: 100%;
+}
+
+.login-titulo {
+  position: relative;
+  max-width: 30rem;
+  margin: auto 0 0;
+  text-shadow: 0 2px 18px rgb(13 14 26 / 0.85);
+  text-align: center;
+  font-size: clamp(1.5rem, 2.6vw, 2.125rem);
+  line-height: 1.25;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.login-lugar {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 1.5rem 0 0;
+  font-size: var(--fs-sm);
+  color: var(--texto-sobre-oscuro);
+}
+
+.login-lugar svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.login-lado-formulario {
+  display: grid;
   place-items: center;
-  padding: 1.5rem 1rem;
-  background: var(--navy);
+  padding: 2rem 1.5rem;
 }
 
 .tarjeta-login {
   width: 100%;
-  max-width: 400px;
+  max-width: 420px;
+  padding: 2.25rem 2rem;
+  background: rgb(42 44 74 / 0.72);
+  border: 1px solid var(--navy-borde-fuerte);
+  border-radius: var(--radio-lg);
+  box-shadow:
+    0 24px 60px rgb(5 6 15 / 0.45),
+    inset 0 1px 0 rgb(255 255 255 / 0.06);
+  backdrop-filter: blur(10px);
+}
+
+.tarjeta-login h2 {
   margin: 0;
-  padding: 2rem 1.75rem;
-}
-
-.tarjeta-login h1 {
-  margin-top: 0.75rem;
-}
-
-.tarjeta-login > .texto-suave:first-of-type {
-  margin-bottom: 1.25rem;
-}
-
-.login-marca {
-  display: inline-block;
-  background: var(--navy);
+  font-size: var(--fs-2xl);
   color: #fff;
-  font-weight: 700;
+}
+
+.login-subtitulo {
+  margin: 0.35rem 0 1.5rem;
+  font-size: var(--fs-md);
+  color: var(--texto-sobre-oscuro);
+}
+
+.tarjeta-login .campo {
+  color: var(--texto-sobre-oscuro);
+  margin-bottom: 1.1rem;
+}
+
+/* Campo con ícono: el contenedor dibuja el borde y el foco; el input va sin
+   borde para que ícono, texto y botón Mostrar se vean como una sola pieza. */
+.login-entrada {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+  padding: 0 0.75rem;
+  background: var(--navy);
+  border: 1px solid var(--navy-borde-fuerte);
+  border-radius: var(--radio-sm);
+  transition:
+    border-color var(--transicion),
+    box-shadow var(--transicion);
+}
+
+.login-entrada:hover {
+  border-color: #5c608a;
+}
+
+.login-entrada:focus-within {
+  border-color: var(--acento);
+  box-shadow: 0 0 0 3px rgb(42 99 216 / 0.35);
+}
+
+.login-entrada > svg {
+  flex: none;
+  width: 1.1rem;
+  height: 1.1rem;
+  color: #9da0bd;
+}
+
+.tarjeta-login .login-entrada input {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0.7rem 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  font-size: var(--fs-base);
+  box-shadow: none;
+  outline: none;
+}
+
+.tarjeta-login .login-entrada input::placeholder {
+  color: #8a8db0;
+}
+
+/* El autocompletado de Chrome pinta el campo de celeste: se mantiene oscuro. */
+.tarjeta-login .login-entrada input:-webkit-autofill {
+  -webkit-text-fill-color: #fff;
+  box-shadow: 0 0 0 100px var(--navy) inset;
+  caret-color: #fff;
+}
+
+.login-ver {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.25rem;
+  border: 0;
+  background: none;
+  color: var(--texto-sobre-oscuro);
+  font: inherit;
   font-size: var(--fs-sm);
-  letter-spacing: 0.08em;
-  padding: 0.3rem 0.6rem;
+  cursor: pointer;
   border-radius: var(--radio-xs);
+}
+
+.login-ver:hover {
+  color: #fff;
+}
+
+.login-ver:focus-visible {
+  outline: 2px solid var(--acento);
+  outline-offset: 2px;
+}
+
+.login-ver svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.login-ingresar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: var(--fs-base);
+  background: var(--acento);
+  border-color: var(--acento);
+}
+
+.login-ingresar:hover:not(:disabled) {
+  background: var(--acento-oscuro);
+  border-color: var(--acento-oscuro);
+}
+
+.login-ingresar:disabled {
+  background: var(--navy-borde-fuerte);
+  border-color: var(--navy-borde-fuerte);
+  color: var(--texto-sobre-oscuro);
+}
+
+.login-ingresar svg {
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.login-ayuda {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--texto-sobre-oscuro);
+}
+
+/* Error de acceso en versión oscura: el rojo de la marca sobre la tarjeta. */
+.tarjeta-login .alerta-error {
+  background: rgb(178 52 52 / 0.18);
+  border: 1px solid rgb(178 52 52 / 0.6);
+  color: #ffc2c2;
+  border-left: 3px solid #e05a5a;
+}
+
+/* Monitores grandes: la portada y la tarjeta crecen para no verse perdidas. */
+@media (min-width: 1600px) {
+  .login-portada {
+    padding: 2.75rem 3.5rem;
+  }
+  .login-titulo {
+    max-width: 38rem;
+    font-size: 2.6rem;
+  }
+  .login-lugar {
+    font-size: var(--fs-base);
+  }
+  .tarjeta-login {
+    max-width: 500px;
+    padding: 3rem 2.75rem;
+  }
+  .tarjeta-login h2 {
+    font-size: 2rem;
+  }
+  .login-subtitulo,
+  .tarjeta-login .campo {
+    font-size: var(--fs-base);
+  }
+  .tarjeta-login .login-entrada input {
+    padding: 0.85rem 0;
+    font-size: var(--fs-lg);
+  }
+  .login-ingresar {
+    padding: 0.9rem 1rem;
+    font-size: var(--fs-lg);
+  }
+}
+
+@media (max-width: 900px) {
+  .pantalla-login {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .login-portada {
+    min-height: 210px;
+    padding: 1.5rem 1.25rem 0;
+    border-right: 0;
+  }
+  .login-logo {
+    width: 170px;
+  }
+  .login-titulo {
+    position: relative;
+    margin: 1.75rem 0 0;
+    text-align: left;
+    align-self: flex-start;
+    font-size: var(--fs-xl);
+  }
+  .login-lugar {
+    display: none;
+  }
+  .login-lado-formulario {
+    align-content: start;
+    padding: 1.5rem 1rem 2rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .tarjeta-login {
+    padding: 1.6rem 1.15rem;
+  }
 }
 
 .campo-con-boton {
@@ -1118,11 +1393,6 @@ a:hover {
 .campo-con-boton input {
   flex: 1;
   min-width: 0;
-}
-
-.login-ayuda {
-  margin-top: 1rem;
-  text-align: center;
 }
 
 .pantalla-carga {
@@ -1820,9 +2090,6 @@ button.paso:hover {
 }
 
 @media (max-width: 400px) {
-  .tarjeta-login {
-    padding: 1.5rem 1.1rem;
-  }
   .menu-usuario {
     width: 100%;
     justify-content: space-between;

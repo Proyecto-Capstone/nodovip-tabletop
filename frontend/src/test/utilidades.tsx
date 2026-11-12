@@ -6,6 +6,7 @@ import { MemoryRouter, type InitialEntry } from 'react-router-dom'
 import { vi } from 'vitest'
 import type { Sesion } from '../api/auth'
 import { SesionContext, valorSesion, type SesionContextValor } from '../auth/sesionContext'
+import { ProveedorConfirmacion } from '../components/DialogoConfirmacion'
 
 export const ADMINISTRADOR: Sesion = {
   id: '11111111-1111-1111-1111-111111111111',
@@ -74,13 +75,18 @@ export function sesionDePrueba(
   }
 }
 
+/** Como en la app real (Layout envuelve cada pantalla protegida con el
+ * proveedor del diálogo de confirmación), para que useConfirmar() funcione
+ * en pruebas que renderizan una página sin pasar por Layout. */
 export function renderConSesion(
   ui: ReactNode,
   { sesion, ruta = '/' }: { sesion: SesionContextValor; ruta?: InitialEntry },
 ) {
   return render(
     <SesionContext.Provider value={sesion}>
-      <MemoryRouter initialEntries={[ruta]}>{ui}</MemoryRouter>
+      <MemoryRouter initialEntries={[ruta]}>
+        <ProveedorConfirmacion>{ui}</ProveedorConfirmacion>
+      </MemoryRouter>
     </SesionContext.Provider>,
   )
 }

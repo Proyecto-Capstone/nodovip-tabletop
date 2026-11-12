@@ -1,6 +1,7 @@
 // Opciones de una pregunta de selección múltiple: texto y si es correcta.
 // Lo usan el formulario del escenario (PC-46) y el diseñador de la sesión (PB-05).
 
+import { X } from 'lucide-react'
 import type { Opcion } from '../api/sesiones'
 
 const MAX_OPCIONES = 8
@@ -38,7 +39,7 @@ export function EditorOpciones({
             aria-label={`Quitar opción ${i + 1}`}
             onClick={() => onChange(opciones.filter((_, x) => x !== i))}
           >
-            ✕
+            <X size={14} aria-hidden="true" />
           </button>
         </div>
       ))}

@@ -188,6 +188,24 @@ describe('DisenadorPage', () => {
     ])
   })
 
+  it('paso 2: quitar un rol con tareas asignadas pide confirmación', async () => {
+    simularApi()
+    abrir(2)
+    await screen.findByRole('heading', { name: 'Paso 2 — Configurar roles' })
+
+    const checkboxLegal = screen.getByRole('checkbox', { name: 'Legal' })
+    expect(checkboxLegal).toBeChecked()
+
+    await userEvent.click(checkboxLegal)
+    expect(await screen.findByRole('alertdialog')).toHaveTextContent('¿Quitar Legal?')
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(checkboxLegal).toBeChecked()
+
+    await userEvent.click(checkboxLegal)
+    await userEvent.click(await screen.findByRole('button', { name: 'Quitar rol' }))
+    expect(checkboxLegal).not.toBeChecked()
+  })
+
   it('paso 3: muestra las tareas por rol e inject y agrega una de selección múltiple', async () => {
     const fetchFalso = simularApi()
     abrir(3)

@@ -1,20 +1,22 @@
 // Paso 2: roles de la sesión y el participante que asume cada uno (CU-03.2).
 
+import { useConfirmar } from '../../components/confirmacionContext'
 import { nombreRol } from '../../lib/etiquetas'
 import { participanteDe, type PropsPaso } from './comun'
 
 export function PasoRoles({ d, cambiar, roles, disponibles }: PropsPaso) {
-  const alternarRol = (codigo: string) => {
+  const confirmar = useConfirmar()
+
+  const alternarRol = async (codigo: string) => {
     const activo = d.roles.includes(codigo)
     const tareas = d.tareas.filter((t) => t.rol_codigo === codigo).length
-    if (
-      activo &&
-      tareas > 0 &&
-      !confirm(
-        `Quitar ${nombreRol(roles, codigo)} también quita sus ${tareas} tarea(s). ¿Continuar?`,
-      )
-    ) {
-      return
+    if (activo && tareas > 0) {
+      const confirmado = await confirmar({
+        titulo: `¿Quitar ${nombreRol(roles, codigo)}?`,
+        cuerpo: `También se quitan sus ${tareas} tarea(s).`,
+        textoConfirmar: 'Quitar rol',
+      })
+      if (!confirmado) return
     }
     cambiar((a) =>
       activo

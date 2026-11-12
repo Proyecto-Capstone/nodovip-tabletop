@@ -1,7 +1,7 @@
 import { cleanup, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Route, Routes } from 'react-router-dom'
-import { describe, expect, it } from 'vitest'
+import { Link, Route, Routes } from 'react-router-dom'
+import { beforeEach, describe, expect, it } from 'vitest'
 import {
   ADMINISTRADOR,
   ANALISTA,
@@ -18,10 +18,24 @@ function rutas() {
       <Route path="/login" element={<p>Pantalla de login</p>} />
       <Route element={<Layout />}>
         <Route path="/" element={<p>Inicio</p>} />
+        <Route path="/escenarios" element={<p>Biblioteca</p>} />
+        <Route
+          path="/escenarios/:id"
+          element={
+            <>
+              <p>Detalle</p>
+              <Link to="/escenarios">Volver</Link>
+            </>
+          }
+        />
       </Route>
     </Routes>
   )
 }
+
+beforeEach(() => {
+  localStorage.clear()
+})
 
 describe('Layout', () => {
   it('muestra el usuario y el menú según sus permisos', () => {
@@ -74,5 +88,64 @@ describe('Layout', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Cerrar sesión' }))
     expect(sesion.cerrarSesion).toHaveBeenCalledTimes(1)
     expect(await screen.findByText('Pantalla de login')).toBeInTheDocument()
+  })
+
+  it('agrupa los enlaces del menú por función', () => {
+    renderConSesion(rutas(), { sesion: sesionDePrueba(ADMINISTRADOR) })
+    expect(screen.getByText('Operación')).toBeInTheDocument()
+    expect(screen.getByText('Diseño')).toBeInTheDocument()
+    expect(screen.getByText('Análisis')).toBeInTheDocument()
+    expect(screen.getByText('Administración')).toBeInTheDocument()
+  })
+
+  it('colapsa el menú, recuerda el estado en localStorage y lo restaura al volver a montar', async () => {
+    const { unmount } = renderConSesion(rutas(), { sesion: sesionDePrueba(ADMINISTRADOR) })
+    await userEvent.click(screen.getByRole('button', { name: 'Colapsar' }))
+    expect(localStorage.getItem('nodovip_sidebar_colapsado')).toBe('si')
+    expect(screen.getByRole('button', { name: 'Expandir' })).toBeInTheDocument()
+    unmount()
+
+    renderConSesion(rutas(), { sesion: sesionDePrueba(ADMINISTRADOR) })
+    expect(screen.getByRole('button', { name: 'Expandir' })).toBeInTheDocument()
+  })
+
+  it('abre y cierra el cajón móvil con la hamburguesa y con Escape', async () => {
+    renderConSesion(rutas(), { sesion: sesionDePrueba(ADMINISTRADOR) })
+    const hamburguesa = screen.getByRole('button', { name: 'Abrir menú' })
+    await userEvent.click(hamburguesa)
+    expect(screen.getByRole('button', { name: 'Cerrar menú' })).toBeInTheDocument()
+
+    await userEvent.keyboard('{Escape}')
+    expect(screen.getByRole('button', { name: 'Abrir menú' })).toBeInTheDocument()
+  })
+
+  it('cierra el cajón móvil al hacer clic fuera (el velo) y al navegar', async () => {
+    renderConSesion(rutas(), { sesion: sesionDePrueba(ADMINISTRADOR) })
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
+    const velo = document.querySelector('.velo-cajon')
+    expect(velo).not.toBeNull()
+    await userEvent.click(velo as Element)
+    expect(screen.getByRole('button', { name: 'Abrir menú' })).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Abrir menú' }))
+    await userEvent.click(screen.getAllByRole('link', { name: 'Biblioteca de escenarios' })[0])
+    expect(screen.getByRole('button', { name: 'Abrir menú' })).toBeInTheDocument()
+  })
+
+  it('muestra migas de pan en páginas internas, no en las de primer nivel', () => {
+    renderConSesion(rutas(), {
+      sesion: sesionDePrueba(ADMINISTRADOR),
+      ruta: '/escenarios',
+    })
+    expect(screen.queryByRole('navigation', { name: 'Ruta de navegación' })).toBeNull()
+    cleanup()
+
+    renderConSesion(rutas(), {
+      sesion: sesionDePrueba(ADMINISTRADOR),
+      ruta: '/escenarios/abc-123',
+    })
+    const migas = screen.getByRole('navigation', { name: 'Ruta de navegación' })
+    expect(migas).toHaveTextContent('Diseño')
+    expect(migas).toHaveTextContent('Detalle del escenario')
   })
 })

@@ -2,6 +2,7 @@
 // Recibe el inject actual por WebSocket; si pierde la conexión, se reconecta y
 // recupera el estado. PB-08: las tareas de su rol y su respuesta.
 
+import { Bell, BellOff } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { rutasMisSesiones, type MiSesion } from '../api/misSesiones'
 import { useSesion } from '../auth/sesionContext'
@@ -57,7 +58,11 @@ export function SesionEnVivoPage() {
               onClick={alternarSonido}
               title={sonido ? 'Silenciar el aviso de nuevos injects' : 'Activar el sonido'}
             >
-              <span aria-hidden="true">{sonido ? '🔔' : '🔕'}</span>{' '}
+              {sonido ? (
+                <Bell size={16} aria-hidden="true" />
+              ) : (
+                <BellOff size={16} aria-hidden="true" />
+              )}{' '}
               {sonido ? 'Sonido activado' : 'Silenciado'}
             </button>
           )}

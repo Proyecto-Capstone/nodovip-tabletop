@@ -1,4 +1,5 @@
-import { screen } from '@testing-library/react'
+import { screen, within } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -45,24 +46,50 @@ const SESIONES = [
 
 describe('LeaderboardPage', () => {
   it('muestra las sesiones visibles con su estado', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => respuesta(200, SESIONES)))
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => respuesta(200, SESIONES)),
+    )
     renderConSesion(rutas(), { sesion: sesionDePrueba(OBSERVADOR), ruta: '/leaderboard' })
 
     expect(await screen.findByText('Simulacro Q4')).toBeInTheDocument()
     expect(screen.getByText('Simulacro Q3')).toBeInTheDocument()
     expect(screen.getByText('En curso')).toBeInTheDocument()
     expect(screen.getByText('Finalizada')).toBeInTheDocument()
-    expect(screen.getByText('● EN VIVO')).toBeInTheDocument()
+    expect(screen.getByText('EN VIVO')).toBeInTheDocument()
     expect(screen.getByText('Inject 1/3')).toBeInTheDocument()
   })
 
-  it('sin sesiones muestra un aviso', async () => {
-    vi.stubGlobal('fetch', vi.fn(async () => respuesta(200, [])))
+  it('separa las sesiones en vivo, filtra por estado y busca por nombre', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => respuesta(200, SESIONES)),
+    )
     renderConSesion(rutas(), { sesion: sesionDePrueba(OBSERVADOR), ruta: '/leaderboard' })
 
-    expect(
-      await screen.findByText(/No hay sesiones en curso ni finalizadas/),
-    ).toBeInTheDocument()
+    const enVivo = await screen.findByRole('region', { name: 'En vivo ahora' })
+    expect(within(enVivo).getByText('Simulacro Q4')).toBeInTheDocument()
+    const finalizadas = screen.getByRole('region', { name: /Finalizadas/ })
+    expect(within(finalizadas).getByText('Simulacro Q3')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /Finalizadas/ }))
+    expect(screen.queryByText('Simulacro Q4')).not.toBeInTheDocument()
+    expect(screen.getByText('Simulacro Q3')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: /Todas/ }))
+    await userEvent.type(screen.getByLabelText('Buscar sesión'), 'q4')
+    expect(screen.getByText('Simulacro Q4')).toBeInTheDocument()
+    expect(screen.queryByText('Simulacro Q3')).not.toBeInTheDocument()
+  })
+
+  it('sin sesiones muestra un aviso', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => respuesta(200, [])),
+    )
+    renderConSesion(rutas(), { sesion: sesionDePrueba(OBSERVADOR), ruta: '/leaderboard' })
+
+    expect(await screen.findByText(/No hay sesiones en curso ni finalizadas/)).toBeInTheDocument()
   })
 
   it('un error del servidor se muestra', async () => {

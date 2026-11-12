@@ -103,6 +103,18 @@ siguiente). Usa las mismas variables de color, que ya cumplen el contraste.
 Como los colores salen de las variables del sistema de diseño (PC-43), la
 corrección se aplica a todas las pantallas a la vez.
 
+### Tema oscuro (PC-15)
+
+La interfaz pasó a un tema oscuro que sigue al inicio de sesión. Cada color de
+estado tiene ahora dos tonos: uno de **relleno** (`--verde`, `--rojo`,
+`--naranja`, `--acento`, para barras y fondos con texto blanco) y otro de
+**texto** (`--verde-texto`, `--rojo-texto`, `--naranja-texto`,
+`--acento-texto`), que cumple al menos 4.5:1 sobre todas las superficies
+oscuras. El texto secundario `--texto-suave` (`#a4a8c4`) da como mínimo
+5.78:1. Se repitió la auditoría con axe-core en Chrome sobre las pantallas
+rediseñadas (inicio de sesión, biblioteca, banco de preguntas, nuevo
+escenario, leaderboard y reportes) con 0 violaciones.
+
 ### Pruebas automáticas
 
 `src/test/accesibilidad.test.tsx` ejecuta axe-core en el CI sobre:

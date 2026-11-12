@@ -1,6 +1,7 @@
 // PB-04: detalle del escenario. PB-03: acciones del Administrador.
 // PB-05: el Moderador lo usa como base de una sesión tabletop.
 
+import { Check, Circle } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
@@ -14,6 +15,7 @@ import {
 } from '../api/escenarios'
 import { crearSesion } from '../api/sesiones'
 import { useSesion } from '../auth/sesionContext'
+import { useConfirmar } from '../components/confirmacionContext'
 import {
   Cargando,
   Errores,
@@ -29,6 +31,7 @@ export function EscenarioDetallePage() {
   const { id = '' } = useParams()
   const { rol, puedeGestionarEscenarios, puedeLeerEscenarios, puede } = useSesion()
   const navegar = useNavigate()
+  const confirmar = useConfirmar()
   const habilitado = puedeLeerEscenarios
   const escenario = useGet<EscenarioDetalle>(
     habilitado ? rutas.escenario(id) : null,
@@ -110,14 +113,13 @@ export function EscenarioDetallePage() {
                 type="button"
                 className="boton boton-peligro"
                 disabled={enviando}
-                onClick={() => {
-                  if (
-                    confirm(
-                      'Archivar el escenario lo quita de la biblioteca. ¿Continuar?',
-                    )
-                  ) {
-                    ejecutar(() => archivarEscenario(e.id))
-                  }
+                onClick={async () => {
+                  const confirmado = await confirmar({
+                    titulo: '¿Archivar el escenario?',
+                    cuerpo: 'Se quita de la biblioteca. Las sesiones ya creadas no se ven afectadas.',
+                    textoConfirmar: 'Archivar',
+                  })
+                  if (confirmado) ejecutar(() => archivarEscenario(e.id))
                 }}
               >
                 Archivar
@@ -223,6 +225,11 @@ export function EscenarioDetallePage() {
                         <ul className="lista-opciones">
                           {t.opciones.map((o, i) => (
                             <li key={i} className={o.correcta ? 'opcion-correcta' : undefined}>
+                              {o.correcta ? (
+                                <Check size={14} aria-hidden="true" />
+                              ) : (
+                                <Circle size={14} aria-hidden="true" />
+                              )}
                               {o.correcta && <span className="solo-lector">Correcta: </span>}
                               {o.texto}
                             </li>

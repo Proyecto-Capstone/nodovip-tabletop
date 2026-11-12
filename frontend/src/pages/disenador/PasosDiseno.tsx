@@ -1,5 +1,6 @@
 // Barra lateral con los 6 pasos del diseñador, como en el prototipo (Figura 18).
 
+import { Check } from 'lucide-react'
 import { PASOS } from './comun'
 
 export function PasosDiseno({
@@ -25,7 +26,7 @@ export function PasosDiseno({
           const contenido = (
             <>
               <span className="paso-numero" aria-hidden="true">
-                {completos[i] && paso !== actual ? '✓' : paso}
+                {completos[i] && paso !== actual ? <Check size={14} /> : paso}
               </span>
               {nombre}
             </>

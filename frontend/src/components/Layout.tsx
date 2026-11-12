@@ -1,18 +1,109 @@
-import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { ChevronRight, Menu, PanelLeftClose, PanelLeftOpen, X } from 'lucide-react'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import logoNodovip from '../assets/marca/nodovip-horizontal-claro.webp'
 import { nombreRolSistema, useSesion } from '../auth/sesionContext'
+import { ProveedorConfirmacion } from './DialogoConfirmacion'
+import { useGruposNav } from './navegacion'
+
+const CLAVE_SIDEBAR = 'nodovip_sidebar_colapsado'
+
+function leerSidebarGuardado(): boolean {
+  try {
+    return localStorage.getItem(CLAVE_SIDEBAR) === 'si'
+  } catch {
+    return false
+  }
+}
+
+function guardarSidebar(colapsado: boolean) {
+  try {
+    localStorage.setItem(CLAVE_SIDEBAR, colapsado ? 'si' : 'no')
+  } catch {
+    // Sin almacenamiento disponible (navegación privada): el estado no
+    // persiste entre visitas, pero el menú sigue funcionando en esta.
+  }
+}
+
+/** Migas de pan para páginas internas; las pantallas de primer nivel (las que
+ * ya están en el menú) no llevan migas. */
+function useMigas(): { grupo: string; titulo: string } | null {
+  const { pathname } = useLocation()
+
+  if (/^\/escenarios\/nuevo$/.test(pathname)) return { grupo: 'Diseño', titulo: 'Nuevo escenario' }
+  if (/^\/escenarios\/[^/]+\/editar$/.test(pathname)) {
+    return { grupo: 'Diseño', titulo: 'Editar escenario' }
+  }
+  if (/^\/escenarios\/[^/]+$/.test(pathname)) {
+    return { grupo: 'Diseño', titulo: 'Detalle del escenario' }
+  }
+  if (/^\/sesiones\/nueva$/.test(pathname)) {
+    return { grupo: 'Operación', titulo: 'Nueva sesión' }
+  }
+  if (/^\/sesiones\/[^/]+\/disenar$/.test(pathname)) {
+    return { grupo: 'Operación', titulo: 'Diseñar sesión' }
+  }
+  if (/^\/sesiones\/[^/]+\/conducir$/.test(pathname)) {
+    return { grupo: 'Operación', titulo: 'Conducir sesión' }
+  }
+  if (/^\/sesiones\/[^/]+\/respuestas$/.test(pathname)) {
+    return { grupo: 'Operación', titulo: 'Respuestas de la sesión' }
+  }
+  if (/^\/sesiones\/[^/]+\/debrief$/.test(pathname)) {
+    return { grupo: 'Operación', titulo: 'Debrief' }
+  }
+  if (/^\/reportes\/[^/]+$/.test(pathname)) {
+    return { grupo: 'Análisis', titulo: 'Reporte de brechas' }
+  }
+  if (/^\/leaderboard\/[^/]+$/.test(pathname)) {
+    return { grupo: 'Análisis', titulo: 'Leaderboard de la sesión' }
+  }
+  if (/^\/monitoreo\/[^/]+$/.test(pathname)) {
+    return { grupo: 'Análisis', titulo: 'Monitoreo de la sesión' }
+  }
+  if (/^\/mis-sesiones\/[^/]+\/en-vivo$/.test(pathname)) {
+    return { grupo: 'Operación', titulo: 'Sesión en vivo' }
+  }
+  if (/^\/mis-sesiones\/[^/]+$/.test(pathname)) {
+    return { grupo: 'Operación', titulo: 'Mi sesión' }
+  }
+  return null
+}
 
 export function Layout() {
-  const {
-    usuario,
-    cerrarSesion,
-    puedeLeerEscenarios,
-    puedeGestionarEscenarios,
-    puedeGestionarUsuarios,
-    puede,
-  } = useSesion()
+  const { usuario, cerrarSesion } = useSesion()
   const navegar = useNavigate()
+  const { pathname } = useLocation()
+  const [colapsado, setColapsado] = useState(leerSidebarGuardado)
+  const [cajonAbierto, setCajonAbierto] = useState(false)
   const [saliendo, setSaliendo] = useState(false)
+  const grupos = useGruposNav()
+  const migas = useMigas()
+
+  // Cierra el cajón al navegar (clic en un enlace, atrás/adelante del
+  // navegador, etc.): se ajusta durante el render, no en un efecto, como
+  // recomienda React para "resetear estado cuando cambia algo externo".
+  const [rutaAnterior, setRutaAnterior] = useState(pathname)
+  if (pathname !== rutaAnterior) {
+    setRutaAnterior(pathname)
+    if (cajonAbierto) setCajonAbierto(false)
+  }
+
+  useEffect(() => {
+    if (!cajonAbierto) return
+    const alTeclado = (evento: KeyboardEvent) => {
+      if (evento.key === 'Escape') setCajonAbierto(false)
+    }
+    document.addEventListener('keydown', alTeclado)
+    return () => document.removeEventListener('keydown', alTeclado)
+  }, [cajonAbierto])
+
+  const alternarColapso = () => {
+    setColapsado((actual) => {
+      guardarSidebar(!actual)
+      return !actual
+    })
+  }
 
   const salir = async () => {
     setSaliendo(true)
@@ -24,61 +115,119 @@ export function Layout() {
   }
 
   return (
-    <div className="app">
-      {/* PC-47 (WCAG 2.4.1): con teclado se salta el menú y se va al contenido. */}
-      <a className="saltar-contenido" href="#contenido">
-        Saltar al contenido
-      </a>
-      <header className="topbar">
-        <span className="marca">NODOVIP — Plataforma Tabletop Exercise</span>
-        {usuario && (
-          <div className="usuario-barra">
-            <span className="usuario-datos">
-              <strong>{usuario.nombre}</strong>
-              <span className="usuario-rol">{nombreRolSistema(usuario.rol)}</span>
-            </span>
+    <ProveedorConfirmacion>
+      <div
+        className={`app ${colapsado ? 'sidebar-colapsado' : ''} ${
+          cajonAbierto ? 'sidebar-abierto' : ''
+        }`}
+      >
+        {/* PC-47 (WCAG 2.4.1): con teclado se salta el menú y se va al contenido. */}
+        <a className="saltar-contenido" href="#contenido">
+          Saltar al contenido
+        </a>
+        <header className="topbar">
+          <div className="topbar-izquierda">
             <button
               type="button"
-              className="boton boton-salir"
-              onClick={salir}
-              disabled={saliendo}
+              className="boton-hamburguesa"
+              aria-label={cajonAbierto ? 'Cerrar menú' : 'Abrir menú'}
+              aria-expanded={cajonAbierto}
+              onClick={() => setCajonAbierto((a) => !a)}
             >
-              Cerrar sesión
+              {cajonAbierto ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
+            </button>
+            <NavLink to="/" className="marca" aria-label="NODOVIP Tabletop, ir al inicio">
+              <img src={logoNodovip} alt="" width={720} height={206} />
+              <span className="marca-producto" aria-hidden="true">
+                Tabletop
+              </span>
+            </NavLink>
+          </div>
+          {usuario && (
+            <div className="menu-usuario">
+              <span
+                className="avatar"
+                aria-hidden="true"
+                title={`${usuario.nombre} · ${nombreRolSistema(usuario.rol)}`}
+              >
+                {iniciales(usuario.nombre)}
+              </span>
+              <span className="usuario-datos">
+                <strong>{usuario.nombre}</strong>
+                <span className="usuario-rol">{nombreRolSistema(usuario.rol)}</span>
+              </span>
+              <button
+                type="button"
+                className="boton boton-salir"
+                onClick={salir}
+                disabled={saliendo}
+              >
+                Cerrar sesión
+              </button>
+            </div>
+          )}
+        </header>
+
+        {cajonAbierto && <div className="velo-cajon" onClick={() => setCajonAbierto(false)} />}
+
+        <nav className="sidebar" aria-label="Navegación principal">
+          {grupos.map((grupo) => {
+            const visibles = grupo.enlaces.filter((e) => e.mostrar)
+            if (visibles.length === 0) return null
+            return (
+              <div className="sidebar-grupo" key={grupo.titulo}>
+                <p className="sidebar-grupo-titulo">{grupo.titulo}</p>
+                {visibles.map(({ to, fin, texto, icono: Icono }) => (
+                  <NavLink key={to} to={to} end={fin} title={texto}>
+                    <Icono size={18} aria-hidden="true" />
+                    <span className={colapsado ? 'solo-lector' : undefined}>{texto}</span>
+                  </NavLink>
+                ))}
+              </div>
+            )
+          })}
+          <div className="sidebar-pie">
+            <button
+              type="button"
+              className="sidebar-colapsar"
+              onClick={alternarColapso}
+              title={colapsado ? 'Expandir menú' : 'Colapsar menú'}
+            >
+              {colapsado ? (
+                <PanelLeftOpen size={18} aria-hidden="true" />
+              ) : (
+                <PanelLeftClose size={18} aria-hidden="true" />
+              )}
+              <span className={colapsado ? 'solo-lector' : undefined}>
+                {colapsado ? 'Expandir' : 'Colapsar'}
+              </span>
             </button>
           </div>
-        )}
-      </header>
+        </nav>
 
-      <nav className="sidebar" aria-label="Navegación principal">
-        {puedeLeerEscenarios && (
-          <>
-            <NavLink to="/escenarios" end>
-              Biblioteca de escenarios
-            </NavLink>
-            <NavLink to="/banco-preguntas">Banco de preguntas</NavLink>
-          </>
-        )}
-        {puedeGestionarEscenarios && (
-          <NavLink to="/escenarios/nuevo">Nuevo escenario</NavLink>
-        )}
-        {puede('sesiones:disenar') && <NavLink to="/sesiones">Mis tabletops</NavLink>}
-        {puede('sesiones:participar') && (
-          <NavLink to="/mis-sesiones">Mis sesiones</NavLink>
-        )}
-        {puede('leaderboard:ver') && <NavLink to="/leaderboard">Leaderboard</NavLink>}
-        {puede('sesiones:monitorear') && <NavLink to="/monitoreo">Monitoreo</NavLink>}
-        {puede('reportes:ver') && <NavLink to="/reportes">Reportes</NavLink>}
-        {puedeGestionarUsuarios && (
-          <>
-            <NavLink to="/usuarios">Gestión de usuarios</NavLink>
-            <NavLink to="/accesos">Historial de accesos</NavLink>
-          </>
-        )}
-      </nav>
+        <main className="contenido" id="contenido" tabIndex={-1}>
+          {migas && <Migas grupo={migas.grupo} titulo={migas.titulo} />}
+          <Outlet />
+        </main>
+      </div>
+    </ProveedorConfirmacion>
+  )
+}
 
-      <main className="contenido" id="contenido" tabIndex={-1}>
-        <Outlet />
-      </main>
-    </div>
+/** Hasta dos iniciales del nombre, para el avatar del menú de usuario. */
+function iniciales(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/).filter(Boolean)
+  return (
+    (partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')
+  ).toUpperCase()
+}
+
+function Migas({ grupo, titulo }: { grupo: string; titulo: string }) {
+  return (
+    <nav className="migas" aria-label="Ruta de navegación">
+      <span>{grupo}</span>
+      <ChevronRight size={14} aria-hidden="true" />
+      <span aria-current="page">{titulo}</span>
+    </nav>
   )
 }

@@ -84,7 +84,7 @@ describe('Debrief (PC-45)', () => {
     await userEvent.click(screen.getByRole('button', { name: '+ Agregar acción' }))
     await userEvent.type(screen.getByLabelText('Qué se hará'), 'Simulacro trimestral')
     await userEvent.selectOptions(screen.getByLabelText('Responsable'), 'legal')
-    expect(screen.getByText('● Cambios sin guardar')).toBeInTheDocument()
+    expect(screen.getByText('Cambios sin guardar')).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole('button', { name: 'Guardar borrador' }))
     expect(await screen.findByText('Borrador guardado.')).toBeInTheDocument()

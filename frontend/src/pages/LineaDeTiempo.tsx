@@ -1,10 +1,21 @@
 // PC-44: línea de tiempo del incidente en la sala del participante y el aviso
 // cuando llega un inject nuevo.
 
+import { X } from 'lucide-react'
 import type { InjectEnVivo } from '../api/enVivo'
+import type { TipoEvidencia } from '../api/escenarios'
 import { EvidenciaSimulada } from '../components/Evidencia'
 import { TIPOS_EVIDENCIA } from '../lib/evidencias'
 import { formatoReloj } from '../lib/useEnVivo'
+
+function TipoEvidenciaEtiqueta({ tipo }: { tipo: TipoEvidencia }) {
+  const { icono: Icono, nombre } = TIPOS_EVIDENCIA[tipo]
+  return (
+    <span className="linea-incidente-tipo texto-suave">
+      <Icono size={14} aria-hidden="true" /> {nombre}
+    </span>
+  )
+}
 
 /** Banner que aparece unos segundos al lanzarse un inject. */
 export function AvisoInject({
@@ -30,7 +41,7 @@ export function AvisoInject({
             aria-label="Cerrar aviso"
             onClick={onCerrar}
           >
-            ×
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
       )}
@@ -58,12 +69,7 @@ export function LineaDeTiempo({ lanzados }: { lanzados: InjectEnVivo[] }) {
                 <span className="linea-incidente-titulo">
                   Inject {i.orden} · {i.titulo}
                 </span>
-                {i.evidencia && (
-                  <span className="linea-incidente-tipo texto-suave">
-                    <span aria-hidden="true">{TIPOS_EVIDENCIA[i.evidencia.tipo].icono}</span>{' '}
-                    {TIPOS_EVIDENCIA[i.evidencia.tipo].nombre}
-                  </span>
-                )}
+                {i.evidencia && <TipoEvidenciaEtiqueta tipo={i.evidencia.tipo} />}
               </summary>
               <p className="parrafo">{i.descripcion}</p>
               {i.evidencia && <EvidenciaSimulada evidencia={i.evidencia} />}

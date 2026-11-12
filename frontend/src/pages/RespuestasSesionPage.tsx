@@ -4,6 +4,7 @@
 // el historial) y puntaje acumulado por participante y por rol.
 
 import { Fragment, useState, type FormEvent } from 'react'
+import { Check, Lock, TriangleAlert, X } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
@@ -100,8 +101,9 @@ export function RespuestasSesionPage() {
       </div>
 
       <p className="texto-suave nota-solo-lectura">
-        🔒 Solo lectura: una respuesta registrada no se puede modificar ni borrar. Un ajuste de
-        puntaje se agrega al historial; la evaluación automática original se conserva.
+        <Lock size={14} aria-hidden="true" /> Solo lectura: una respuesta registrada no se puede
+        modificar ni borrar. Un ajuste de puntaje se agrega al historial; la evaluación automática
+        original se conserva.
       </p>
 
       {puntajes.datos && <PuntajesAcumulados puntajes={puntajes.datos} />}
@@ -248,17 +250,17 @@ function Puntaje({ respuesta: r }: { respuesta: RespuestaRegistrada }) {
           <li>Tiempo: {Math.round(r.tiempo * 100)} %</li>
           {r.aciertos.map((a) => (
             <li key={`a-${a}`} className="texto-exito">
-              ✓ {a}
+              <Check size={14} aria-hidden="true" /> {a}
             </li>
           ))}
           {r.faltantes.map((f) => (
             <li key={`f-${f}`} className="texto-suave">
-              ✗ Falta: {f}
+              <X size={14} aria-hidden="true" /> Falta: {f}
             </li>
           ))}
           {r.errores.map((e) => (
             <li key={`e-${e}`} className="texto-peligro">
-              ⚠ {e}
+              <TriangleAlert size={14} aria-hidden="true" /> {e}
             </li>
           ))}
         </ul>

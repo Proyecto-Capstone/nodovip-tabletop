@@ -124,12 +124,14 @@ export function EvidenciaSimulada({ evidencia }: { evidencia: Evidencia }) {
   const textos = TIPOS_EVIDENCIA[evidencia.tipo]
   const etiqueta = `${textos.nombre}: ${evidencia.asunto}`
 
+  const Icono = textos.icono
+
   switch (evidencia.tipo) {
     case 'correo':
       return (
         <article className="evidencia evidencia-correo" aria-label={etiqueta}>
           <header className="evidencia-barra">
-            <span aria-hidden="true">{textos.icono}</span> Bandeja de entrada
+            <Icono size={14} aria-hidden="true" /> Bandeja de entrada
           </header>
           <dl className="evidencia-correo-datos">
             <dt>De</dt>
@@ -153,7 +155,7 @@ export function EvidenciaSimulada({ evidencia }: { evidencia: Evidencia }) {
             <span className="evidencia-alerta-origen">{evidencia.origen}</span>
           </header>
           <p className="evidencia-alerta-titulo">
-            <span aria-hidden="true">{textos.icono}</span> {evidencia.asunto}
+            <Icono size={14} aria-hidden="true" /> {evidencia.asunto}
           </p>
           <pre className="evidencia-alerta-detalle">{evidencia.contenido}</pre>
         </article>
@@ -171,8 +173,8 @@ export function EvidenciaSimulada({ evidencia }: { evidencia: Evidencia }) {
       return (
         <article className="evidencia evidencia-llamada" aria-label={etiqueta}>
           <header className="evidencia-llamada-cabecera">
-            <span className="evidencia-llamada-icono" aria-hidden="true">
-              {textos.icono}
+            <span className="evidencia-llamada-icono">
+              <Icono size={18} aria-hidden="true" />
             </span>
             <span>
               <strong>Llamada entrante</strong>
@@ -187,7 +189,7 @@ export function EvidenciaSimulada({ evidencia }: { evidencia: Evidencia }) {
       return (
         <article className="evidencia evidencia-mensaje" aria-label={etiqueta}>
           <p className="evidencia-mensaje-origen">
-            <span aria-hidden="true">{textos.icono}</span> {evidencia.origen}
+            <Icono size={14} aria-hidden="true" /> {evidencia.origen}
           </p>
           <p className="evidencia-mensaje-burbuja">{evidencia.contenido}</p>
         </article>
@@ -196,7 +198,7 @@ export function EvidenciaSimulada({ evidencia }: { evidencia: Evidencia }) {
       return (
         <article className="evidencia evidencia-documento" aria-label={etiqueta}>
           <header className="evidencia-documento-cabecera">
-            <span aria-hidden="true">{textos.icono}</span>
+            <Icono size={16} aria-hidden="true" />
             <span>
               <strong>{evidencia.asunto}</strong>
               <span className="evidencia-documento-origen">{evidencia.origen}</span>

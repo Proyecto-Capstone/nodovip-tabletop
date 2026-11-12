@@ -3,6 +3,18 @@
 // trazabilidad de respuestas y recomendaciones, con exportación a PDF.
 
 import { useState } from 'react'
+import {
+  AlertTriangle,
+  ArrowLeft,
+  BarChart3,
+  BookOpenCheck,
+  Download,
+  FileSearch,
+  Lightbulb,
+  ListOrdered,
+  RefreshCw,
+  type LucideIcon,
+} from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
@@ -16,17 +28,18 @@ import {
 import { useSesion } from '../auth/sesionContext'
 import { Cargando, Errores } from '../components/Etiquetas'
 import { Lecciones } from '../components/Lecciones'
+import { Medidor } from '../components/Medidor'
 import { useGet } from '../lib/useGet'
 import { EstadoPdfBadge } from './ReportesPage'
 
-const SECCIONES = [
-  ['resumen', '1. Resumen ejecutivo'],
-  ['puntajes', '2. Puntajes finales'],
-  ['brechas', '3. Brechas detectadas'],
-  ['trazabilidad', '4. Trazabilidad'],
-  ['recomendaciones', '5. Recomendaciones'],
-  ['lecciones', '6. Lecciones aprendidas'],
-] as const
+const SECCIONES: [string, string, LucideIcon][] = [
+  ['resumen', '1. Resumen ejecutivo', FileSearch],
+  ['puntajes', '2. Puntajes finales', BarChart3],
+  ['brechas', '3. Brechas detectadas', AlertTriangle],
+  ['trazabilidad', '4. Trazabilidad', ListOrdered],
+  ['recomendaciones', '5. Recomendaciones', Lightbulb],
+  ['lecciones', '6. Lecciones aprendidas', BookOpenCheck],
+]
 
 const ETIQUETA_SEVERIDAD: Record<Severidad, string> = {
   alta: 'Alta',
@@ -101,12 +114,14 @@ function Contenido({ r, recargar }: { r: Reporte; recargar: () => void }) {
   return (
     <>
       <Link to="/reportes" className="volver">
-        ← Reportes
+        <ArrowLeft size={16} aria-hidden="true" />
+        Reportes
       </Link>
-      <div className="encabezado">
+      <div className="encabezado reporte-hero">
         <div>
+          <p className="reporte-vista-rotulo">Reporte de brechas organizacionales</p>
           <h1>Reporte de cierre: {r.nombre}</h1>
-          <p className="texto-suave">
+          <p className="texto-suave reporte-hero-pdf">
             PDF: <EstadoPdfBadge reporte={r.pdf} />
             {r.pdf?.generado_en && ` · generado ${formatoFecha(r.pdf.generado_en)}`}
           </p>
@@ -118,10 +133,15 @@ function Contenido({ r, recargar }: { r: Reporte; recargar: () => void }) {
             disabled={regenerando}
             onClick={regenerar}
           >
+            <RefreshCw size={16} aria-hidden="true" />
             {regenerando ? 'Generando…' : 'Regenerar PDF'}
           </button>
-          <a className="boton boton-primario" href={rutasReportes.pdf(r.sesion_id)} download>
-            ⬇ Exportar PDF
+          <a
+            className="boton boton-primario boton-destacado"
+            href={rutasReportes.pdf(r.sesion_id)}
+            download
+          >
+            <Download size={16} aria-hidden="true" /> Exportar PDF
           </a>
         </div>
       </div>
@@ -130,8 +150,9 @@ function Contenido({ r, recargar }: { r: Reporte; recargar: () => void }) {
       <div className="reporte-layout">
         <nav className="reporte-indice" aria-label="Contenido del reporte">
           <strong>Contenido del reporte</strong>
-          {SECCIONES.map(([ancla, titulo]) => (
+          {SECCIONES.map(([ancla, titulo, Icono]) => (
             <a key={ancla} href={`#${ancla}`}>
+              <Icono size={15} aria-hidden="true" />
               {titulo}
             </a>
           ))}
@@ -175,8 +196,8 @@ function Contenido({ r, recargar }: { r: Reporte; recargar: () => void }) {
               <Lecciones {...r.lecciones} />
             ) : (
               <p className="texto-suave">
-                El moderador todavía no completó el debrief. Cuando lo haga, sus
-                lecciones y el plan de acción aparecerán aquí y en el PDF.
+                El moderador todavía no completó el debrief. Cuando lo haga, sus lecciones y el plan
+                de acción aparecerán aquí y en el PDF.
               </p>
             )}
           </section>
@@ -192,17 +213,25 @@ function Resumen({ r }: { r: Reporte }) {
   return (
     <section id="resumen" className="tarjeta" aria-labelledby="titulo-resumen">
       <h2 id="titulo-resumen">Reporte de Brechas Organizacionales</h2>
-      <p className="texto-suave">
-        {r.escenario} · Cliente: {r.cliente ?? 'sin cliente'} · Fecha: {formatoFecha(r.iniciada_en)}{' '}
-        · Duración: {formatoDuracion(r.duracion_segundos)} · Moderador: {r.moderador} ·
-        Participantes: {r.participantes}
-      </p>
-      <div className="metricas">
-        <div className="tarjeta metrica">
-          <strong className={`texto-${nivelDe(r.porcentaje_total)}`}>{r.porcentaje_total} %</strong>
-          <span className="texto-suave">
-            Puntaje global ({formatoPuntaje(r.puntaje_total)} / {r.maximo_total})
-          </span>
+      <ul className="reporte-meta">
+        <li>{r.escenario}</li>
+        <li>Cliente: {r.cliente ?? 'sin cliente'}</li>
+        <li>Fecha: {formatoFecha(r.iniciada_en)}</li>
+        <li>Duración: {formatoDuracion(r.duracion_segundos)}</li>
+        <li>Moderador: {r.moderador}</li>
+        <li>Participantes: {r.participantes}</li>
+      </ul>
+      <div className="metricas reporte-metricas">
+        <div className="tarjeta metrica metrica-madurez">
+          <Medidor porcentaje={r.porcentaje_total} etiqueta="Nivel de madurez" />
+          <div>
+            <strong className={`texto-${nivelDe(r.porcentaje_total)}`}>
+              {r.porcentaje_total} %
+            </strong>
+            <span className="texto-suave">
+              Puntaje global ({formatoPuntaje(r.puntaje_total)} / {r.maximo_total})
+            </span>
+          </div>
         </div>
         <div className="tarjeta metrica">
           <strong>{r.brechas.length}</strong>

@@ -5,6 +5,7 @@ from datetime import datetime
 from typing import Annotated
 from uuid import UUID
 
+import email_validator
 from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from sqlalchemy.exc import IntegrityError
@@ -28,6 +29,14 @@ from app.domain.usuarios import (
     Usuario,
 )
 from app.ports.usuario_repository import FiltroUsuarios
+
+# Las cuentas ficticias del proyecto usan el dominio reservado ".test"
+# (RFC 6761, p. ej. demo.nodovip.test) para no apuntar nunca a un buzón real.
+# email-validator lo rechaza por defecto como "special-use", y por eso esas
+# cuentas no se podían editar ni cambiar de rol. Se permite solo "test"; los
+# demás dominios reservados (localhost, invalid, onion…) siguen rechazados.
+if "test" in email_validator.SPECIAL_USE_DOMAIN_NAMES:
+    email_validator.SPECIAL_USE_DOMAIN_NAMES.remove("test")
 
 router = APIRouter(prefix="/api/usuarios", tags=["usuarios"])
 

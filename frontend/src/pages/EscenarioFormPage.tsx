@@ -1,7 +1,20 @@
 // PB-03: crear y editar escenarios base (solo Administrador).
 
-import { useState, type FormEvent } from 'react'
-import { Check, Circle } from 'lucide-react'
+import { useState, type FormEvent, type ReactNode } from 'react'
+import {
+  ArrowDown,
+  ArrowLeft,
+  ArrowUp,
+  Check,
+  Circle,
+  FileText,
+  ListChecks,
+  Plus,
+  Save,
+  Trash2,
+  Users,
+  Zap,
+} from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import {
@@ -16,6 +29,7 @@ import {
   type TipoEscenario,
 } from '../api/escenarios'
 import { useSesion } from '../auth/sesionContext'
+import { Anillo } from '../components/Anillo'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { EditorOpciones } from '../components/EditorOpciones'
 import { EditorEvidencia } from '../components/Evidencia'
@@ -231,9 +245,7 @@ function FormularioEscenario({
   const alternarRol = (codigo: string) =>
     setF((a) => ({
       ...a,
-      roles: a.roles.includes(codigo)
-        ? a.roles.filter((r) => r !== codigo)
-        : [...a.roles, codigo],
+      roles: a.roles.includes(codigo) ? a.roles.filter((r) => r !== codigo) : [...a.roles, codigo],
     }))
 
   const cambiarInject = (clave: string, cambios: Partial<InjectForm>) =>
@@ -258,9 +270,7 @@ function FormularioEscenario({
     }))
 
   // Reglas de RF-04, calculadas en vivo para guiar al administrador.
-  const rolesSinTareas = f.roles.filter(
-    (r) => !f.tareas.some((t) => t.rol_codigo === r),
-  )
+  const rolesSinTareas = f.roles.filter((r) => !f.tareas.some((t) => t.rol_codigo === r))
   const tareasHuerfanas = f.tareas.filter((t) => !f.roles.includes(t.rol_codigo))
   const requisitos = [
     {
@@ -288,9 +298,7 @@ function FormularioEscenario({
     setErrores(undefined)
     try {
       const datos = aEntrada(f)
-      const guardado = id
-        ? await actualizarEscenario(id, datos)
-        : await crearEscenario(datos)
+      const guardado = id ? await actualizarEscenario(id, datos) : await crearEscenario(datos)
       navigate(`/escenarios/${guardado.id}`)
     } catch (error) {
       setErrores(error instanceof ApiError ? error.errores : ['Error de conexión'])
@@ -300,17 +308,30 @@ function FormularioEscenario({
     }
   }
 
+  const cumplidos = requisitos.filter((r) => r.ok).length
+  const avance = Math.round((cumplidos / requisitos.length) * 100)
+  const secciones = [
+    { id: 'seccion-datos', texto: 'Datos generales', listo: Boolean(f.nombre && f.tipo_codigo) },
+    { id: 'seccion-roles', texto: 'Roles', listo: f.roles.length > 0 },
+    { id: 'seccion-injects', texto: 'Injects', listo: f.injects.length >= MIN_INJECTS },
+    {
+      id: 'seccion-tareas',
+      texto: 'Tareas por rol',
+      listo: f.roles.length > 0 && rolesSinTareas.length === 0,
+    },
+  ]
+
   return (
-    <form onSubmit={guardar}>
+    <form onSubmit={guardar} className="formulario-escenario">
       <Link to={id ? `/escenarios/${id}` : '/escenarios'} className="volver">
-        ← {id ? 'Volver al escenario' : 'Biblioteca de escenarios'}
+        <ArrowLeft size={16} aria-hidden="true" />
+        {id ? 'Volver al escenario' : 'Biblioteca de escenarios'}
       </Link>
       <div className="encabezado">
         <div>
           <h1>{id ? 'Editar escenario' : 'Nuevo escenario base'}</h1>
           <p className="texto-suave">
-            Se guarda como borrador. Publícalo desde su ficha cuando cumpla los
-            requisitos.
+            Se guarda como borrador. Publícalo desde su ficha cuando cumpla los requisitos.
           </p>
         </div>
       </div>
@@ -318,15 +339,26 @@ function FormularioEscenario({
       <Errores errores={errores} />
 
       <div className="formulario-columnas">
-        <div>
-          <section className="tarjeta">
-            <h2>1. Datos generales</h2>
+        <div className="formulario-secciones">
+          <section
+            className="tarjeta seccion-formulario"
+            id="seccion-datos"
+            aria-labelledby="titulo-datos"
+          >
+            <CabeceraSeccion
+              numero={1}
+              icono={<FileText />}
+              id="titulo-datos"
+              titulo="Datos generales"
+              descripcion="Nombre, tipo de incidente, complejidad y la historia que se presenta."
+            />
             <label className="campo">
               <span>Nombre</span>
               <input
                 required
                 minLength={3}
                 maxLength={150}
+                placeholder="Ej.: Ransomware en servidores de archivos"
                 value={f.nombre}
                 onChange={(e) => cambiar({ nombre: e.target.value })}
               />
@@ -334,11 +366,7 @@ function FormularioEscenario({
             <div className="fila-campos">
               <label className="campo">
                 <span>Tipo de incidente</span>
-                <select
-                  required
-                  value={f.tipo_codigo}
-                  onChange={(e) => elegirTipo(e.target.value)}
-                >
+                <select required value={f.tipo_codigo} onChange={(e) => elegirTipo(e.target.value)}>
                   <option value="">Elegir…</option>
                   {tipos.map((t) => (
                     <option key={t.codigo} value={t.codigo}>
@@ -368,283 +396,370 @@ function FormularioEscenario({
                 minLength={20}
                 maxLength={5000}
                 rows={4}
+                placeholder="Contexto que verán los participantes al iniciar el ejercicio."
                 value={f.descripcion}
                 onChange={(e) => cambiar({ descripcion: e.target.value })}
               />
             </label>
           </section>
 
-          <section className="tarjeta">
-            <h2>2. Roles involucrados</h2>
-            <div className="opciones-roles">
-              {roles.map((r) => (
-                <label key={r.codigo} className="opcion">
-                  <input
-                    type="checkbox"
-                    checked={f.roles.includes(r.codigo)}
-                    onChange={() => alternarRol(r.codigo)}
-                  />
-                  {r.nombre}
-                </label>
+          <section
+            className="tarjeta seccion-formulario"
+            id="seccion-roles"
+            aria-labelledby="titulo-roles"
+          >
+            <CabeceraSeccion
+              numero={2}
+              icono={<Users />}
+              id="titulo-roles"
+              titulo="Roles involucrados"
+              descripcion="Al elegir el tipo de incidente se proponen sus roles sugeridos."
+              extra={
+                <span className="contador" aria-label={`${f.roles.length} roles elegidos`}>
+                  {f.roles.length}
+                </span>
+              }
+            />
+            <div className="fichas-roles">
+              {roles.map((r) => {
+                const marcado = f.roles.includes(r.codigo)
+                return (
+                  <label key={r.codigo} className={`ficha-rol${marcado ? ' marcada' : ''}`}>
+                    <input
+                      type="checkbox"
+                      checked={marcado}
+                      onChange={() => alternarRol(r.codigo)}
+                    />
+                    <span className="ficha-rol-marca" aria-hidden="true">
+                      {marcado && <Check />}
+                    </span>
+                    {r.nombre}
+                  </label>
+                )
+              })}
+            </div>
+          </section>
+
+          <section
+            className="tarjeta seccion-formulario"
+            id="seccion-injects"
+            aria-labelledby="titulo-injects"
+          >
+            <CabeceraSeccion
+              numero={3}
+              icono={<Zap />}
+              id="titulo-injects"
+              titulo="Injects"
+              descripcion={`Eventos que el moderador lanza durante el ejercicio (mínimo ${MIN_INJECTS}).`}
+              extra={
+                <button
+                  type="button"
+                  className="boton boton-secundario"
+                  onClick={() => cambiar({ injects: [...f.injects, injectVacio()] })}
+                >
+                  <Plus size={16} aria-hidden="true" />
+                  Agregar inject
+                </button>
+              }
+            />
+            <ol className="lista-bloques">
+              {f.injects.map((i, indice) => (
+                <li key={i.clave}>
+                  <fieldset className="bloque bloque-numerado">
+                    <legend className="solo-lector">Inject {indice + 1}</legend>
+                    <div className="bloque-cabecera">
+                      <span className="bloque-numero" aria-hidden="true">
+                        {indice + 1}
+                      </span>
+                      <span className="bloque-titulo">
+                        <span className="bloque-tipo">Inject {indice + 1}</span>
+                        {i.titulo || <em>Sin título</em>}
+                      </span>
+                      <span className="bloque-acciones">
+                        <button
+                          type="button"
+                          className="boton-icono"
+                          disabled={indice === 0}
+                          aria-label={`Subir inject ${indice + 1}`}
+                          title="Subir"
+                          onClick={() => moverInject(indice, -1)}
+                        >
+                          <ArrowUp aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="boton-icono"
+                          disabled={indice === f.injects.length - 1}
+                          aria-label={`Bajar inject ${indice + 1}`}
+                          title="Bajar"
+                          onClick={() => moverInject(indice, 1)}
+                        >
+                          <ArrowDown aria-hidden="true" />
+                        </button>
+                        <button
+                          type="button"
+                          className="boton-icono boton-icono-peligro"
+                          aria-label={`Quitar inject ${indice + 1}`}
+                          title="Quitar"
+                          onClick={() =>
+                            cambiar({ injects: f.injects.filter((x) => x.clave !== i.clave) })
+                          }
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </button>
+                      </span>
+                    </div>
+                    <div className="fila-campos">
+                      <label className="campo campo-ancho">
+                        <span>Título</span>
+                        <input
+                          required
+                          minLength={3}
+                          maxLength={150}
+                          value={i.titulo}
+                          onChange={(e) => cambiarInject(i.clave, { titulo: e.target.value })}
+                        />
+                      </label>
+                      <label className="campo campo-corto">
+                        <span>Minuto</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={600}
+                          value={i.minuto}
+                          onChange={(e) => cambiarInject(i.clave, { minuto: e.target.value })}
+                        />
+                      </label>
+                    </div>
+                    <label className="campo">
+                      <span>Descripción</span>
+                      <textarea
+                        required
+                        minLength={10}
+                        rows={2}
+                        value={i.descripcion}
+                        onChange={(e) => cambiarInject(i.clave, { descripcion: e.target.value })}
+                      />
+                    </label>
+                    <EditorEvidencia
+                      valor={i.evidencia}
+                      onChange={(evidencia) => cambiarInject(i.clave, { evidencia })}
+                    />
+                  </fieldset>
+                </li>
               ))}
-            </div>
+            </ol>
           </section>
 
-          <section className="tarjeta">
-            <div className="titulo-seccion">
-              <h2>3. Injects</h2>
-              <button
-                type="button"
-                className="boton"
-                onClick={() => cambiar({ injects: [...f.injects, injectVacio()] })}
-              >
-                + Agregar inject
-              </button>
-            </div>
-            {f.injects.map((i, indice) => (
-              <fieldset key={i.clave} className="bloque">
-                <legend>Inject {indice + 1}</legend>
-                <div className="fila-campos">
-                  <label className="campo campo-ancho">
-                    <span>Título</span>
-                    <input
-                      required
-                      minLength={3}
-                      maxLength={150}
-                      value={i.titulo}
-                      onChange={(e) => cambiarInject(i.clave, { titulo: e.target.value })}
-                    />
-                  </label>
-                  <label className="campo campo-corto">
-                    <span>Minuto</span>
-                    <input
-                      type="number"
-                      min={0}
-                      max={600}
-                      value={i.minuto}
-                      onChange={(e) => cambiarInject(i.clave, { minuto: e.target.value })}
-                    />
-                  </label>
-                </div>
-                <label className="campo">
-                  <span>Descripción</span>
-                  <textarea
-                    required
-                    minLength={10}
-                    rows={2}
-                    value={i.descripcion}
-                    onChange={(e) =>
-                      cambiarInject(i.clave, { descripcion: e.target.value })
-                    }
-                  />
-                </label>
-                <EditorEvidencia
-                  valor={i.evidencia}
-                  onChange={(evidencia) => cambiarInject(i.clave, { evidencia })}
-                />
-                <div className="acciones-bloque">
-                  <button
-                    type="button"
-                    className="boton boton-texto"
-                    disabled={indice === 0}
-                    onClick={() => moverInject(indice, -1)}
-                  >
-                    ↑ Subir
-                  </button>
-                  <button
-                    type="button"
-                    className="boton boton-texto"
-                    disabled={indice === f.injects.length - 1}
-                    onClick={() => moverInject(indice, 1)}
-                  >
-                    ↓ Bajar
-                  </button>
-                  <button
-                    type="button"
-                    className="boton boton-texto texto-peligro"
-                    onClick={() =>
-                      cambiar({ injects: f.injects.filter((x) => x.clave !== i.clave) })
-                    }
-                  >
-                    Quitar
-                  </button>
-                </div>
-              </fieldset>
-            ))}
-          </section>
-
-          <section className="tarjeta">
-            <div className="titulo-seccion">
-              <h2>4. Tareas y preguntas por rol</h2>
-              <button
-                type="button"
-                className="boton"
-                disabled={f.roles.length === 0}
-                title={f.roles.length === 0 ? 'Primero elige los roles' : ''}
-                onClick={() =>
-                  cambiar({
-                    tareas: [...f.tareas, tareaVacia(rolesSinTareas[0] ?? f.roles[0])],
-                  })
-                }
-              >
-                + Agregar tarea
-              </button>
-            </div>
+          <section
+            className="tarjeta seccion-formulario"
+            id="seccion-tareas"
+            aria-labelledby="titulo-tareas"
+          >
+            <CabeceraSeccion
+              numero={4}
+              icono={<ListChecks />}
+              id="titulo-tareas"
+              titulo="Tareas y preguntas por rol"
+              descripcion="Cada rol necesita al menos una tarea. Se evalúa por criterios u opciones."
+              extra={
+                <button
+                  type="button"
+                  className="boton boton-secundario"
+                  disabled={f.roles.length === 0}
+                  title={f.roles.length === 0 ? 'Primero elige los roles' : ''}
+                  onClick={() =>
+                    cambiar({
+                      tareas: [...f.tareas, tareaVacia(rolesSinTareas[0] ?? f.roles[0])],
+                    })
+                  }
+                >
+                  <Plus size={16} aria-hidden="true" />
+                  Agregar tarea
+                </button>
+              }
+            />
             {f.tareas.length === 0 && (
-              <p className="texto-suave">Agrega al menos una tarea para cada rol.</p>
+              <div className="vacio vacio-compacto">
+                {f.roles.length === 0
+                  ? 'Primero elige los roles involucrados.'
+                  : 'Agrega al menos una tarea para cada rol.'}
+              </div>
             )}
-            {f.tareas.map((t, indice) => (
-              <fieldset key={t.clave} className="bloque">
-                <legend>Tarea {indice + 1}</legend>
-                <div className="fila-campos">
-                  <label className="campo">
-                    <span>Rol</span>
-                    <select
-                      required
-                      value={t.rol_codigo}
-                      onChange={(e) =>
-                        cambiarTarea(t.clave, { rol_codigo: e.target.value })
-                      }
-                    >
-                      <option value="">Elegir…</option>
-                      {f.roles.map((r) => (
-                        <option key={r} value={r}>
-                          {nombreRol(roles, r)}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="campo">
-                    <span>Dificultad</span>
-                    <select
-                      value={t.dificultad}
-                      onChange={(e) =>
-                        cambiarTarea(t.clave, { dificultad: e.target.value as Nivel })
-                      }
-                    >
-                      {NIVELES.map((n) => (
-                        <option key={n} value={n}>
-                          {ETIQUETA_NIVEL[n]}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="campo campo-corto">
-                    <span>Puntaje</span>
-                    <input
-                      type="number"
-                      required
-                      min={1}
-                      max={100}
-                      value={t.puntaje}
-                      onChange={(e) => cambiarTarea(t.clave, { puntaje: e.target.value })}
-                    />
-                  </label>
-                  <label className="campo campo-corto">
-                    <span>Minutos</span>
-                    <input
-                      type="number"
-                      required
-                      min={0.5}
-                      max={60}
-                      step={0.5}
-                      value={t.tiempoMin}
-                      onChange={(e) =>
-                        cambiarTarea(t.clave, { tiempoMin: e.target.value })
-                      }
-                    />
-                  </label>
-                </div>
-                <div className="fila-campos">
-                  <label className="campo">
-                    <span>Se pregunta en</span>
-                    <select
-                      value={t.injectClave}
-                      onChange={(e) => cambiarTarea(t.clave, { injectClave: e.target.value })}
-                    >
-                      <option value="">Repartir en orden</option>
-                      {f.injects.map((i, n) => (
-                        <option key={i.clave} value={i.clave}>
-                          Inject {n + 1}
-                          {i.titulo ? ` · ${i.titulo}` : ''}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="campo">
-                    <span>Tipo de respuesta</span>
-                    <select
-                      value={t.tipo}
-                      onChange={(e) => {
-                        const tipo = e.target.value as TipoTarea
-                        cambiarTarea(t.clave, {
-                          tipo,
-                          opciones:
-                            tipo === 'seleccion_multiple' && t.opciones.length === 0
-                              ? opcionesIniciales()
-                              : t.opciones,
-                        })
-                      }}
-                    >
-                      <option value="texto_libre">{ETIQUETA_TIPO_TAREA.texto_libre}</option>
-                      <option value="seleccion_multiple">
-                        {ETIQUETA_TIPO_TAREA.seleccion_multiple}
-                      </option>
-                    </select>
-                  </label>
-                </div>
-                <label className="campo">
-                  <span>Pregunta o tarea</span>
-                  <textarea
-                    required
-                    minLength={10}
-                    rows={2}
-                    value={t.enunciado}
-                    onChange={(e) => cambiarTarea(t.clave, { enunciado: e.target.value })}
-                  />
-                </label>
-                {t.tipo === 'seleccion_multiple' ? (
-                  <EditorOpciones
-                    opciones={t.opciones}
-                    onChange={(opciones) => cambiarTarea(t.clave, { opciones })}
-                  />
-                ) : (
-                  <label className="campo">
-                    <span>Criterios de evaluación (uno por línea)</span>
-                    <textarea
-                      required
-                      rows={3}
-                      value={t.criterios}
-                      onChange={(e) => cambiarTarea(t.clave, { criterios: e.target.value })}
-                    />
-                  </label>
-                )}
-                <label className="campo">
-                  <span>Respuesta esperada (opcional)</span>
-                  <textarea
-                    rows={2}
-                    value={t.respuesta}
-                    onChange={(e) => cambiarTarea(t.clave, { respuesta: e.target.value })}
-                  />
-                </label>
-                <div className="acciones-bloque">
-                  <button
-                    type="button"
-                    className="boton boton-texto texto-peligro"
-                    onClick={() =>
-                      cambiar({ tareas: f.tareas.filter((x) => x.clave !== t.clave) })
-                    }
-                  >
-                    Quitar
-                  </button>
-                </div>
-              </fieldset>
-            ))}
+            <ol className="lista-bloques">
+              {f.tareas.map((t, indice) => (
+                <li key={t.clave}>
+                  <fieldset className="bloque bloque-numerado">
+                    <legend className="solo-lector">Tarea {indice + 1}</legend>
+                    <div className="bloque-cabecera">
+                      <span className="bloque-numero" aria-hidden="true">
+                        {indice + 1}
+                      </span>
+                      <span className="bloque-titulo">
+                        <span className="bloque-tipo">Tarea {indice + 1}</span>
+                        {t.rol_codigo ? nombreRol(roles, t.rol_codigo) : <em>Sin rol</em>}
+                        <span className="bloque-detalle">
+                          {ETIQUETA_TIPO_TAREA[t.tipo]} · {t.puntaje || 0} pts
+                        </span>
+                      </span>
+                      <span className="bloque-acciones">
+                        <button
+                          type="button"
+                          className="boton-icono boton-icono-peligro"
+                          aria-label={`Quitar tarea ${indice + 1}`}
+                          title="Quitar"
+                          onClick={() =>
+                            cambiar({ tareas: f.tareas.filter((x) => x.clave !== t.clave) })
+                          }
+                        >
+                          <Trash2 aria-hidden="true" />
+                        </button>
+                      </span>
+                    </div>
+                    <div className="fila-campos">
+                      <label className="campo">
+                        <span>Rol</span>
+                        <select
+                          required
+                          value={t.rol_codigo}
+                          onChange={(e) => cambiarTarea(t.clave, { rol_codigo: e.target.value })}
+                        >
+                          <option value="">Elegir…</option>
+                          {f.roles.map((r) => (
+                            <option key={r} value={r}>
+                              {nombreRol(roles, r)}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="campo">
+                        <span>Dificultad</span>
+                        <select
+                          value={t.dificultad}
+                          onChange={(e) =>
+                            cambiarTarea(t.clave, { dificultad: e.target.value as Nivel })
+                          }
+                        >
+                          {NIVELES.map((n) => (
+                            <option key={n} value={n}>
+                              {ETIQUETA_NIVEL[n]}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="campo campo-corto">
+                        <span>Puntaje</span>
+                        <input
+                          type="number"
+                          required
+                          min={1}
+                          max={100}
+                          value={t.puntaje}
+                          onChange={(e) => cambiarTarea(t.clave, { puntaje: e.target.value })}
+                        />
+                      </label>
+                      <label className="campo campo-corto">
+                        <span>Minutos</span>
+                        <input
+                          type="number"
+                          required
+                          min={0.5}
+                          max={60}
+                          step={0.5}
+                          value={t.tiempoMin}
+                          onChange={(e) => cambiarTarea(t.clave, { tiempoMin: e.target.value })}
+                        />
+                      </label>
+                    </div>
+                    <div className="fila-campos">
+                      <label className="campo">
+                        <span>Se pregunta en</span>
+                        <select
+                          value={t.injectClave}
+                          onChange={(e) => cambiarTarea(t.clave, { injectClave: e.target.value })}
+                        >
+                          <option value="">Repartir en orden</option>
+                          {f.injects.map((i, n) => (
+                            <option key={i.clave} value={i.clave}>
+                              Inject {n + 1}
+                              {i.titulo ? ` · ${i.titulo}` : ''}
+                            </option>
+                          ))}
+                        </select>
+                      </label>
+                      <label className="campo">
+                        <span>Tipo de respuesta</span>
+                        <select
+                          value={t.tipo}
+                          onChange={(e) => {
+                            const tipo = e.target.value as TipoTarea
+                            cambiarTarea(t.clave, {
+                              tipo,
+                              opciones:
+                                tipo === 'seleccion_multiple' && t.opciones.length === 0
+                                  ? opcionesIniciales()
+                                  : t.opciones,
+                            })
+                          }}
+                        >
+                          <option value="texto_libre">{ETIQUETA_TIPO_TAREA.texto_libre}</option>
+                          <option value="seleccion_multiple">
+                            {ETIQUETA_TIPO_TAREA.seleccion_multiple}
+                          </option>
+                        </select>
+                      </label>
+                    </div>
+                    <label className="campo">
+                      <span>Pregunta o tarea</span>
+                      <textarea
+                        required
+                        minLength={10}
+                        rows={2}
+                        value={t.enunciado}
+                        onChange={(e) => cambiarTarea(t.clave, { enunciado: e.target.value })}
+                      />
+                    </label>
+                    {t.tipo === 'seleccion_multiple' ? (
+                      <EditorOpciones
+                        opciones={t.opciones}
+                        onChange={(opciones) => cambiarTarea(t.clave, { opciones })}
+                      />
+                    ) : (
+                      <label className="campo">
+                        <span>Criterios de evaluación (uno por línea)</span>
+                        <textarea
+                          required
+                          rows={3}
+                          value={t.criterios}
+                          onChange={(e) => cambiarTarea(t.clave, { criterios: e.target.value })}
+                        />
+                      </label>
+                    )}
+                    <label className="campo">
+                      <span>Respuesta esperada (opcional)</span>
+                      <textarea
+                        rows={2}
+                        value={t.respuesta}
+                        onChange={(e) => cambiarTarea(t.clave, { respuesta: e.target.value })}
+                      />
+                    </label>
+                  </fieldset>
+                </li>
+              ))}
+            </ol>
           </section>
         </div>
 
-        <aside className="tarjeta resumen-lateral">
-          <h2>Requisitos para publicar</h2>
+        <aside className="tarjeta resumen-lateral" aria-labelledby="titulo-requisitos">
+          <div className="resumen-avance">
+            <Anillo porcentaje={avance} />
+            <div>
+              <h2 id="titulo-requisitos">Requisitos para publicar</h2>
+              <p className="texto-suave">
+                {cumplidos} de {requisitos.length} cumplidos
+              </p>
+            </div>
+          </div>
           <ul className="requisitos">
             {requisitos.map((r) => (
               <li key={r.texto} className={r.ok ? 'ok' : 'pendiente'}>
@@ -658,19 +773,77 @@ function FormularioEscenario({
             ))}
           </ul>
           {tareasHuerfanas.length > 0 && (
-            <p className="texto-peligro">
-              {tareasHuerfanas.length} tarea(s) sin rol válido.
-            </p>
+            <p className="texto-peligro">{tareasHuerfanas.length} tarea(s) sin rol válido.</p>
           )}
+
+          <dl className="resumen-conteo">
+            <div>
+              <dt>Roles</dt>
+              <dd>{f.roles.length}</dd>
+            </div>
+            <div>
+              <dt>Injects</dt>
+              <dd>{f.injects.length}</dd>
+            </div>
+            <div>
+              <dt>Tareas</dt>
+              <dd>{f.tareas.length}</dd>
+            </div>
+          </dl>
+
+          <nav className="indice-formulario" aria-label="Secciones del formulario">
+            {secciones.map((sec, n) => (
+              <a key={sec.id} href={`#${sec.id}`} className={sec.listo ? 'listo' : undefined}>
+                <span className="indice-numero" aria-hidden="true">
+                  {sec.listo ? <Check /> : n + 1}
+                </span>
+                {sec.texto}
+                {sec.listo && <span className="solo-lector"> (completo)</span>}
+              </a>
+            ))}
+          </nav>
+
           <button
             type="submit"
-            className="boton boton-primario boton-bloque"
+            className="boton boton-primario boton-destacado boton-bloque"
             disabled={guardando}
           >
+            <Save size={17} aria-hidden="true" />
             {guardando ? 'Guardando…' : 'Guardar'}
           </button>
+          <p className="texto-suave resumen-nota">Se guarda como borrador.</p>
         </aside>
       </div>
     </form>
+  )
+}
+
+function CabeceraSeccion({
+  numero,
+  icono,
+  id,
+  titulo,
+  descripcion,
+  extra,
+}: {
+  numero: number
+  icono: ReactNode
+  id: string
+  titulo: string
+  descripcion: string
+  extra?: ReactNode
+}) {
+  return (
+    <div className="seccion-cabecera">
+      <span className="seccion-icono" aria-hidden="true">
+        {icono}
+        <span className="seccion-numero">{numero}</span>
+      </span>
+      <div className="seccion-textos">
+        <h2 id={id}>{titulo}</h2>
+        <p className="texto-suave">{descripcion}</p>
+      </div>
+      {extra && <div className="seccion-extra">{extra}</div>}
+    </div>
   )
 }

@@ -189,37 +189,75 @@ describe('Reporte de brechas', () => {
 })
 
 describe('Lista de reportes', () => {
-  it('muestra cada sesión finalizada con el estado de su PDF', async () => {
-    const lista: SesionConReporte[] = [
-      {
-        id: ID,
-        nombre: 'Simulacro Q4',
-        cliente: 'Banco Andino',
-        finalizada_en: '2026-11-02T14:45:00Z',
-        participantes: 2,
-        reporte: REPORTE.pdf,
-      },
-      {
-        id: 'otro',
-        nombre: 'Prueba',
-        cliente: null,
-        finalizada_en: null,
-        participantes: 1,
-        reporte: { estado: 'fallido', solicitado_en: '', generado_en: null, error: 'Pango' },
-      },
-    ]
-    vi.stubGlobal(
-      'fetch',
-      vi.fn(async () => respuesta(200, lista)),
-    )
+  const lista: SesionConReporte[] = [
+    {
+      id: ID,
+      nombre: 'Simulacro Q4',
+      cliente: 'Banco Andino',
+      finalizada_en: '2026-11-02T14:45:00Z',
+      participantes: 2,
+      reporte: REPORTE.pdf,
+    },
+    {
+      id: 'otro',
+      nombre: 'Prueba',
+      cliente: null,
+      finalizada_en: null,
+      participantes: 1,
+      reporte: { estado: 'fallido', solicitado_en: '', generado_en: null, error: 'Pango' },
+    },
+  ]
+
+  /** La lista y el detalle que pide la vista previa. */
+  function simularApi() {
+    const fetchSimulado = vi.fn(async (url: string) => {
+      if (url.endsWith('/reportes')) return respuesta(200, lista)
+      const sesion = lista.find((x) => url.endsWith(`/${x.id}`))!
+      return respuesta(200, {
+        ...REPORTE,
+        sesion_id: sesion.id,
+        nombre: sesion.nombre,
+        pdf: sesion.reporte,
+      })
+    })
+    vi.stubGlobal('fetch', fetchSimulado)
+    return fetchSimulado
+  }
+
+  it('muestra cada sesión finalizada con el estado de su PDF y los indicadores', async () => {
+    simularApi()
     renderConSesion(<ReportesPage />, { sesion: sesionDePrueba(ANALISTA), ruta: '/reportes' })
-    expect(await screen.findByText('Simulacro Q4')).toBeInTheDocument()
-    expect(screen.getByText('PDF listo')).toBeInTheDocument()
-    expect(screen.getByText('Falló el PDF')).toBeInTheDocument()
-    expect(screen.getByText('Sin cliente')).toBeInTheDocument()
-    expect(screen.getAllByRole('link', { name: 'Ver reporte' })[0]).toHaveAttribute(
+
+    const items = await screen.findByRole('list')
+    expect(within(items).getByText('Simulacro Q4')).toBeInTheDocument()
+    expect(within(items).getByText('PDF listo')).toBeInTheDocument()
+    expect(within(items).getByText('Falló el PDF')).toBeInTheDocument()
+    expect(within(items).getByText('Sin cliente')).toBeInTheDocument()
+
+    const resumen = screen.getByRole('region', { name: 'Resumen de reportes' })
+    expect(within(resumen).getByText('PDF listos').nextSibling).toHaveTextContent('1')
+    expect(within(resumen).getByText('PDF pendientes').nextSibling).toHaveTextContent('1')
+  })
+
+  it('la vista previa carga el reporte elegido y enlaza al reporte completo', async () => {
+    const fetchSimulado = simularApi()
+    renderConSesion(<ReportesPage />, { sesion: sesionDePrueba(ANALISTA), ruta: '/reportes' })
+
+    const vista = await screen.findByRole('complementary', { name: 'Simulacro Q4' })
+    expect(await within(vista).findByRole('img', { name: /Nivel de madurez/ })).toBeInTheDocument()
+    expect(within(vista).getByRole('link', { name: /Ver reporte completo/ })).toHaveAttribute(
       'href',
       `/reportes/${ID}`,
     )
+    expect(within(vista).getByRole('link', { name: /Descargar PDF/ })).toHaveAttribute(
+      'href',
+      `/api/reportes/${ID}/pdf`,
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /^Prueba/ }))
+    const otra = await screen.findByRole('complementary', { name: 'Prueba' })
+    // Con el PDF fallido se ofrece generarlo en lugar de descargarlo.
+    expect(within(otra).getByRole('button', { name: /Generar PDF/ })).toBeInTheDocument()
+    expect(fetchSimulado).toHaveBeenCalledWith('/api/reportes/otro', expect.anything())
   })
 })

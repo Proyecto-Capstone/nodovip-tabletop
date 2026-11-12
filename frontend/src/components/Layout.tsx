@@ -19,6 +19,7 @@ import {
   type LucideIcon,
 } from 'lucide-react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import logoNodovip from '../assets/marca/nodovip-horizontal-claro.webp'
 import { nombreRolSistema, useSesion } from '../auth/sesionContext'
 import { ProveedorConfirmacion } from './DialogoConfirmacion'
 
@@ -255,10 +256,22 @@ export function Layout() {
             >
               {cajonAbierto ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
             </button>
-            <span className="marca">NODOVIP — Plataforma Tabletop Exercise</span>
+            <NavLink to="/" className="marca" aria-label="NODOVIP Tabletop, ir al inicio">
+              <img src={logoNodovip} alt="" width={720} height={206} />
+              <span className="marca-producto" aria-hidden="true">
+                Tabletop
+              </span>
+            </NavLink>
           </div>
           {usuario && (
             <div className="menu-usuario">
+              <span
+                className="avatar"
+                aria-hidden="true"
+                title={`${usuario.nombre} · ${nombreRolSistema(usuario.rol)}`}
+              >
+                {iniciales(usuario.nombre)}
+              </span>
               <span className="usuario-datos">
                 <strong>{usuario.nombre}</strong>
                 <span className="usuario-rol">{nombreRolSistema(usuario.rol)}</span>
@@ -275,9 +288,7 @@ export function Layout() {
           )}
         </header>
 
-        {cajonAbierto && (
-          <div className="velo-cajon" onClick={() => setCajonAbierto(false)} />
-        )}
+        {cajonAbierto && <div className="velo-cajon" onClick={() => setCajonAbierto(false)} />}
 
         <nav className="sidebar" aria-label="Navegación principal">
           {grupos.map((grupo) => {
@@ -323,6 +334,14 @@ export function Layout() {
   )
 }
 
+/** Hasta dos iniciales del nombre, para el avatar del menú de usuario. */
+function iniciales(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/).filter(Boolean)
+  return (
+    (partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')
+  ).toUpperCase()
+}
+
 function Migas({ grupo, titulo }: { grupo: string; titulo: string }) {
   return (
     <nav className="migas" aria-label="Ruta de navegación">
@@ -332,4 +351,3 @@ function Migas({ grupo, titulo }: { grupo: string; titulo: string }) {
     </nav>
   )
 }
-

@@ -3,7 +3,7 @@
 // opciones elegidas ni criterios: solo el acumulado (PB-10). Sigue el
 // prototipo P-06 (Figura 21): tablero oscuro, podio y ranking completo.
 
-import { Circle, Medal } from 'lucide-react'
+import { ArrowLeft, Circle, Crown, Medal, Percent, Trophy, Users, Zap } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import type { Leaderboard, PosicionParticipante, PosicionRol } from '../api/leaderboard'
 import { useSesion } from '../auth/sesionContext'
@@ -20,6 +20,13 @@ const tierDeColor = (porcentaje: number) => {
   if (porcentaje >= 70) return 'tier-verde'
   if (porcentaje >= 40) return 'tier-naranja'
   return 'tier-rojo'
+}
+
+function iniciales(nombre: string): string {
+  const partes = nombre.trim().split(/\s+/).filter(Boolean)
+  return (
+    (partes[0]?.[0] ?? '') + (partes.length > 1 ? partes[partes.length - 1][0] : '')
+  ).toUpperCase()
 }
 
 export function LeaderboardSesionPage() {
@@ -51,42 +58,87 @@ function Panel({
   recibidaEn: number
 }) {
   const segundos = useSegundosDesde(recibidaEn)
-  const finalizada = datos.sesion.estado === 'finalizada'
+  const { sesion, participantes } = datos
+  const finalizada = sesion.estado === 'finalizada'
+  const avanceInjects = sesion.total_injects
+    ? Math.round((sesion.inject_actual / sesion.total_injects) * 100)
+    : 0
+  const promedio = participantes.length
+    ? Math.round(participantes.reduce((suma, p) => suma + p.porcentaje, 0) / participantes.length)
+    : 0
+  const respondidas = participantes.reduce((suma, p) => suma + p.respondidas, 0)
+  const pendientes = participantes.reduce((suma, p) => suma + p.sin_responder, 0)
+  const lider = participantes.find((p) => esPodio(p.posicion, p.puntaje))
 
   return (
-    <>
+    <div className="leaderboard-sesion">
       <Link to="/leaderboard" className="volver">
-        ← Leaderboard
+        <ArrowLeft size={16} aria-hidden="true" />
+        Leaderboard
       </Link>
-      <div className="encabezado">
-        <div>
-          <h1>{datos.sesion.nombre}</h1>
-          <p className="texto-suave">
-            Inject {datos.sesion.inject_actual}/{datos.sesion.total_injects}
-          </p>
+
+      <section className="leaderboard-hero" aria-label="Resumen de la sesión">
+        <div className="leaderboard-hero-principal">
+          <div className="fila-badges">
+            <EstadoSesionBadge estado={sesion.estado} />
+            <IndicadorConexion conexion={conexion} finalizada={finalizada} segundos={segundos} />
+          </div>
+          <h1>{sesion.nombre}</h1>
+          <div className="avance-injects avance-injects-grande">
+            <span className="texto-suave">
+              Inject {sesion.inject_actual}/{sesion.total_injects}
+            </span>
+            <span className="avance-injects-barra" aria-hidden="true">
+              <span style={{ width: `${avanceInjects}%` }} />
+            </span>
+          </div>
         </div>
-        <div className="acciones-fila">
-          <IndicadorConexion
-            conexion={conexion}
-            finalizada={finalizada}
-            segundos={segundos}
-          />
-          <EstadoSesionBadge estado={datos.sesion.estado} />
-        </div>
-      </div>
+        <dl className="leaderboard-hero-cifras">
+          <div>
+            <dt>
+              <Users aria-hidden="true" /> Participantes
+            </dt>
+            <dd>{participantes.length}</dd>
+          </div>
+          <div>
+            <dt>
+              <Percent aria-hidden="true" /> Promedio
+            </dt>
+            <dd>{promedio}%</dd>
+          </div>
+          <div>
+            <dt>
+              <Zap aria-hidden="true" /> Respuestas
+            </dt>
+            <dd>
+              {respondidas}
+              <small>/{respondidas + pendientes}</small>
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <Crown aria-hidden="true" /> Líder
+            </dt>
+            <dd className="leaderboard-hero-lider">{lider ? lider.nombre : '—'}</dd>
+          </div>
+        </dl>
+      </section>
 
       {finalizada && (
-        <p className="alerta alerta-aviso leaderboard-resultado-final">Resultado final</p>
+        <p className="alerta leaderboard-resultado-final">
+          <Trophy size={18} aria-hidden="true" />
+          Resultado final
+        </p>
       )}
 
       <div className="tablero-leaderboard">
         <div className="tablero-leaderboard-principal">
+          <Podio participantes={participantes} />
           <RankingRoles roles={datos.roles} />
-          <Podio participantes={datos.participantes} />
         </div>
-        <RankingCompleto participantes={datos.participantes} />
+        <RankingCompleto participantes={participantes} />
       </div>
-    </>
+    </div>
   )
 }
 
@@ -102,7 +154,7 @@ function IndicadorConexion({
   if (finalizada) return null
   if (conexion === 'conectado') {
     return (
-      <span className="texto-suave">
+      <span className="texto-suave indicador-conexion">
         <span className="badge badge-live">
           <Circle size={10} fill="currentColor" aria-hidden="true" /> EN VIVO
         </span>{' '}
@@ -126,6 +178,9 @@ function RankingRoles({ roles }: { roles: PosicionRol[] }) {
         <ul className="ranking-roles-tablero">
           {roles.map((r) => (
             <li key={r.rol_codigo}>
+              <span className="ranking-roles-posicion" aria-hidden="true">
+                {r.posicion}
+              </span>
               <span className="ranking-roles-nombre">
                 <strong>{r.rol_nombre}</strong>
                 <span className="tablero-texto-suave">
@@ -163,18 +218,31 @@ function Podio({ participantes }: { participantes: PosicionParticipante[] }) {
   if (top3.length === 0) return null
 
   return (
-    <div className="podio" role="group" aria-label="Podio">
-      {top3.map((p) => (
-        <div key={p.usuario_id} className={`podio-bloque podio-${p.posicion}`}>
-          <span className="podio-puesto" aria-hidden="true">
-            <Medal size={22} />
-          </span>
-          <strong className="podio-nombre">{p.nombre}</strong>
-          <span className="podio-rol">{p.rol_nombre}</span>
-          <span className="podio-puntos">{formatoPuntaje(p.puntaje)} pts</span>
-        </div>
-      ))}
-    </div>
+    <section className="tablero-seccion podio-seccion" aria-labelledby="titulo-podio">
+      <h2 id="titulo-podio">Podio</h2>
+      <div className="podio" role="group" aria-label="Podio">
+        {top3.map((p) => (
+          <div key={p.usuario_id} className={`podio-bloque podio-${p.posicion}`}>
+            <span className="podio-avatar" aria-hidden="true">
+              {iniciales(p.nombre)}
+              <span className="podio-medalla">
+                <Medal />
+              </span>
+            </span>
+            <strong className="podio-nombre">{p.nombre}</strong>
+            <span className="podio-rol">{p.rol_nombre}</span>
+            <span className="podio-puntos">{formatoPuntaje(p.puntaje)} pts</span>
+            <span className="podio-pedestal">
+              <span className="podio-lugar">
+                {p.posicion}
+                <span className="solo-lector">.º lugar</span>
+              </span>
+              <span className="podio-porcentaje">{Math.round(p.porcentaje)}%</span>
+            </span>
+          </div>
+        ))}
+      </div>
+    </section>
   )
 }
 
@@ -194,11 +262,22 @@ function RankingCompleto({ participantes }: { participantes: PosicionParticipant
               <span className="ranking-completo-puesto" aria-label={`Posición ${p.posicion}`}>
                 {p.posicion}
               </span>
+              <span className="ranking-completo-avatar" aria-hidden="true">
+                {iniciales(p.nombre)}
+              </span>
               <span className="ranking-completo-nombre">
                 <strong>{p.nombre}</strong>
-                <span className="tablero-texto-suave">{p.rol_nombre}</span>
+                <span className="tablero-texto-suave">
+                  {p.rol_nombre} · {p.respondidas}/{p.respondidas + p.sin_responder} respondidas
+                </span>
+                <span className={`barra-avance-tablero barra-fina ${tierDeColor(p.porcentaje)}`}>
+                  <span style={{ width: `${p.porcentaje}%` }} />
+                </span>
               </span>
-              <span className="ranking-completo-puntos">{formatoPuntaje(p.puntaje)} pts</span>
+              <span className="ranking-completo-puntos">
+                {formatoPuntaje(p.puntaje)} pts
+                <small>{Math.round(p.porcentaje)}%</small>
+              </span>
             </li>
           ))}
         </ol>

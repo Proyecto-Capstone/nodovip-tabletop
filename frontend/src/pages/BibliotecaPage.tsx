@@ -1,34 +1,50 @@
-// PB-04: biblioteca de escenarios con búsqueda y filtros.
+// PB-04: biblioteca de escenarios con búsqueda, filtros e indicadores.
 
+import {
+  Archive,
+  ArrowRight,
+  Eye,
+  Layers,
+  ListChecks,
+  PenLine,
+  Pencil,
+  Plus,
+  Search,
+  Send,
+  ShieldCheck,
+  Zap,
+} from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { ApiError } from '../api/client'
 import {
   rutas,
   type EscenarioResumen,
   type RolEjercicio,
   type TipoEscenario,
 } from '../api/escenarios'
+import { crearSesion } from '../api/sesiones'
 import { useSesion } from '../auth/sesionContext'
-import {
-  Cargando,
-  Errores,
-  EstadoBadge,
-  NivelBadge,
-  SinPermiso,
-} from '../components/Etiquetas'
+import { Anillo } from '../components/Anillo'
+import { Indicador } from '../components/Indicador'
+import { Cargando, Errores, EstadoBadge, NivelBadge, SinPermiso } from '../components/Etiquetas'
 import { ETIQUETA_NIVEL, NIVELES, nombreRol, nombreTipo } from '../lib/etiquetas'
 import { useDebounce, useGet } from '../lib/useGet'
 
 export function BibliotecaPage() {
-  const { rol, puedeGestionarEscenarios, puedeLeerEscenarios } = useSesion()
+  const { rol, puede, puedeGestionarEscenarios, puedeLeerEscenarios } = useSesion()
+  const navegar = useNavigate()
   const [texto, setTexto] = useState('')
   const [tipo, setTipo] = useState('')
   const [nivel, setNivel] = useState('')
   const [rolFiltro, setRolFiltro] = useState('')
   const [estado, setEstado] = useState('')
+  const [creando, setCreando] = useState<string | null>(null)
+  const [erroresAccion, setErroresAccion] = useState<string[]>()
   const q = useDebounce(texto.trim())
 
   const habilitado = puedeLeerEscenarios
+  const puedeDisenar = puede('sesiones:disenar')
   const tipos = useGet<TipoEscenario[]>(habilitado ? rutas.tipos : null, rol)
   const roles = useGet<RolEjercicio[]>(habilitado ? rutas.roles : null, rol)
   const escenarios = useGet<EscenarioResumen[]>(
@@ -43,13 +59,50 @@ export function BibliotecaPage() {
       : null,
     rol,
   )
+  // Indicadores: siempre sobre toda la biblioteca, no sobre lo filtrado.
+  const todos = useGet<EscenarioResumen[]>(habilitado ? rutas.escenarios({}) : null, rol)
+  const archivados = useGet<EscenarioResumen[]>(
+    habilitado && puedeGestionarEscenarios ? rutas.escenarios({ estado: 'archivado' }) : null,
+    rol,
+  )
 
   if (!habilitado) return <SinPermiso />
 
   const hayFiltros = Boolean(texto || tipo || nivel || rolFiltro || estado)
+  const lista = todos.datos ?? []
+  const publicados = lista.filter((e) => e.estado === 'publicado')
+  const borradores = lista.filter((e) => e.estado === 'borrador')
+  const tiposCubiertos = new Set(publicados.map((e) => e.tipo_codigo)).size
+  const totalTipos = tipos.datos?.length ?? 0
+  const cobertura = totalTipos ? Math.round((tiposCubiertos / totalTipos) * 100) : 0
+  const cargandoIndicadores = !todos.datos
+
+  const limpiar = () => {
+    setTexto('')
+    setTipo('')
+    setNivel('')
+    setRolFiltro('')
+    setEstado('')
+  }
+
+  const disenar = async (escenario: EscenarioResumen) => {
+    setErroresAccion(undefined)
+    setCreando(escenario.id)
+    try {
+      const sesion = await crearSesion(escenario.id)
+      navegar(`/sesiones/${sesion.id}/disenar?paso=2`)
+    } catch (error) {
+      setErroresAccion(
+        error instanceof ApiError
+          ? error.errores
+          : ['No se pudo crear la sesión. Intenta de nuevo.'],
+      )
+      setCreando(null)
+    }
+  }
 
   return (
-    <>
+    <div className="biblioteca">
       <div className="encabezado">
         <div>
           <h1>Biblioteca de escenarios</h1>
@@ -60,22 +113,78 @@ export function BibliotecaPage() {
           </p>
         </div>
         {puedeGestionarEscenarios && (
-          <Link className="boton boton-primario" to="/escenarios/nuevo">
-            + Nuevo escenario
+          <Link className="boton boton-primario boton-destacado" to="/escenarios/nuevo">
+            <Plus aria-hidden="true" />
+            Nuevo escenario
           </Link>
         )}
       </div>
 
-      <section className="tarjeta filtros" aria-label="Filtros">
+      <section
+        className="indicadores"
+        aria-label="Resumen de la biblioteca"
+        aria-busy={cargandoIndicadores}
+      >
+        {puedeGestionarEscenarios ? (
+          <>
+            <Indicador
+              tono="azul"
+              icono={<Layers />}
+              etiqueta="Escenarios activos"
+              valor={cargandoIndicadores ? '—' : lista.length}
+              detalle={
+                archivados.datos ? `${archivados.datos.length} archivados aparte` : undefined
+              }
+            />
+            <Indicador
+              tono="verde"
+              icono={<Send />}
+              etiqueta="Publicados"
+              valor={cargandoIndicadores ? '—' : publicados.length}
+              detalle="Visibles para los moderadores"
+            />
+            <Indicador
+              tono="naranja"
+              icono={<PenLine />}
+              etiqueta="En borrador"
+              valor={cargandoIndicadores ? '—' : borradores.length}
+              detalle="Pendientes de publicar"
+            />
+          </>
+        ) : (
+          <Indicador
+            tono="verde"
+            icono={<ShieldCheck />}
+            etiqueta="Disponibles"
+            valor={cargandoIndicadores ? '—' : publicados.length}
+            detalle="Escenarios publicados"
+          />
+        )}
+        <div className="indicador indicador-cobertura">
+          <Anillo porcentaje={cobertura} />
+          <div>
+            <p className="indicador-etiqueta">Cobertura de incidentes</p>
+            <p className="indicador-valor">
+              {cargandoIndicadores ? '—' : `${tiposCubiertos} de ${totalTipos}`}
+            </p>
+            <p className="indicador-detalle">Tipos con un escenario publicado</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="filtros-biblioteca" aria-label="Filtros">
         <label className="campo campo-busqueda">
           <span>Buscar</span>
-          <input
-            type="search"
-            placeholder="Nombre o descripción…"
-            value={texto}
-            maxLength={100}
-            onChange={(e) => setTexto(e.target.value)}
-          />
+          <span className="campo-icono">
+            <Search aria-hidden="true" />
+            <input
+              type="search"
+              placeholder="Nombre o descripción…"
+              value={texto}
+              maxLength={100}
+              onChange={(e) => setTexto(e.target.value)}
+            />
+          </span>
         </label>
         <label className="campo">
           <span>Tipo de incidente</span>
@@ -114,31 +223,29 @@ export function BibliotecaPage() {
           <label className="campo">
             <span>Estado</span>
             <select value={estado} onChange={(e) => setEstado(e.target.value)}>
-              <option value="">Todos</option>
+              <option value="">Borrador y publicados</option>
               <option value="borrador">Borrador</option>
               <option value="publicado">Publicado</option>
               <option value="archivado">Archivado</option>
             </select>
           </label>
         )}
+      </section>
+
+      <div className="resultado-biblioteca">
+        <p className="texto-suave" aria-live="polite">
+          {escenarios.datos
+            ? `${escenarios.datos.length} ${escenarios.datos.length === 1 ? 'escenario' : 'escenarios'}${hayFiltros ? ' con los filtros aplicados' : ''}`
+            : ''}
+        </p>
         {hayFiltros && (
-          <button
-            type="button"
-            className="boton boton-texto"
-            onClick={() => {
-              setTexto('')
-              setTipo('')
-              setNivel('')
-              setRolFiltro('')
-              setEstado('')
-            }}
-          >
+          <button type="button" className="boton boton-texto" onClick={limpiar}>
             Limpiar filtros
           </button>
         )}
-      </section>
+      </div>
 
-      <Errores errores={escenarios.errores} />
+      <Errores errores={escenarios.errores ?? erroresAccion} />
       {escenarios.cargando && !escenarios.datos && <Cargando />}
 
       {escenarios.datos && escenarios.datos.length === 0 && (
@@ -151,26 +258,85 @@ export function BibliotecaPage() {
 
       <div className="grilla-escenarios">
         {escenarios.datos?.map((e) => (
-          <Link key={e.id} to={`/escenarios/${e.id}`} className="tarjeta tarjeta-escenario">
-            <div className="fila-badges">
-              <span className="tipo">{nombreTipo(tipos.datos, e.tipo_codigo)}</span>
+          <article key={e.id} className={`tarjeta-escenario nivel-borde-${e.nivel}`}>
+            <div className="tarjeta-escenario-cabecera">
+              <span className="tipo" title={nombreTipo(tipos.datos, e.tipo_codigo)}>
+                {nombreTipo(tipos.datos, e.tipo_codigo)}
+              </span>
               <NivelBadge nivel={e.nivel} />
-              {puedeGestionarEscenarios && <EstadoBadge estado={e.estado} />}
-            </div>
-            <h2>{e.nombre}</h2>
-            <div className="chips">
-              {e.roles.map((r) => (
-                <span key={r} className="chip">
-                  {nombreRol(roles.datos, r)}
+              {puedeGestionarEscenarios && (
+                <span className="empujar-derecha">
+                  <EstadoBadge estado={e.estado} />
                 </span>
-              ))}
+              )}
             </div>
+            <h2>
+              <Link to={`/escenarios/${e.id}`} className="enlace-tarjeta">
+                {e.nombre}
+              </Link>
+            </h2>
+            <ul className="chips" aria-label="Roles involucrados">
+              {e.roles.map((r) => (
+                <li key={r} className="chip">
+                  {nombreRol(roles.datos, r)}
+                </li>
+              ))}
+            </ul>
             <p className="conteos">
-              {e.total_injects} injects · {e.total_tareas} tareas
+              <span>
+                <Zap aria-hidden="true" />
+                {e.total_injects} injects
+              </span>
+              <span>
+                <ListChecks aria-hidden="true" />
+                {e.total_tareas} tareas
+              </span>
             </p>
-          </Link>
+            <div className="tarjeta-escenario-acciones">
+              {puedeDisenar && e.estado === 'publicado' ? (
+                <>
+                  <button
+                    type="button"
+                    className="boton boton-primario boton-destacado"
+                    disabled={creando !== null}
+                    onClick={() => disenar(e)}
+                  >
+                    {creando === e.id ? 'Creando…' : 'Diseñar tabletop'}
+                    {creando !== e.id && <ArrowRight aria-hidden="true" />}
+                  </button>
+                  <Link className="boton boton-secundario" to={`/escenarios/${e.id}`}>
+                    <Eye aria-hidden="true" />
+                    Ver detalle
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link className="boton boton-primario boton-destacado" to={`/escenarios/${e.id}`}>
+                    <Eye aria-hidden="true" />
+                    Ver detalle
+                  </Link>
+                  {puedeGestionarEscenarios &&
+                    (e.estado === 'archivado' ? (
+                      <span className="boton boton-secundario boton-inactivo" aria-disabled="true">
+                        <Archive aria-hidden="true" />
+                        Archivado
+                      </span>
+                    ) : (
+                      <Link
+                        className="boton boton-secundario"
+                        to={`/escenarios/${e.id}/editar`}
+                        aria-label={`Editar ${e.nombre}`}
+                      >
+                        <Pencil aria-hidden="true" />
+                        Editar
+                      </Link>
+                    ))}
+                </>
+              )}
+            </div>
+          </article>
         ))}
       </div>
-    </>
+    </div>
   )
 }

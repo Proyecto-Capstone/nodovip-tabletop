@@ -5861,3 +5861,265 @@ button.paso:hover {
 .metrica-madurez > div:last-child {
   display: grid;
 }
+
+/* --- Gestión de usuarios: columnas por categoría de rol (PC-15) ------------ */
+
+.filtros-usuarios {
+  margin-bottom: 1.25rem;
+}
+
+.panel-usuario {
+  border-color: rgb(143 176 245 / 0.45);
+  box-shadow:
+    var(--sombra-elevada),
+    0 0 26px rgb(42 99 216 / 0.14);
+}
+
+.columnas-usuarios {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1.1rem;
+  align-items: start;
+}
+
+.columna-usuarios {
+  --tono-columna: var(--acento-texto);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 1rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--tono-columna) 9%, transparent), transparent 140px),
+    var(--superficie);
+  border: 1px solid var(--borde);
+  border-top: 3px solid var(--tono-columna);
+  border-radius: var(--radio-lg);
+  box-shadow: var(--sombra);
+}
+
+.columna-moderacion {
+  --tono-columna: var(--verde-texto);
+}
+
+.columna-participacion {
+  --tono-columna: #c4b5fd;
+}
+
+.columna-usuarios-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  margin-bottom: 0.9rem;
+}
+
+.columna-usuarios-cabecera h2 {
+  margin: 0;
+  font-size: var(--fs-base);
+}
+
+.columna-usuarios-cabecera p {
+  font-size: var(--fs-xs);
+}
+
+.columna-usuarios-cabecera > div {
+  flex: 1;
+  min-width: 0;
+}
+
+.columna-usuarios-icono {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 2.3rem;
+  height: 2.3rem;
+  border-radius: var(--radio-sm);
+  background: color-mix(in srgb, var(--tono-columna) 14%, transparent);
+  color: var(--tono-columna);
+}
+
+.columna-usuarios-icono svg {
+  width: 1.15rem;
+  height: 1.15rem;
+}
+
+.columna-usuarios-vacia {
+  margin: 0;
+  padding: 1.25rem 0.5rem;
+  text-align: center;
+  font-size: var(--fs-sm);
+  color: var(--texto-suave);
+  border: 1px dashed var(--borde-fuerte);
+  border-radius: var(--radio);
+}
+
+.lista-usuarios {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+  padding: 0 0.2rem 0 0;
+  list-style: none;
+  max-height: 34rem;
+  overflow-y: auto;
+}
+
+.tarjeta-usuario {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.75rem 0.8rem 0.6rem;
+  background: var(--fondo-sutil);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  transition:
+    border-color var(--transicion),
+    opacity var(--transicion);
+}
+
+.tarjeta-usuario:hover {
+  border-color: var(--borde-fuerte);
+}
+
+.tarjeta-usuario[aria-busy='true'] {
+  opacity: 0.6;
+}
+
+.tarjeta-usuario.inactivo {
+  border-style: dashed;
+}
+
+.tarjeta-usuario.inactivo .tarjeta-usuario-datos,
+.tarjeta-usuario.inactivo .avatar-usuario {
+  opacity: 0.6;
+}
+
+.tarjeta-usuario-cabecera {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.avatar-usuario {
+  width: 2.3rem;
+  height: 2.3rem;
+  font-size: var(--fs-xs);
+  background: var(--superficie-alta);
+  border: 1.5px solid var(--tono-columna);
+  box-shadow: none;
+  color: var(--texto);
+}
+
+.tarjeta-usuario-datos {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  line-height: 1.3;
+}
+
+.tarjeta-usuario-datos strong {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: var(--fs-md);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.tarjeta-usuario-datos .texto-suave {
+  font-size: var(--fs-sm);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.etiqueta-tu {
+  flex: none;
+  padding: 0 0.4rem;
+  border-radius: 999px;
+  background: var(--azul-fondo);
+  color: var(--acento-texto);
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.tarjeta-usuario-cabecera .badge {
+  flex: none;
+}
+
+.tarjeta-usuario-pie {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.selector-rol select {
+  min-height: 2rem;
+  padding: 0.2rem 0.5rem;
+  border: 1px solid var(--borde-fuerte);
+  border-radius: var(--radio-sm);
+  background: var(--superficie);
+  color: var(--texto);
+  font: inherit;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.selector-rol select:hover:not(:disabled) {
+  border-color: var(--acento-texto);
+}
+
+.selector-rol select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.tarjeta-usuario-acciones {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.tarjeta-usuario-acciones .boton-icono {
+  width: 1.9rem;
+  height: 1.9rem;
+}
+
+.boton-icono-clave:hover:not(:disabled) {
+  background: var(--naranja-fondo);
+  border-color: rgb(245 179 102 / 0.35);
+  color: var(--naranja-texto);
+}
+
+.boton-icono-exito:hover:not(:disabled) {
+  background: var(--verde-fondo);
+  border-color: rgb(95 211 155 / 0.35);
+  color: var(--verde-texto);
+}
+
+.tarjeta-usuario-fecha {
+  margin: 0;
+  font-size: var(--fs-xs);
+  color: var(--texto-suave);
+}
+
+@media (max-width: 1200px) {
+  .columnas-usuarios {
+    grid-template-columns: 1fr 1fr;
+  }
+  .columna-participacion {
+    grid-column: 1 / -1;
+  }
+  .columna-participacion .lista-usuarios {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .columnas-usuarios {
+    grid-template-columns: 1fr;
+  }
+  .lista-usuarios {
+    max-height: none;
+  }
+}

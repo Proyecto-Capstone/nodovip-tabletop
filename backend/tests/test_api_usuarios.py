@@ -168,6 +168,37 @@ def test_cambiar_rol_y_datos(client):
     assert r.json()["nombre"] == "Ana Pérez Ruiz"
 
 
+def test_cuentas_demo_con_dominio_test_se_crean_y_cambian_de_rol(client):
+    """Las cuentas ficticias usan el dominio reservado .test (demo.nodovip.test)."""
+    olga = _crear(
+        client,
+        nombre="Olga Observadora",
+        correo="olga@demo.nodovip.test",
+        rol="observador",
+    )
+    r = client.put(
+        f"/api/usuarios/{olga['id']}",
+        json={"nombre": olga["nombre"], "correo": olga["correo"], "rol": "analista"},
+        headers=ADMIN,
+    )
+    assert r.status_code == 200, r.text
+    assert r.json()["rol"] == "analista"
+
+
+def test_otros_dominios_reservados_siguen_rechazados(client):
+    r = client.post(
+        "/api/usuarios",
+        json={
+            "nombre": "Ana Pérez",
+            "correo": "ana@intranet.localhost",
+            "contrasena": CLAVE,
+            "rol": "participante",
+        },
+        headers=ADMIN,
+    )
+    assert r.status_code == 422
+
+
 def test_cambiar_a_correo_de_otro_usuario_409(client):
     _crear(client, correo="ana@example.com")
     luis = _crear(client, nombre="Luis Mora", correo="luis@example.com")

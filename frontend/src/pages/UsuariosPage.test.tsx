@@ -3,7 +3,13 @@ import userEvent from '@testing-library/user-event'
 import { Route, Routes } from 'react-router-dom'
 import { describe, expect, it, vi } from 'vitest'
 import type { Usuario } from '../api/usuarios'
-import { ADMINISTRADOR, MODERADOR, renderConSesion, respuesta, sesionDePrueba } from '../test/utilidades'
+import {
+  ADMINISTRADOR,
+  MODERADOR,
+  renderConSesion,
+  respuesta,
+  sesionDePrueba,
+} from '../test/utilidades'
 import { UsuariosPage } from './UsuariosPage'
 
 const ACTIVO: Usuario = {
@@ -23,6 +29,9 @@ function abrir(lista: Usuario[] = [ACTIVO], usuario = ADMINISTRADOR) {
       return respuesta(200, { ...ACTIVO, activo: false })
     }
     if (init?.method === 'DELETE') return respuesta(204)
+    if (init?.method === 'PUT') {
+      return respuesta(200, { ...ACTIVO, ...JSON.parse(String(init.body)) })
+    }
     return respuesta(200, lista)
   })
   vi.stubGlobal('fetch', fetchFalso)
@@ -51,9 +60,7 @@ describe('UsuariosPage', () => {
 
     await userEvent.click(within(dialogo).getByRole('button', { name: 'Desactivar' }))
 
-    expect(
-      await screen.findByText('Pedro Participante desactivado.'),
-    ).toBeInTheDocument()
+    expect(await screen.findByText('Pedro Participante desactivado.')).toBeInTheDocument()
     expect(
       fetchFalso.mock.calls.some(
         ([url, init]) => url === `/api/usuarios/${ACTIVO.id}/desactivar` && init?.method === 'POST',
@@ -69,9 +76,7 @@ describe('UsuariosPage', () => {
     await screen.findByRole('alertdialog')
     await userEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
 
-    expect(
-      fetchFalso.mock.calls.some(([url]) => String(url).endsWith('/desactivar')),
-    ).toBe(false)
+    expect(fetchFalso.mock.calls.some(([url]) => String(url).endsWith('/desactivar'))).toBe(false)
   })
 
   it('un usuario inactivo puede eliminarse tras confirmar, con aviso de que no se puede deshacer', async () => {
@@ -90,5 +95,40 @@ describe('UsuariosPage', () => {
         ([url, init]) => url === `/api/usuarios/${INACTIVO.id}` && init?.method === 'DELETE',
       ),
     ).toBe(true)
+  })
+
+  it('agrupa a los usuarios en columnas por categoría de rol', async () => {
+    abrir([ACTIVO, { ...ACTIVO, id: 'm1', nombre: 'Mónica Moderadora', rol: 'moderador' }])
+    const participantes = await screen.findByRole('region', { name: 'Participantes' })
+    expect(within(participantes).getByText('Pedro Participante')).toBeInTheDocument()
+    const moderacion = screen.getByRole('region', { name: 'Moderación y análisis' })
+    expect(within(moderacion).getByText('Mónica Moderadora')).toBeInTheDocument()
+  })
+
+  it('cambia el rol desde la tarjeta tras confirmar', async () => {
+    const fetchFalso = abrir()
+    await userEvent.selectOptions(
+      await screen.findByLabelText('Rol de Pedro Participante'),
+      'analista',
+    )
+    const dialogo = await screen.findByRole('alertdialog')
+    expect(dialogo).toHaveTextContent('Pasará de Participante a Analista')
+    await userEvent.click(within(dialogo).getByRole('button', { name: 'Cambiar rol' }))
+
+    expect(await screen.findByText('Pedro Participante ahora es Analista.')).toBeInTheDocument()
+    const put = fetchFalso.mock.calls.find(([, init]) => init?.method === 'PUT')
+    expect(put?.[0]).toBe(`/api/usuarios/${ACTIVO.id}`)
+    expect(JSON.parse(String(put?.[1]?.body))).toEqual({
+      nombre: ACTIVO.nombre,
+      correo: ACTIVO.correo,
+      rol: 'analista',
+    })
+  })
+
+  it('no permite cambiarse el rol ni desactivarse a uno mismo', async () => {
+    abrir([{ ...ACTIVO, id: ADMINISTRADOR.id, nombre: 'Yo Mismo', rol: 'administrador' }])
+    expect(await screen.findByLabelText('Rol de Yo Mismo')).toBeDisabled()
+    expect(screen.getByText('Tú')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Desactivar' })).not.toBeInTheDocument()
   })
 })

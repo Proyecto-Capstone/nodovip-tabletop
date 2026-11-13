@@ -5,7 +5,7 @@
 // el inject), recarga el avance por rol, los puntajes y las últimas respuestas.
 
 import { useState } from 'react'
-import { Pause, Play, Square } from 'lucide-react'
+import { Clock, MessageSquareText, Pause, Play, Square, Users, Zap } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { ApiError } from '../api/client'
 import { comandoEnVivo, type ComandoEnVivo, type VistaEnVivo } from '../api/enVivo'
@@ -26,6 +26,7 @@ import { useConfirmar } from '../components/confirmacionContext'
 import { Cargando, Errores, SinPermiso } from '../components/Etiquetas'
 import { EstadoVivo } from '../components/EstadoVivo'
 import { EvidenciaSimulada } from '../components/Evidencia'
+import { Indicador } from '../components/Indicador'
 import { nombreRol } from '../lib/etiquetas'
 import { formatoReloj, useCronometro, useEnVivo } from '../lib/useEnVivo'
 import { useGet, useGetVigente } from '../lib/useGet'
@@ -179,24 +180,33 @@ function Panel({
         errores={errores ?? (error ? [error] : undefined) ?? puntajes.errores ?? respuestas.errores}
       />
 
-      <div className="metricas">
-        <Metrica valor={formatoReloj(segundos)} nombre="Tiempo transcurrido" />
-        <Metrica
+      <section className="indicadores" aria-label="Resumen de la sesión">
+        <Indicador
+          tono={vista?.pausada ? 'naranja' : 'gris'}
+          icono={<Clock />}
+          etiqueta="Tiempo transcurrido"
+          valor={formatoReloj(segundos)}
+          detalle={vista?.pausada ? 'En pausa: el tiempo se detiene' : undefined}
+        />
+        <Indicador
+          tono="verde"
+          icono={<Users />}
+          etiqueta="Participantes conectados"
           valor={`${participantesConectados}/${sesion.participantes.length}`}
-          nombre="Participantes conectados"
-          color="verde"
         />
-        <Metrica
+        <Indicador
+          tono="azul"
+          icono={<Zap />}
+          etiqueta="Inject actual"
           valor={`${vista?.inject_actual ?? 0}/${sesion.injects.length}`}
-          nombre="Inject actual"
-          color="azul"
         />
-        <Metrica
+        <Indicador
+          tono="naranja"
+          icono={<MessageSquareText />}
+          etiqueta="Respuestas recibidas"
           valor={cargandoAvance ? '…' : `${recibidas}/${esperadas}`}
-          nombre="Respuestas recibidas"
-          color="naranja"
         />
-      </div>
+      </section>
 
       <div className="disenador-columnas">
         <ProgresoParticipantes
@@ -366,23 +376,6 @@ export function InjectActual({ vista }: { vista?: VistaEnVivo }) {
       <h3>{vista.inject.titulo}</h3>
       <p className="parrafo">{vista.inject.descripcion}</p>
       {vista.inject.evidencia && <EvidenciaSimulada evidencia={vista.inject.evidencia} />}
-    </div>
-  )
-}
-
-function Metrica({
-  valor,
-  nombre,
-  color,
-}: {
-  valor: string
-  nombre: string
-  color?: 'verde' | 'azul' | 'naranja'
-}) {
-  return (
-    <div className="tarjeta metrica">
-      <strong className={color ? `metrica-${color}` : ''}>{valor}</strong>
-      <span className="texto-suave">{nombre}</span>
     </div>
   )
 }

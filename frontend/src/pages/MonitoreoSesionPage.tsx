@@ -4,11 +4,13 @@
 // leaderboard. No hay comandos ni ajustes de puntaje aquí: eso sigue
 // requiriendo sesiones:conducir y ser el dueño de la sesión.
 
+import { Clock, MessageSquareText, Users, Zap } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import type { DetalleMonitoreo } from '../api/monitoreo'
 import { useSesion } from '../auth/sesionContext'
 import { SinPermiso } from '../components/Etiquetas'
 import { EstadoVivo } from '../components/EstadoVivo'
+import { Indicador } from '../components/Indicador'
 import { formatoReloj } from '../lib/useEnVivo'
 import { useDetalleMonitoreo, useTiempoTranscurrido } from '../lib/useMonitoreo'
 import { AvancePorRol, ProgresoParticipantes } from './PanelAvance'
@@ -68,15 +70,33 @@ function Panel({
         </div>
       </div>
 
-      <div className="metricas">
-        <Metrica valor={formatoReloj(segundos)} nombre="Tiempo transcurrido" />
-        <Metrica valor={`${fila.conectados}/${fila.invitados}`} nombre="Conectados" />
-        <Metrica valor={`${fila.inject_actual}/${fila.total_injects}`} nombre="Inject actual" />
-        <Metrica
-          valor={`${fila.respuestas_recibidas}/${fila.respuestas_esperadas}`}
-          nombre="Respuestas recibidas"
+      <section className="indicadores" aria-label="Resumen de la sesión">
+        <Indicador
+          tono={fila.pausada ? 'naranja' : 'gris'}
+          icono={<Clock />}
+          etiqueta="Tiempo transcurrido"
+          valor={formatoReloj(segundos)}
+          detalle={fila.pausada ? 'En pausa: el tiempo se detiene' : undefined}
         />
-      </div>
+        <Indicador
+          tono="verde"
+          icono={<Users />}
+          etiqueta="Conectados"
+          valor={`${fila.conectados}/${fila.invitados}`}
+        />
+        <Indicador
+          tono="azul"
+          icono={<Zap />}
+          etiqueta="Inject actual"
+          valor={`${fila.inject_actual}/${fila.total_injects}`}
+        />
+        <Indicador
+          tono="naranja"
+          icono={<MessageSquareText />}
+          etiqueta="Respuestas recibidas"
+          valor={`${fila.respuestas_recibidas}/${fila.respuestas_esperadas}`}
+        />
+      </section>
 
       <div className="disenador-columnas">
         <ProgresoParticipantes
@@ -100,14 +120,5 @@ function Panel({
         />
       </div>
     </>
-  )
-}
-
-function Metrica({ valor, nombre }: { valor: string; nombre: string }) {
-  return (
-    <div className="tarjeta metrica">
-      <strong>{valor}</strong>
-      <span className="texto-suave">{nombre}</span>
-    </div>
   )
 }

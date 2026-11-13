@@ -463,7 +463,8 @@ describe('Panel del moderador', () => {
       within(recientes).getByText('Aíslo los servidores y activo el plan de respuesta'),
     ).toBeInTheDocument()
     expect(within(recientes).getByText('Inject 1 · 8 / 10 pts')).toBeInTheDocument()
-    expect(screen.getByText('1/1', { selector: '.metrica strong:not(.metrica-verde)' })).toBeInTheDocument()
+    const recibidas = screen.getByText('Respuestas recibidas').closest('.indicador')
+    expect(recibidas).toHaveTextContent('1/1')
   })
 
   it('si el servidor rechaza por el límite de sesiones activas, muestra el mensaje tal cual', async () => {

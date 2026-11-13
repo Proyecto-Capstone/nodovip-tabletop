@@ -6769,3 +6769,152 @@ button.paso:hover {
     transform: none;
   }
 }
+
+/* --- Monitoreo: cupo y sesiones en curso (PC-49) --------------------------- */
+
+.indicador-cupo {
+  align-items: center;
+}
+
+.indicador-cupo .anillo {
+  width: 3.4rem;
+  height: 3.4rem;
+}
+
+.indicador-cupo-texto {
+  display: grid;
+  flex: 1;
+  gap: 0.3rem;
+  min-width: 0;
+}
+
+.indicador-cupo-texto .indicador-etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.indicador-cupo-texto strong {
+  font-size: var(--fs-base);
+}
+
+.indicador-rojo .anillo-avance {
+  stroke: var(--rojo-texto);
+}
+
+.tarjeta-monitoreo {
+  gap: 0.75rem;
+}
+
+.tarjeta-monitoreo.en-pausa {
+  padding: 1.25rem 1.35rem;
+  border-color: rgb(245 207 107 / 0.45);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgb(245 207 107 / 0.1), transparent 55%),
+    var(--superficie);
+}
+
+.monitoreo-datos {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.monitoreo-escenario {
+  margin: 0;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: var(--azul-fondo);
+  color: var(--acento-texto);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+.monitoreo-metricas {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.monitoreo-metricas div {
+  padding: 0.55rem 0.7rem;
+  background: var(--fondo-sutil);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio-sm);
+}
+
+.monitoreo-metricas dt {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--fs-xs);
+  color: var(--texto-suave);
+}
+
+.monitoreo-metricas dt svg {
+  width: 0.85rem;
+  height: 0.85rem;
+  color: var(--acento-texto);
+}
+
+.monitoreo-metricas dd {
+  margin: 0.15rem 0 0;
+  font-size: var(--fs-lg);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.monitoreo-avance {
+  display: grid;
+  gap: 0.35rem;
+  font-size: var(--fs-sm);
+}
+
+.tarjeta-monitoreo > .boton {
+  align-self: flex-start;
+}
+
+/* --- Mis sesiones del participante (PC-49) --------------------------------- */
+
+.indicadores + .grupo-mis-sesiones {
+  margin-top: 1.5rem;
+}
+
+.tarjeta-sesion-vivo {
+  gap: 0.4rem;
+  border-color: rgb(255 107 95 / 0.45);
+  background:
+    radial-gradient(120% 120% at 0% 0%, rgb(255 107 95 / 0.12), transparent 55%),
+    var(--superficie);
+  box-shadow:
+    var(--sombra),
+    0 0 26px rgb(255 107 95 / 0.12);
+}
+
+.tarjeta-sesion-vivo:hover {
+  border-color: rgb(255 107 95 / 0.7);
+}
+
+.entrar-sala {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-top: 0.4rem;
+  font-weight: 700;
+  color: var(--rojo-texto);
+}
+
+.tarjeta-sesion-vivo:hover .entrar-sala svg {
+  transform: translateX(3px);
+}
+
+.entrar-sala svg {
+  transition: transform 0.15s ease;
+}
+
+.grupo-mis-sesiones .ver-todas {
+  margin-top: 1rem;
+}

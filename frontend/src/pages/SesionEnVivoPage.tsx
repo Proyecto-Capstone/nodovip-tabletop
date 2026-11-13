@@ -2,7 +2,7 @@
 // Recibe el inject actual por WebSocket; si pierde la conexión, se reconecta y
 // recupera el estado. PB-08: las tareas de su rol y su respuesta.
 
-import { Bell, BellOff } from 'lucide-react'
+import { Bell, BellOff, Clock, Users, Zap } from 'lucide-react'
 import { Link, useParams } from 'react-router-dom'
 import { rutasMisSesiones, type MiSesion } from '../api/misSesiones'
 import { useSesion } from '../auth/sesionContext'
@@ -42,12 +42,21 @@ export function SesionEnVivoPage() {
   const terminada = estado === 'finalizada'
   const avance = vista?.total_injects ? (100 * vista.inject_actual) / vista.total_injects : 0
 
+  const totalInjects = vista?.total_injects ?? 0
+  const injectActual = vista?.inject_actual ?? 0
+
   return (
-    <div className="sala-vivo">
+    <div
+      className={`sala-vivo ${estado === 'en_curso' ? 'sala-vivo-activa' : ''} ${terminada ? 'sala-vivo-resumen' : ''}`}
+    >
       <div className="sala-cabecera">
-        <div>
+        <div className="sala-titulo">
+          <p className="sala-eyebrow">Sala del ejercicio</p>
           <h1>{mia.datos.nombre}</h1>
-          <span className="chip chip-rol">Rol: {mia.datos.rol_nombre}</span>
+          <div className="chips">
+            <span className="chip chip-rol">Rol: {mia.datos.rol_nombre}</span>
+            <span className="chip">{mia.datos.escenario_nombre}</span>
+          </div>
         </div>
         <div className="sala-cabecera-acciones">
           {!terminada && (
@@ -73,29 +82,49 @@ export function SesionEnVivoPage() {
       <AvisoInject inject={aviso} onCerrar={cerrarAviso} />
 
       {!terminada && (
-        <>
-          <div
-            className="barra-avance"
-            role="progressbar"
-            aria-label="Avance de la sesión"
-            aria-valuenow={Math.round(avance)}
-            aria-valuemin={0}
-            aria-valuemax={100}
-          >
-            <span style={{ width: `${avance}%` }} />
-          </div>
-          <div className="sala-datos texto-suave">
-            <span>
-              Inject {vista?.inject_actual ?? 0} de {vista?.total_injects ?? '…'}
+        <div className="sala-estado">
+          <div className="sala-estado-avance">
+            <span className="sala-estado-etiqueta">
+              <Zap size={14} aria-hidden="true" />
+              {`Inject ${injectActual} de ${vista?.total_injects ?? '…'}`}
             </span>
-            <span>{formatoReloj(segundos)}</span>
-            <span>
-              {vista
-                ? `${vista.total_conectados} ${vista.total_conectados === 1 ? 'conectado' : 'conectados'}`
-                : ''}
-            </span>
+            <div
+              className="pasos-inject"
+              role="progressbar"
+              aria-label="Avance de la sesión"
+              aria-valuenow={Math.round(avance)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              {Array.from({ length: totalInjects }, (_, i) => (
+                <span
+                  key={i}
+                  className={
+                    i + 1 < injectActual ? 'hecho' : i + 1 === injectActual ? 'actual' : undefined
+                  }
+                />
+              ))}
+            </div>
           </div>
-        </>
+          <div className="sala-estado-dato">
+            <Clock size={16} aria-hidden="true" />
+            <div>
+              <span className="sala-estado-etiqueta">Tiempo transcurrido</span>
+              <strong>{formatoReloj(segundos)}</strong>
+            </div>
+          </div>
+          <div className="sala-estado-dato">
+            <Users size={16} aria-hidden="true" />
+            <div>
+              <span className="sala-estado-etiqueta">En la sala</span>
+              <strong>
+                {vista
+                  ? `${vista.total_conectados} ${vista.total_conectados === 1 ? 'conectado' : 'conectados'}`
+                  : '…'}
+              </strong>
+            </div>
+          </div>
+        </div>
       )}
 
       {conexion === 'reconectando' && (
@@ -122,14 +151,19 @@ export function SesionEnVivoPage() {
             </p>
           )}
           {estado === 'en_curso' && vista && (
-            <>
-              <section className="tarjeta narrativa">
-                <h2>Narrativa del escenario</h2>
-                <InjectActual vista={vista} />
-              </section>
-              <TareasDelRol sesionId={id} rolNombre={mia.datos.rol_nombre} vista={vista} />
-              <LineaDeTiempo lanzados={vista.lanzados ?? []} />
-            </>
+            // PC-49: en escritorio, el escenario a la izquierda y las tareas a la derecha.
+            <div className="sala-grid">
+              <div className="sala-columna-escenario">
+                <section className="tarjeta narrativa">
+                  <h2>Narrativa del escenario</h2>
+                  <InjectActual vista={vista} />
+                </section>
+                <LineaDeTiempo lanzados={vista.lanzados ?? []} />
+              </div>
+              <div className="sala-columna-tareas">
+                <TareasDelRol sesionId={id} rolNombre={mia.datos.rol_nombre} vista={vista} />
+              </div>
+            </div>
           )}
         </>
       )}

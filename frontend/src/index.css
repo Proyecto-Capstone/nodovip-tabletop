@@ -6918,3 +6918,454 @@ button.paso:hover {
 .grupo-mis-sesiones .ver-todas {
   margin-top: 1rem;
 }
+
+/* --- Sala del participante (PC-49) ----------------------------------------- */
+
+.sala-vivo-activa {
+  max-width: 1240px;
+}
+
+.sala-titulo h1 {
+  margin: 0.15rem 0 0.5rem;
+}
+
+.sala-eyebrow {
+  margin: 0;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--acento-texto);
+}
+
+.sala-estado {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.sala-estado > div {
+  padding: 0.8rem 1rem;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  box-shadow: var(--sombra-sm);
+}
+
+.sala-estado-etiqueta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: var(--fs-xs);
+  color: var(--texto-suave);
+}
+
+.sala-estado-avance .sala-estado-etiqueta {
+  font-weight: 700;
+  color: var(--texto);
+}
+
+.sala-estado-avance .sala-estado-etiqueta svg {
+  color: var(--acento-texto);
+}
+
+.pasos-inject {
+  display: flex;
+  gap: 0.35rem;
+  margin-top: 0.6rem;
+}
+
+.pasos-inject span {
+  flex: 1;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--gris-fondo);
+}
+
+.pasos-inject span.hecho {
+  background: var(--verde);
+}
+
+.pasos-inject span.actual {
+  background: var(--acento);
+  box-shadow: 0 0 10px rgb(77 132 255 / 0.55);
+}
+
+.sala-estado-dato {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.sala-estado-dato > svg {
+  flex: none;
+  color: var(--acento-texto);
+}
+
+.sala-estado-dato div {
+  display: grid;
+}
+
+.sala-estado-dato strong {
+  font-size: var(--fs-lg);
+  font-variant-numeric: tabular-nums;
+}
+
+.sala-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.sala-columna-escenario,
+.sala-columna-tareas {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.sala-columna-tareas {
+  position: sticky;
+  top: 4.5rem;
+}
+
+.sala-columna-tareas .tarjeta,
+.sala-columna-escenario .tarjeta {
+  margin: 0;
+}
+
+/* Tarjeta de tarea: cabecera sin franja oscura, estado por color. */
+.tarea-vivo .tarea-vivo-cabecera {
+  align-items: flex-start;
+  margin: 0 0 0.25rem;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  color: inherit;
+}
+
+.tarea-vivo-cabecera h2 {
+  margin: 0.4rem 0 0;
+  font-size: var(--fs-base);
+}
+
+.tarea-pendiente {
+  border-color: rgb(77 132 255 / 0.55);
+  background:
+    radial-gradient(120% 120% at 100% 0%, rgb(77 132 255 / 0.12), transparent 55%),
+    var(--superficie);
+  box-shadow:
+    var(--sombra),
+    0 0 26px rgb(77 132 255 / 0.12);
+}
+
+.tarea-respondida,
+.tarea-vencida {
+  opacity: 0.92;
+}
+
+.tarea-respondida .tarea-vivo-enunciado,
+.tarea-vencida .tarea-vivo-enunciado {
+  font-size: var(--fs-base);
+}
+
+.tarea-sello {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  flex: none;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: var(--fs-xs);
+  font-weight: 700;
+}
+
+.tarea-sello-ok {
+  background: var(--verde-fondo);
+  color: var(--verde-texto);
+}
+
+.tarea-sello-vencida {
+  background: var(--naranja-fondo);
+  color: var(--naranja-texto);
+}
+
+.reloj-tarea {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 4.4rem;
+  height: 4.4rem;
+  padding: 0;
+  background: none;
+}
+
+.reloj-tarea.urgente {
+  background: none;
+}
+
+.reloj-tarea svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.reloj-tarea circle {
+  fill: none;
+  stroke-width: 4;
+}
+
+.reloj-pista {
+  stroke: var(--gris-fondo);
+}
+
+.reloj-avance {
+  stroke: var(--acento);
+  stroke-linecap: round;
+  transform: rotate(-90deg);
+  transform-origin: center;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.reloj-tarea.urgente .reloj-avance {
+  stroke: var(--rojo);
+}
+
+.reloj-texto {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  font-size: var(--fs-sm);
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.reloj-tarea.urgente .reloj-texto {
+  color: var(--rojo-texto);
+}
+
+.reloj-etiqueta {
+  font-size: 0.6rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--texto-suave);
+}
+
+.opcion-tarea {
+  transition:
+    border-color var(--transicion),
+    background var(--transicion);
+}
+
+.opcion-tarea:hover {
+  border-color: var(--borde-fuerte);
+}
+
+.tarea-vivo .boton-enviar {
+  width: 100%;
+  justify-content: center;
+}
+
+@media (max-width: 1000px) {
+  .sala-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* En móvil la tarea va primero: es lo que hay que responder. */
+  .sala-columna-tareas {
+    position: static;
+    order: -1;
+  }
+}
+
+@media (max-width: 600px) {
+  .sala-estado {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .sala-estado-avance {
+    grid-column: 1 / -1;
+  }
+}
+
+.tarea-espera {
+  margin: 0;
+  border-style: dashed;
+  color: var(--texto-suave);
+  font-size: var(--fs-sm);
+}
+
+/* --- Pantallas anchas (PC-49) ---------------------------------------------
+   En monitores grandes la interfaz crece un poco (todo está en rem) y el
+   contenido ocupa más ancho, centrado en su columna, en vez de quedar como una
+   franja angosta con mucho espacio vacío a los lados. */
+
+@media (min-width: 1700px) {
+  html {
+    font-size: 17px;
+  }
+}
+
+@media (min-width: 2100px) {
+  html {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 2500px) {
+  html {
+    font-size: 19px;
+  }
+}
+
+.contenido {
+  max-width: 100rem;
+}
+
+/* Detalle de la sesión del participante: dos columnas, centradas. */
+.mi-sesion {
+  max-width: 76rem;
+  margin-inline: auto;
+}
+
+.mi-sesion-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.mi-sesion-principal,
+.mi-sesion-lateral {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.mi-sesion-principal .tarjeta,
+.mi-sesion-lateral .tarjeta {
+  margin: 0;
+}
+
+.mi-sesion-lateral {
+  position: sticky;
+  top: 4.5rem;
+}
+
+.mi-sesion-lateral .datos-sesion {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0;
+}
+
+.mi-sesion-principal h2 {
+  margin-top: 0.15rem;
+}
+
+.pasos-participante {
+  display: grid;
+  gap: 0.85rem;
+  margin: 0.25rem 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: paso;
+}
+
+.pasos-participante li {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr);
+  column-gap: 0.75rem;
+  counter-increment: paso;
+}
+
+.pasos-participante li::before {
+  content: counter(paso);
+  grid-row: span 2;
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--azul-fondo);
+  color: var(--acento-texto);
+  font-weight: 700;
+}
+
+.pasos-participante span {
+  color: var(--texto-suave);
+  font-size: var(--fs-sm);
+}
+
+.sala-vivo {
+  max-width: 60rem;
+  margin-inline: auto;
+}
+
+.sala-vivo.sala-vivo-activa {
+  max-width: none;
+}
+
+/* Resultado del participante al terminar: más ancho para leer cómodo. */
+.sala-vivo.sala-vivo-resumen {
+  max-width: 80rem;
+}
+
+/* Diseñador: la columna de pasos crece con la letra. */
+.disenador {
+  grid-template-columns: 15rem minmax(0, 1fr);
+}
+
+.paso-programar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.paso-programar .tarjeta {
+  margin: 0;
+}
+
+/* Detalle de escenario: incidente e injects | tareas por rol. */
+.escenario-detalle-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.escenario-detalle-columna {
+  display: grid;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.escenario-detalle-columna .tarjeta {
+  margin: 0;
+}
+
+.escenario-detalle-columna .tareas-por-rol {
+  grid-template-columns: 1fr;
+}
+
+@media (max-width: 1100px) {
+  .mi-sesion-grid,
+  .paso-programar,
+  .escenario-detalle-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mi-sesion-lateral {
+    position: static;
+  }
+}
+
+@media (max-width: 900px) {
+  .disenador {
+    grid-template-columns: 1fr;
+  }
+}

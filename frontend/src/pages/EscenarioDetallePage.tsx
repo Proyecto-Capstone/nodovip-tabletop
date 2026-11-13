@@ -16,13 +16,7 @@ import {
 import { crearSesion } from '../api/sesiones'
 import { useSesion } from '../auth/sesionContext'
 import { useConfirmar } from '../components/confirmacionContext'
-import {
-  Cargando,
-  Errores,
-  EstadoBadge,
-  NivelBadge,
-  SinPermiso,
-} from '../components/Etiquetas'
+import { Cargando, Errores, EstadoBadge, NivelBadge, SinPermiso } from '../components/Etiquetas'
 import { EvidenciaSimulada } from '../components/Evidencia'
 import { formatoTiempo, nombreRol, nombreTipo } from '../lib/etiquetas'
 import { useGet } from '../lib/useGet'
@@ -33,10 +27,7 @@ export function EscenarioDetallePage() {
   const navegar = useNavigate()
   const confirmar = useConfirmar()
   const habilitado = puedeLeerEscenarios
-  const escenario = useGet<EscenarioDetalle>(
-    habilitado ? rutas.escenario(id) : null,
-    rol,
-  )
+  const escenario = useGet<EscenarioDetalle>(habilitado ? rutas.escenario(id) : null, rol)
   const tipos = useGet<TipoEscenario[]>(habilitado ? rutas.tipos : null, rol)
   const roles = useGet<RolEjercicio[]>(habilitado ? rutas.roles : null, rol)
   const [erroresAccion, setErroresAccion] = useState<string[]>()
@@ -64,9 +55,7 @@ export function EscenarioDetallePage() {
       await accion()
       escenario.recargar()
     } catch (error) {
-      setErroresAccion(
-        error instanceof ApiError ? error.errores : ['Error de conexión'],
-      )
+      setErroresAccion(error instanceof ApiError ? error.errores : ['Error de conexión'])
     } finally {
       setEnviando(false)
     }
@@ -116,7 +105,8 @@ export function EscenarioDetallePage() {
                 onClick={async () => {
                   const confirmado = await confirmar({
                     titulo: '¿Archivar el escenario?',
-                    cuerpo: 'Se quita de la biblioteca. Las sesiones ya creadas no se ven afectadas.',
+                    cuerpo:
+                      'Se quita de la biblioteca. Las sesiones ya creadas no se ven afectadas.',
                     textoConfirmar: 'Archivar',
                   })
                   if (confirmado) ejecutar(() => archivarEscenario(e.id))
@@ -157,107 +147,113 @@ export function EscenarioDetallePage() {
         </div>
       )}
 
-      <section className="tarjeta">
-        <h2>Descripción del incidente</h2>
-        <p className="parrafo">{e.descripcion}</p>
-        <h3>Roles involucrados</h3>
-        <div className="chips">
-          {e.roles.map((r) => (
-            <span key={r} className="chip">
-              {nombreRol(roles.datos, r)}
-            </span>
-          ))}
-        </div>
-      </section>
-
-      <section className="tarjeta">
-        <h2>Injects ({e.injects.length})</h2>
-        <ol className="linea-tiempo">
-          {e.injects.map((i) => (
-            <li key={i.id}>
-              <div className="inject-cabecera">
-                <span className="inject-numero">Inject {i.orden}</span>
-                {i.minuto_sugerido !== null && (
-                  <span className="texto-suave">minuto {i.minuto_sugerido}</span>
-                )}
-              </div>
-              <strong>{i.titulo}</strong>
-              <p className="parrafo">{i.descripcion}</p>
-              {i.evidencia && <EvidenciaSimulada evidencia={i.evidencia} />}
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      <section className="tarjeta">
-        <h2>Tareas por rol ({e.tareas.length})</h2>
-        <div className="tareas-por-rol">
-          {tareasPorRol.map((grupo) => (
-            <div key={grupo.codigo} className="grupo-rol">
-              <h3>
-                {nombreRol(roles.datos, grupo.codigo)}{' '}
-                <span className="texto-suave">({grupo.tareas.length})</span>
-              </h3>
-              {grupo.tareas.length === 0 && (
-                <p className="texto-suave">Sin tareas asignadas.</p>
-              )}
-              {grupo.tareas.map((t) => (
-                <article key={t.id} className="tarea">
-                  <p className="tarea-enunciado">{t.enunciado}</p>
-                  <div className="fila-badges">
-                    {t.inject_orden !== null && (
-                      <span className="badge inject-badge inject-0">
-                        Inject {t.inject_orden}
-                      </span>
-                    )}
-                    <NivelBadge nivel={t.dificultad} />
-                    {t.tipo === 'seleccion_multiple' && (
-                      <span className="badge tipo-seleccion">Selección múltiple</span>
-                    )}
-                    <span className="texto-suave">
-                      {t.puntaje_maximo} pts · {formatoTiempo(t.tiempo_limite_segundos)}
-                    </span>
-                  </div>
-                  <details>
-                    {t.tipo === 'seleccion_multiple' ? (
-                      <>
-                        <summary>Opciones ({t.opciones.length})</summary>
-                        <ul className="lista-opciones">
-                          {t.opciones.map((o, i) => (
-                            <li key={i} className={o.correcta ? 'opcion-correcta' : undefined}>
-                              {o.correcta ? (
-                                <Check size={14} aria-hidden="true" />
-                              ) : (
-                                <Circle size={14} aria-hidden="true" />
-                              )}
-                              {o.correcta && <span className="solo-lector">Correcta: </span>}
-                              {o.texto}
-                            </li>
-                          ))}
-                        </ul>
-                      </>
-                    ) : (
-                      <>
-                        <summary>Criterios de evaluación ({t.criterios.length})</summary>
-                        <ul>
-                          {t.criterios.map((c) => (
-                            <li key={c}>{c}</li>
-                          ))}
-                        </ul>
-                      </>
-                    )}
-                    {t.respuesta_esperada && (
-                      <p className="parrafo">
-                        <strong>Respuesta esperada:</strong> {t.respuesta_esperada}
-                      </p>
-                    )}
-                  </details>
-                </article>
+      {/* PC-49: incidente e injects a la izquierda; tareas por rol a la derecha. */}
+      <div className="escenario-detalle-grid">
+        <div className="escenario-detalle-columna">
+          <section className="tarjeta">
+            <h2>Descripción del incidente</h2>
+            <p className="parrafo">{e.descripcion}</p>
+            <h3>Roles involucrados</h3>
+            <div className="chips">
+              {e.roles.map((r) => (
+                <span key={r} className="chip">
+                  {nombreRol(roles.datos, r)}
+                </span>
               ))}
             </div>
-          ))}
+          </section>
+
+          <section className="tarjeta">
+            <h2>Injects ({e.injects.length})</h2>
+            <ol className="linea-tiempo">
+              {e.injects.map((i) => (
+                <li key={i.id}>
+                  <div className="inject-cabecera">
+                    <span className="inject-numero">Inject {i.orden}</span>
+                    {i.minuto_sugerido !== null && (
+                      <span className="texto-suave">minuto {i.minuto_sugerido}</span>
+                    )}
+                  </div>
+                  <strong>{i.titulo}</strong>
+                  <p className="parrafo">{i.descripcion}</p>
+                  {i.evidencia && <EvidenciaSimulada evidencia={i.evidencia} />}
+                </li>
+              ))}
+            </ol>
+          </section>
         </div>
-      </section>
+        <div className="escenario-detalle-columna">
+          <section className="tarjeta">
+            <h2>Tareas por rol ({e.tareas.length})</h2>
+            <div className="tareas-por-rol">
+              {tareasPorRol.map((grupo) => (
+                <div key={grupo.codigo} className="grupo-rol">
+                  <h3>
+                    {nombreRol(roles.datos, grupo.codigo)}{' '}
+                    <span className="texto-suave">({grupo.tareas.length})</span>
+                  </h3>
+                  {grupo.tareas.length === 0 && (
+                    <p className="texto-suave">Sin tareas asignadas.</p>
+                  )}
+                  {grupo.tareas.map((t) => (
+                    <article key={t.id} className="tarea">
+                      <p className="tarea-enunciado">{t.enunciado}</p>
+                      <div className="fila-badges">
+                        {t.inject_orden !== null && (
+                          <span className="badge inject-badge inject-0">
+                            Inject {t.inject_orden}
+                          </span>
+                        )}
+                        <NivelBadge nivel={t.dificultad} />
+                        {t.tipo === 'seleccion_multiple' && (
+                          <span className="badge tipo-seleccion">Selección múltiple</span>
+                        )}
+                        <span className="texto-suave">
+                          {t.puntaje_maximo} pts · {formatoTiempo(t.tiempo_limite_segundos)}
+                        </span>
+                      </div>
+                      <details>
+                        {t.tipo === 'seleccion_multiple' ? (
+                          <>
+                            <summary>Opciones ({t.opciones.length})</summary>
+                            <ul className="lista-opciones">
+                              {t.opciones.map((o, i) => (
+                                <li key={i} className={o.correcta ? 'opcion-correcta' : undefined}>
+                                  {o.correcta ? (
+                                    <Check size={14} aria-hidden="true" />
+                                  ) : (
+                                    <Circle size={14} aria-hidden="true" />
+                                  )}
+                                  {o.correcta && <span className="solo-lector">Correcta: </span>}
+                                  {o.texto}
+                                </li>
+                              ))}
+                            </ul>
+                          </>
+                        ) : (
+                          <>
+                            <summary>Criterios de evaluación ({t.criterios.length})</summary>
+                            <ul>
+                              {t.criterios.map((c) => (
+                                <li key={c}>{c}</li>
+                              ))}
+                            </ul>
+                          </>
+                        )}
+                        {t.respuesta_esperada && (
+                          <p className="parrafo">
+                            <strong>Respuesta esperada:</strong> {t.respuesta_esperada}
+                          </p>
+                        )}
+                      </details>
+                    </article>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
     </>
   )
 }

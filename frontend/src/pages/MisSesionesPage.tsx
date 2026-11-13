@@ -59,7 +59,7 @@ export function MisSesionesPage() {
       {todas.length > 0 && (
         <section className="indicadores" aria-label="Resumen de mis sesiones">
           <Indicador
-            tono="rojo"
+            tono="senal"
             icono={<Radio />}
             etiqueta="En vivo ahora"
             valor={enVivo.length}

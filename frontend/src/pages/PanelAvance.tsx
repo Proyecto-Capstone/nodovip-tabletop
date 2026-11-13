@@ -134,7 +134,7 @@ export function InjectsLanzados({ injects, actual }: { injects: Inject[]; actual
 
 /** Estado de un participante frente a las tareas ya lanzadas de su rol. */
 function estadoProgreso(respondidas: number, esperadas: number) {
-  if (esperadas === 0) return { clase: 'progreso-espera', texto: 'Sin tareas aún' }
+  if (esperadas === 0) return { clase: 'progreso-espera', texto: 'Sin tarea en este inject' }
   if (respondidas >= esperadas) return { clase: 'progreso-respondido', texto: 'Respondido' }
   if (respondidas > 0) return { clase: 'progreso-curso', texto: 'En progreso' }
   return { clase: 'progreso-sin', texto: 'Sin respuesta' }

@@ -82,7 +82,9 @@ export function MonitoreoPage() {
         </section>
       )}
 
-      {datos?.sesiones.length === 0 && <p className="tarjeta vacio">No hay sesiones activas.</p>}
+      {datos?.sesiones.length === 0 && <p className="tarjeta vacio">
+          No hay sesiones en curso. Cuando un moderador inicie una, aparecerá aquí en segundos.
+        </p>}
 
       {sesiones.length > 0 && (
         <section className="leaderboard-grupo" aria-labelledby="titulo-activas">

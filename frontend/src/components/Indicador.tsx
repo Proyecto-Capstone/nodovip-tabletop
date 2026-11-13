@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react'
 
-export type Tono = 'azul' | 'verde' | 'naranja' | 'rojo' | 'gris'
+export type Tono = 'azul' | 'verde' | 'naranja' | 'rojo' | 'gris' | 'senal'
 
 export function Indicador({
   icono,

@@ -7,13 +7,10 @@ import { aFechaLocal, desdeFechaLocal, formatoDuracion, type PropsPaso } from '.
 
 const DURACIONES = [30, 45, 60, 90, 120, 180, 240]
 
-export function PasoProgramar({
-  d,
-  cambiar,
-  guardada,
-}: PropsPaso & { guardada: SesionDetalle }) {
+export function PasoProgramar({ d, cambiar, guardada }: PropsPaso & { guardada: SesionDetalle }) {
   return (
-    <>
+    // PC-49: datos a la izquierda y requisitos a la derecha en pantallas anchas.
+    <div className="paso-programar">
       <section className="tarjeta">
         <h2>Datos de la sesión</h2>
         <label className="campo">
@@ -95,6 +92,6 @@ export function PasoProgramar({
           Según lo último guardado. Al programar se guardan antes tus cambios.
         </p>
       </section>
-    </>
+    </div>
   )
 }

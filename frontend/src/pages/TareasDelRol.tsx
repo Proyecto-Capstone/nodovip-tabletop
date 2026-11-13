@@ -28,7 +28,14 @@ export function TareasDelRol({
   const [ultimas, setUltimas] = useState<TareaParticipante[]>()
   if (tareas.datos && tareas.datos !== ultimas) setUltimas(tareas.datos)
   const conocidas = tareas.datos ?? ultimas
-  const lista = (conocidas ?? []).map((t) => actualizadas[t.id] ?? t)
+  // PC-49: la tarea pendiente arriba; las ya cerradas debajo, la más reciente primero.
+  const lista = (conocidas ?? [])
+    .map((t) => actualizadas[t.id] ?? t)
+    .sort(
+      (a, b) =>
+        Number(a.estado !== 'pendiente') - Number(b.estado !== 'pendiente') ||
+        b.inject_orden - a.inject_orden,
+    )
 
   if (tareas.errores) return <Errores errores={tareas.errores} />
   if (!conocidas) return null
@@ -44,8 +51,18 @@ export function TareasDelRol({
     )
   }
 
+  // PC-49: no todos los roles tienen tarea en cada inject; se avisa para que no
+  // parezca que falta algo.
+  const sinTareaActual = !lista.some((t) => t.inject_orden === vista.inject_actual)
+
   return (
     <>
+      {sinTareaActual && (
+        <p className="tarjeta tarea-espera" role="status">
+          No tienes tarea en el inject {vista.inject_actual}. Lee la evidencia: tu próxima tarea
+          aparecerá aquí.
+        </p>
+      )}
       {lista.map((t) => (
         <TarjetaTarea
           key={t.id}
@@ -92,6 +109,9 @@ function TarjetaTarea({
   const vencida = tarea.estado === 'vencida' || (tarea.estado === 'pendiente' && restantes <= 0)
   const bloqueada = tarea.estado === 'respondida' || vencida || pausada || enviando
   const listo = tarea.tipo === 'texto_libre' ? texto.trim().length > 0 : elegidas.length > 0
+  let claseEstado = 'tarea-pendiente'
+  if (tarea.estado === 'respondida') claseEstado = 'tarea-respondida'
+  else if (vencida) claseEstado = 'tarea-vencida'
 
   const enviar = async (e: FormEvent) => {
     e.preventDefault()
@@ -112,19 +132,26 @@ function TarjetaTarea({
     setElegidas((a) => (a.includes(i) ? a.filter((x) => x !== i) : [...a, i]))
 
   return (
-    <form className="tarjeta tarea-vivo" onSubmit={enviar}>
+    <form className={`tarjeta tarea-vivo ${claseEstado}`} onSubmit={enviar}>
       <div className="tarea-vivo-cabecera">
-        <h2>Tu tarea — {rolNombre}</h2>
+        <div>
+          <span className="badge inject-badge inject-1">Inject {tarea.inject_orden}</span>
+          <h2>Tu tarea — {rolNombre}</h2>
+        </div>
         {tarea.estado === 'pendiente' && !vencida && (
-          <span
-            className={restantes <= 30 ? 'reloj-tarea urgente' : 'reloj-tarea'}
-            aria-label={`Tiempo restante: ${restantes} segundos`}
-          >
-            <Timer size={14} aria-hidden="true" /> {formatoMinutos(restantes)}
+          <RelojTarea restantes={restantes} limite={tarea.tiempo_limite_segundos} />
+        )}
+        {tarea.estado === 'respondida' && (
+          <span className="tarea-sello tarea-sello-ok">
+            <Check size={14} aria-hidden="true" /> Respondida
+          </span>
+        )}
+        {vencida && tarea.estado !== 'respondida' && (
+          <span className="tarea-sello tarea-sello-vencida">
+            <Timer size={14} aria-hidden="true" /> Sin tiempo
           </span>
         )}
       </div>
-      <span className="badge inject-badge inject-1">Inject {tarea.inject_orden}</span>
       <p className="tarea-vivo-enunciado">{tarea.enunciado}</p>
 
       {tarea.tipo === 'texto_libre' ? (
@@ -182,6 +209,35 @@ function TarjetaTarea({
         </div>
       )}
     </form>
+  )
+}
+
+/** Anillo que se vacía con el tiempo de la tarea; en rojo los últimos 30 segundos. */
+function RelojTarea({ restantes, limite }: { restantes: number; limite: number }) {
+  const radio = 20
+  const circunferencia = 2 * Math.PI * radio
+  const fraccion = limite > 0 ? Math.max(0, Math.min(1, restantes / limite)) : 0
+  return (
+    <span
+      className={restantes <= 30 ? 'reloj-tarea urgente' : 'reloj-tarea'}
+      aria-label={`Tiempo restante: ${restantes} segundos`}
+    >
+      <svg viewBox="0 0 48 48" aria-hidden="true">
+        <circle className="reloj-pista" cx="24" cy="24" r={radio} />
+        <circle
+          className="reloj-avance"
+          cx="24"
+          cy="24"
+          r={radio}
+          strokeDasharray={circunferencia}
+          strokeDashoffset={circunferencia * (1 - fraccion)}
+        />
+      </svg>
+      <span className="reloj-texto">
+        <span className="reloj-etiqueta">Quedan</span>
+        {formatoMinutos(restantes)}
+      </span>
+    </span>
   )
 }
 

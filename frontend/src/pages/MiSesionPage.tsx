@@ -45,6 +45,23 @@ export function MiSesionPage() {
     }
   }
 
+  const accion =
+    s.estado === 'finalizada' ? (
+      <Link className="boton boton-primario boton-bloque" to={`/mis-sesiones/${s.id}/en-vivo`}>
+        Ver mi resultado y retroalimentación
+      </Link>
+    ) : s.estado === 'programada' || s.estado === 'en_curso' ? (
+      <Link className="boton boton-primario boton-bloque" to={`/mis-sesiones/${s.id}/en-vivo`}>
+        {s.estado === 'en_curso' ? (
+          <>
+            <Circle size={10} fill="currentColor" aria-hidden="true" /> Entrar a la sesión en vivo
+          </>
+        ) : (
+          'Entrar a la sala de espera'
+        )}
+      </Link>
+    ) : null
+
   return (
     <div className="mi-sesion">
       <Link to="/mis-sesiones" className="volver">
@@ -58,74 +75,88 @@ export function MiSesionPage() {
 
       <Errores errores={errores} />
 
-      <section className="tarjeta tu-rol">
-        <p className="texto-suave">Tu rol en este ejercicio</p>
-        <p className="rol-destacado">{s.rol_nombre}</p>
-      </section>
-
-      <section className="tarjeta">
-        <dl className="datos-sesion">
-          <div>
-            <dt>Fecha</dt>
-            <dd>{formatoFecha(s.fecha_programada)}</dd>
-          </div>
-          {s.duracion_minutos !== null && (
-            <div>
-              <dt>Duración</dt>
-              <dd>{formatoDuracion(s.duracion_minutos)}</dd>
-            </div>
+      {/* PC-49: escenario a la izquierda; rol, datos y acción a la derecha. */}
+      <div className="mi-sesion-grid">
+        <div className="mi-sesion-principal">
+          {s.escenario_nombre && (
+            <section className="tarjeta">
+              <p className="sala-eyebrow">Escenario</p>
+              <h2>{s.escenario_nombre}</h2>
+              <p className="parrafo">{s.escenario_descripcion}</p>
+            </section>
           )}
-          <div>
-            <dt>Moderador</dt>
-            <dd>{s.moderador_nombre}</dd>
-          </div>
-          <div>
-            <dt>Participantes</dt>
-            <dd>{s.total_participantes}</dd>
-          </div>
-        </dl>
-        {s.escenario_nombre && (
-          <>
-            <h2>Escenario: {s.escenario_nombre}</h2>
-            <p className="parrafo">{s.escenario_descripcion}</p>
-          </>
-        )}
-      </section>
-
-      {s.estado === 'finalizada' && (
-        <Link className="boton boton-primario boton-bloque" to={`/mis-sesiones/${s.id}/en-vivo`}>
-          Ver mi resultado y retroalimentación
-        </Link>
-      )}
-      {(s.estado === 'programada' || s.estado === 'en_curso') && (
-        <Link className="boton boton-primario boton-bloque" to={`/mis-sesiones/${s.id}/en-vivo`}>
-          {s.estado === 'en_curso' ? (
-            <>
-              <Circle size={10} fill="currentColor" aria-hidden="true" /> Entrar a la sesión en
-              vivo
-            </>
-          ) : (
-            'Entrar a la sala de espera'
-          )}
-        </Link>
-      )}
-
-      {s.estado === 'finalizada' ? null : s.invitacion === 'aceptada' ? (
-        <div className="alerta alerta-exito" role="status">
-          {s.estado === 'en_curso'
-            ? 'Confirmaste tu asistencia. La sesión ya está en curso: entra ahora a la sala en vivo.'
-            : 'Confirmaste tu asistencia. El día de la sesión entra desde aquí: las tareas de tu rol aparecerán cuando el moderador inicie el ejercicio.'}
+          <section className="tarjeta">
+            <h2>Cómo funciona</h2>
+            <ol className="pasos-participante">
+              <li>
+                <strong>Confirma tu asistencia</strong>
+                <span>El moderador sabrá que cuenta contigo.</span>
+              </li>
+              <li>
+                <strong>Entra a la sala el día del ejercicio</strong>
+                <span>Recibirás cada inject con su evidencia simulada.</span>
+              </li>
+              <li>
+                <strong>Responde las tareas de tu rol a tiempo</strong>
+                <span>Cada tarea tiene un tiempo límite y se responde una sola vez.</span>
+              </li>
+              <li>
+                <strong>Revisa tu resultado</strong>
+                <span>Al cerrar verás tu puntaje, la retroalimentación y las lecciones.</span>
+              </li>
+            </ol>
+          </section>
         </div>
-      ) : (
-        <button
-          type="button"
-          className="boton boton-primario boton-bloque"
-          disabled={enviando}
-          onClick={aceptar}
-        >
-          {enviando ? 'Confirmando…' : 'Confirmar asistencia'}
-        </button>
-      )}
+
+        <aside className="mi-sesion-lateral">
+          <section className="tarjeta tu-rol">
+            <p className="texto-suave">Tu rol en este ejercicio</p>
+            <p className="rol-destacado">{s.rol_nombre}</p>
+          </section>
+
+          <section className="tarjeta">
+            <dl className="datos-sesion">
+              <div>
+                <dt>Fecha</dt>
+                <dd>{formatoFecha(s.fecha_programada)}</dd>
+              </div>
+              {s.duracion_minutos !== null && (
+                <div>
+                  <dt>Duración</dt>
+                  <dd>{formatoDuracion(s.duracion_minutos)}</dd>
+                </div>
+              )}
+              <div>
+                <dt>Moderador</dt>
+                <dd>{s.moderador_nombre}</dd>
+              </div>
+              <div>
+                <dt>Participantes</dt>
+                <dd>{s.total_participantes}</dd>
+              </div>
+            </dl>
+          </section>
+
+          {accion}
+
+          {s.estado === 'finalizada' ? null : s.invitacion === 'aceptada' ? (
+            <div className="alerta alerta-exito" role="status">
+              {s.estado === 'en_curso'
+                ? 'Confirmaste tu asistencia. La sesión ya está en curso: entra ahora a la sala en vivo.'
+                : 'Confirmaste tu asistencia. El día de la sesión entra desde aquí: las tareas de tu rol aparecerán cuando el moderador inicie el ejercicio.'}
+            </div>
+          ) : (
+            <button
+              type="button"
+              className="boton boton-primario boton-bloque"
+              disabled={enviando}
+              onClick={aceptar}
+            >
+              {enviando ? 'Confirmando…' : 'Confirmar asistencia'}
+            </button>
+          )}
+        </aside>
+      </div>
     </div>
   )
 }

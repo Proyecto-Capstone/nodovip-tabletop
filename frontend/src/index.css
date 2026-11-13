@@ -7369,3 +7369,505 @@ button.paso:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ===========================================================================
+   Identidad visual «Centro de operaciones» (PC-49)
+   ---------------------------------------------------------------------------
+   La interfaz se inspira en una sala de crisis o un SOC: superficies planas con
+   bordes finos (sin brillos ni degradados), datos en monoespaciada (relojes,
+   horas, puntajes, injects) y un lenguaje de color fijo:
+     · rojo              → «en vivo» / lo que está pasando ahora
+     · naranja           → en pausa / advertencia
+     · rojo apagado      → severidad y errores
+     · azul              → acciones
+   Este bloque sobrescribe la base: va al final a propósito.
+   =========================================================================== */
+
+:root {
+  /* Señal «en vivo»: rojo vivo para franjas y puntos; las insignias usan el
+     rojo oscuro con texto blanco para mantener el contraste AA. */
+  --senal: #ff5f57;
+  --senal-texto: #ff8f8f;
+  --senal-fondo: rgb(255 95 87 / 0.12);
+  --senal-borde: rgb(255 95 87 / 0.45);
+  --senal-solido: #c0362f;
+  --tinta-sobre-senal: #fff;
+
+  /* Radios más contenidos: herramienta de trabajo, no tarjeta de marketing. */
+  --radio-xs: 4px;
+  --radio-sm: 5px;
+  --radio: 7px;
+  --radio-lg: 9px;
+
+  /* Elevación por contraste y borde, no por sombra difusa. */
+  --sombra-sm: none;
+  --sombra: 0 1px 0 rgb(0 0 0 / 0.22);
+  --degradado-primario: linear-gradient(var(--primario), var(--primario));
+}
+
+/* --- Etiquetas de sección en monoespaciada --------------------------------- */
+
+.sidebar-grupo-titulo,
+.sala-eyebrow,
+.leaderboard-grupo-titulo,
+.pasos-titulo,
+.titulo-grupo {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+}
+
+/* --- Datos en monoespaciada ------------------------------------------------- */
+
+.indicador-valor,
+.sala-estado-dato strong,
+.reloj-texto,
+.monitoreo-metricas dd,
+.metrica strong,
+.tabla .sin-salto,
+.inject-numero,
+.segmento-contador,
+.celda-secundaria {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* --- Indicadores → barra de estado ----------------------------------------
+   Las 4 tarjetas con ícono pasan a ser una sola franja dividida en celdas.
+   El separador es el propio fondo asomando entre celdas (gap de 1px), así se
+   ve bien también cuando las celdas bajan a otra fila. */
+
+.indicadores {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+  gap: 1px;
+  margin-bottom: 1.25rem;
+  background: var(--borde);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+
+.indicadores > .indicador {
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.8rem 1.1rem 0.85rem;
+  background: var(--superficie);
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.indicadores > .indicador .indicador-icono {
+  display: none;
+}
+
+.indicadores .indicador-etiqueta {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+}
+
+/* Marca de color del estado, en vez del ícono en un cuadrito. */
+.indicadores .indicador-etiqueta::before {
+  content: '';
+  flex: none;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 1px;
+  background: var(--tono);
+}
+
+.indicadores .indicador-cupo-texto .indicador-etiqueta::before {
+  content: none;
+}
+
+.indicadores .indicador-valor {
+  margin-top: 0.3rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.indicador {
+  background: var(--superficie);
+}
+
+/* --- Sin brillos: superficies planas ---------------------------------------- */
+
+.leaderboard-hero,
+.reporte-hero,
+.reporte-vista,
+.vista-previa-participante,
+.ranking-roles-puntaje,
+.tarjeta-monitoreo.en-pausa,
+.tarjeta-sesion-vivo,
+.tarea-pendiente {
+  background: var(--superficie);
+  box-shadow: none;
+}
+
+.boton-destacado {
+  box-shadow: none;
+}
+
+/* --- «En vivo» = rojo ------------------------------------------ */
+
+.tarjeta-leaderboard.en-vivo,
+.tarjeta-sesion-vivo,
+.tarea-pendiente {
+  background: var(--superficie);
+  border-color: var(--senal-borde);
+  box-shadow: inset 3px 0 0 var(--senal);
+}
+
+.tarjeta-sesion-vivo:hover {
+  border-color: var(--senal);
+}
+
+.tarjeta-monitoreo.en-pausa {
+  border-color: rgb(245 179 102 / 0.45);
+  box-shadow: inset 3px 0 0 var(--naranja-texto);
+}
+
+.punto-vivo {
+  background: var(--senal);
+  animation-name: pulso-senal;
+}
+
+@keyframes pulso-senal {
+  70% {
+    box-shadow: 0 0 0 7px rgb(255 95 87 / 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 95 87 / 0);
+  }
+}
+
+.badge-live,
+.badge.badge-vivo {
+  background: var(--senal-solido);
+  color: var(--tinta-sobre-senal);
+  font-family: var(--font-mono);
+  letter-spacing: 0.04em;
+}
+
+.badge-pausa {
+  background: var(--naranja-fondo);
+  color: var(--naranja-texto);
+}
+
+.entrar-sala {
+  color: var(--senal-texto);
+}
+
+.en-vivo .avance-injects-barra span {
+  background: var(--senal);
+}
+
+/* Pasos de la sala y reloj de la tarea con la señal en vivo. */
+.pasos-inject span.actual {
+  background: var(--senal);
+  box-shadow: none;
+}
+
+.reloj-avance {
+  stroke: var(--senal);
+}
+
+.tarea-sello-ok {
+  font-family: var(--font-mono);
+}
+
+/* Inject actual del panel y de la sala: la insignia toma la señal. */
+.inject-badge.inject-0 {
+  background: var(--superficie-alta);
+  color: var(--senal-texto);
+  border: 1px solid var(--senal-borde);
+  font-family: var(--font-mono);
+}
+
+.inject-badge.inject-1 {
+  background: var(--senal-solido);
+  color: var(--tinta-sobre-senal);
+  font-family: var(--font-mono);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .punto-vivo {
+    animation: none;
+  }
+}
+
+.indicador-senal {
+  --tono: var(--senal-texto);
+  --tono-fondo: var(--senal-fondo);
+}
+
+/* --- Inicio: «Ahora mismo» (PC-49) ----------------------------------------- */
+
+.portada-ahora {
+  width: min(100%, 46rem);
+  margin-top: -1rem;
+}
+
+.portada-ahora-titulo {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.portada-ahora ul {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--superficie);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+
+.portada-ahora li + li {
+  border-top: 1px solid var(--borde);
+}
+
+.portada-ahora a {
+  display: grid;
+  grid-template-columns: 6.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 1rem;
+  color: inherit;
+  text-decoration: none;
+  transition: background var(--transicion);
+}
+
+.portada-ahora a:hover {
+  background: var(--superficie-alta);
+}
+
+.portada-ahora li.vivo a {
+  box-shadow: inset 3px 0 0 var(--senal);
+}
+
+.portada-ahora-estado {
+  font-family: var(--font-mono);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--texto-suave);
+}
+
+.portada-ahora li.vivo .portada-ahora-estado {
+  color: var(--senal-texto);
+}
+
+.portada-ahora-texto {
+  display: grid;
+  min-width: 0;
+  text-align: left;
+}
+
+.portada-ahora-texto strong,
+.portada-ahora-texto span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.portada-ahora-texto span {
+  font-size: var(--fs-sm);
+  color: var(--texto-suave);
+}
+
+.portada-ahora-accion {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--acento-texto);
+  white-space: nowrap;
+}
+
+.portada-ahora-vacio {
+  margin: 0;
+  padding: 0.85rem 1rem;
+  border: 1px dashed var(--borde-fuerte);
+  border-radius: var(--radio);
+  color: var(--texto-suave);
+  font-size: var(--fs-sm);
+  text-align: center;
+}
+
+@media (max-width: 640px) {
+  .portada-ahora a {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.3rem;
+  }
+}
+
+/* --- Tablas: franja de estado a la izquierda de cada fila (PC-49) ---------- */
+
+.fila-estado td:first-child {
+  box-shadow: inset 3px 0 0 transparent;
+}
+
+.fila-estado.fila-en_curso td:first-child {
+  box-shadow: inset 3px 0 0 var(--senal);
+  font-weight: 600;
+}
+
+.fila-estado.fila-programada td:first-child {
+  box-shadow: inset 3px 0 0 var(--acento);
+}
+
+.fila-estado.fila-borrador td:first-child {
+  box-shadow: inset 3px 0 0 var(--naranja-texto);
+}
+
+/* «En curso» usa la misma señal que «en vivo» en toda la app. */
+.badge.sesion-en_curso {
+  background: var(--senal-fondo);
+  color: var(--senal-texto);
+}
+
+/* ===========================================================================
+   Correcciones de desborde (PC-49): ningún texto ni insignia se sale de su
+   recuadro. Las columnas con insignias toman el ancho de su contenido.
+   =========================================================================== */
+
+.progreso-participantes li {
+  grid-template-columns: minmax(8rem, 1.2fr) minmax(4rem, 2fr) 2.75rem max-content;
+}
+
+.progreso-participantes .badge {
+  justify-self: end;
+}
+
+@media (max-width: 560px) {
+  .progreso-participantes li {
+    grid-template-columns: 1fr auto;
+  }
+
+  .progreso-participantes .badge {
+    justify-self: start;
+  }
+}
+
+/* La fila se adapta al ancho de su tarjeta (no al de la pantalla): en una
+   columna angosta, nombre y estado arriba, barra y porcentaje abajo. */
+.progreso-participantes {
+  container-type: inline-size;
+}
+
+@container (max-width: 34rem) {
+  .progreso-participantes li {
+    grid-template-columns: minmax(0, 1fr) max-content;
+    row-gap: 0.4rem;
+  }
+
+  .progreso-participantes .barra-avance {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .progreso-participantes .progreso-porcentaje {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .progreso-participantes .badge {
+    grid-column: 2;
+    grid-row: 1;
+  }
+}
+
+/* Historial de accesos: el correo y la IP se recortan con «…» en vez de
+   salirse de la fila; en una lista angosta, la columna del navegador se oculta
+   (el detalle completo sigue en el inspector del evento). */
+.evento-correo,
+.evento-ip,
+.evento-fecha {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.lista-eventos {
+  container-type: inline-size;
+}
+
+@container (max-width: 46rem) {
+  .evento-acceso {
+    grid-template-columns: 10rem 8.5rem minmax(0, 1fr) minmax(0, 0.8fr);
+  }
+
+  .evento-agente {
+    display: none;
+  }
+}
+
+@container (max-width: 26rem) {
+  .evento-acceso {
+    grid-template-columns: minmax(0, 1fr) auto;
+    row-gap: 0.2rem;
+  }
+
+  .evento-correo {
+    grid-column: 1 / -1;
+  }
+
+  .evento-ip {
+    display: none;
+  }
+}
+
+/* ===========================================================================
+   Uniformidad (PC-49): todo bloque de cifras usa la misma barra de estado
+   que los indicadores — celdas separadas por una línea fina, valores en mono.
+   =========================================================================== */
+
+.leaderboard-hero-cifras,
+.reporte-metricas {
+  gap: 1px;
+  background: var(--borde);
+  border: 1px solid var(--borde);
+  border-radius: var(--radio);
+  overflow: hidden;
+}
+
+.leaderboard-hero-cifras div {
+  background: var(--superficie);
+  border: 0;
+  border-radius: 0;
+}
+
+.leaderboard-hero-cifras dd,
+.reporte-metricas .metrica strong {
+  font-family: var(--font-mono);
+  font-weight: 600;
+}
+
+.leaderboard-hero-cifras .leaderboard-hero-lider {
+  font-family: var(--font-ui);
+}
+
+.reporte-metricas .metrica {
+  padding: 0.85rem 1.1rem;
+  background: var(--superficie);
+  border: 0;
+  border-radius: 0;
+}
+
+.reporte-metricas {
+  margin-bottom: 1.25rem;
+}

@@ -89,7 +89,7 @@ export function LeaderboardPage() {
       {sesiones.datos && lista.length > 0 && (
         <section className="indicadores" aria-label="Resumen del leaderboard">
           <Indicador
-            tono="rojo"
+            tono="senal"
             icono={<Radio />}
             etiqueta="En vivo ahora"
             valor={totalEnVivo}

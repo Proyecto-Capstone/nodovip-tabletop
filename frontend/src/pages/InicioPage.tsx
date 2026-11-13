@@ -1,11 +1,13 @@
 // Portada después del login: el logo de NODOVIP, un saludo y los accesos
 // directos a las secciones que el rol del usuario puede usar (los mismos que
 // el menú lateral, filtrados por permisos).
+// PC-49: «Ahora mismo» muestra lo que el rol tiene en curso o por delante.
 
 import { Link } from 'react-router-dom'
 import logoNodovip from '../assets/marca/nodovip-horizontal-claro.webp'
 import { nombreRolSistema, useSesion } from '../auth/sesionContext'
 import { useGruposNav } from '../components/navegacion'
+import { AhoraMismo } from './AhoraMismo'
 
 export function InicioPage() {
   const { usuario } = useSesion()
@@ -34,6 +36,8 @@ export function InicioPage() {
           Plataforma de ejercicios tabletop de ciberseguridad. Elige por dónde empezar.
         </p>
       </div>
+
+      <AhoraMismo />
 
       <nav className="portada-dock" aria-label="Accesos directos">
         {accesos.map(({ to, texto, corto, icono: Icono }) => (

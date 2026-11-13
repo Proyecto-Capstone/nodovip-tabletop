@@ -67,7 +67,7 @@ describe('MonitoreoPage', () => {
     vi.stubGlobal('fetch', vi.fn(async () => respuesta(200, { ...RESUMEN, activas: 0, sesiones: [] })))
     renderConSesion(rutas(), { sesion: sesionDePrueba(ADMINISTRADOR), ruta: '/monitoreo' })
 
-    expect(await screen.findByText('No hay sesiones activas.')).toBeInTheDocument()
+    expect(await screen.findByText(/No hay sesiones en curso/)).toBeInTheDocument()
   })
 
   it('con el cupo lleno marca la barra de avance como llena', async () => {

@@ -135,7 +135,9 @@ export function ReportesPage() {
       {sesiones.cargando && <Cargando />}
 
       {sesiones.datos && lista.length === 0 && (
-        <div className="tarjeta vacio">Todavía no hay sesiones finalizadas.</div>
+        <div className="tarjeta vacio">
+          Todavía no hay sesiones finalizadas. El reporte se genera solo al cerrar cada sesión.
+        </div>
       )}
 
       {lista.length > 0 && (

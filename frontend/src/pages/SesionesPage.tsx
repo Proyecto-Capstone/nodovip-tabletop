@@ -95,7 +95,7 @@ export function SesionesPage() {
       {lista.length > 0 && (
         <section className="indicadores" aria-label="Resumen de mis tabletops">
           <Indicador
-            tono="rojo"
+            tono="senal"
             icono={<Radio />}
             etiqueta="En curso"
             valor={cuenta('en_curso')}
@@ -179,7 +179,7 @@ export function SesionesPage() {
             </thead>
             <tbody>
               {visibles.map((s) => (
-                <tr key={s.id}>
+                <tr key={s.id} className={`fila-estado fila-${s.estado}`}>
                   <td>{s.nombre}</td>
                   <td>
                     <EstadoSesionBadge estado={s.estado} />

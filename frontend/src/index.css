@@ -142,7 +142,7 @@ a:hover {
    anima esa variable, no cada regla por separado. */
 
 .app {
-  --ancho-sidebar: 236px;
+  --ancho-sidebar: 15.5rem;
   --alto-topbar: 3.6rem;
   display: grid;
   grid-template-columns: var(--ancho-sidebar) minmax(0, 1fr);
@@ -152,7 +152,7 @@ a:hover {
 }
 
 .app.sidebar-colapsado {
-  --ancho-sidebar: 64px;
+  --ancho-sidebar: 4rem;
 }
 
 .topbar {
